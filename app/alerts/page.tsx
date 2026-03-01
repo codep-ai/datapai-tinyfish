@@ -35,8 +35,8 @@ export default function AlertsPage() {
         </div>
         {changed > 0 && (
           <span
-            className="text-sm font-bold px-4 py-1.5 rounded self-start"
-            style={{ background: "#f9b116", color: "#252525" }}
+            className="text-sm px-4 py-1.5 rounded self-start"
+            style={{ background: "#f9b116", color: "#ffffff", fontWeight: 800, textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}
           >
             {changed} stock{changed !== 1 ? "s" : ""} with changes
           </span>

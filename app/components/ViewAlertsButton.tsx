@@ -24,9 +24,11 @@ export default function ViewAlertsButton({ count }: Props) {
       className="inline-block font-bold uppercase tracking-wide text-sm rounded transition-all duration-300"
       style={{
         background: "#f9b116",
-        color: "#252525",
+        color: "#ffffff",
+        fontWeight: 800,
         padding: "10px 28px",
         letterSpacing: "0.06em",
+        textShadow: "0 1px 2px rgba(0,0,0,0.25)",
       }}
       onMouseEnter={(e) => {
         (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";

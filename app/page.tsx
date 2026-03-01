@@ -19,21 +19,22 @@ export default function Home() {
       >
         <div className="max-w-3xl mx-auto space-y-5">
 
-          {/* Yellow badge — datap.ai #f9b116 CTA style */}
+          {/* Yellow badge — datap.ai #f9b116 CTA style, bold white text */}
           <div
             className="inline-flex items-center gap-2 text-sm"
             style={{
               background: "#f9b116",
-              color: "#252525",
-              fontWeight: 700,
+              color: "#ffffff",
+              fontWeight: 800,
               textTransform: "uppercase",
               letterSpacing: "0.06em",
               borderRadius: "6px",
               padding: "8px 20px",
               fontSize: "0.8rem",
+              textShadow: "0 1px 2px rgba(0,0,0,0.25)",
             }}
           >
-            <span className="w-2 h-2 rounded-full bg-[#252525]/30 animate-pulse inline-block" />
+            <span className="w-2 h-2 rounded-full bg-white/60 animate-pulse inline-block" />
             DataPAI &nbsp;·&nbsp; Powered by TinyFish &amp; ag2
           </div>
 
