@@ -2,22 +2,9 @@ import Link from "next/link";
 import { UNIVERSE } from "@/lib/universe";
 import { getAlertSummaryMap } from "@/lib/db";
 import RunScanButton from "./components/RunScanButton";
+import ViewAlertsButton from "./components/ViewAlertsButton";
 
 export const dynamic = "force-dynamic";
-
-/** datap.ai yellow CTA style — uppercase, hover-lift, #f9b116 */
-const yellowCta = {
-  background: "#f9b116",
-  color: "#252525",
-  fontWeight: 700,
-  textTransform: "uppercase" as const,
-  letterSpacing: "0.06em",
-  borderRadius: "6px",
-  padding: "10px 28px",
-  fontSize: "0.875rem",
-  transition: "all 0.3s ease",
-  display: "inline-block",
-};
 
 export default function Home() {
   const alertMap = getAlertSummaryMap();
@@ -61,30 +48,7 @@ export default function Home() {
 
           {/* CTAs */}
           <div className="flex flex-wrap gap-4 justify-center pt-2 items-center">
-            {alertCount > 0 ? (
-              <Link
-                href="/alerts"
-                style={yellowCta}
-                className="hover:opacity-90"
-                onMouseOver={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
-                  (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 4px 10px rgba(0,0,0,.25)";
-                }}
-                onMouseOut={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).style.transform = "";
-                  (e.currentTarget as HTMLAnchorElement).style.boxShadow = "";
-                }}
-              >
-                View {alertCount} Alert{alertCount !== 1 ? "s" : ""} →
-              </Link>
-            ) : (
-              <Link
-                href="/alerts"
-                className="bg-white text-brand font-semibold px-6 py-2.5 rounded font-semibold uppercase tracking-wide text-sm hover:bg-white/90 transition-colors shadow-sm"
-              >
-                View Alerts →
-              </Link>
-            )}
+            <ViewAlertsButton count={alertCount} />
             <RunScanButton />
           </div>
 
