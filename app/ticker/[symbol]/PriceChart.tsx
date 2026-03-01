@@ -27,18 +27,18 @@ export default function PriceChart({ data }: Props) {
   return (
     <ResponsiveContainer width="100%" height={260}>
       <ComposedChart data={formatted} margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
         <XAxis
           dataKey="date"
-          tick={{ fill: "#64748b", fontSize: 11 }}
+          tick={{ fill: "#9ca3af", fontSize: 11 }}
           tickLine={false}
-          axisLine={{ stroke: "#334155" }}
+          axisLine={{ stroke: "#e5e7eb" }}
           interval={4}
         />
         <YAxis
           yAxisId="price"
           orientation="left"
-          tick={{ fill: "#64748b", fontSize: 11 }}
+          tick={{ fill: "#9ca3af", fontSize: 11 }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v) => `$${v}`}
@@ -46,17 +46,17 @@ export default function PriceChart({ data }: Props) {
         <YAxis
           yAxisId="vol"
           orientation="right"
-          tick={{ fill: "#64748b", fontSize: 11 }}
+          tick={{ fill: "#9ca3af", fontSize: 11 }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v) => `${v}K`}
         />
         <Tooltip
           contentStyle={{
-            background: "#1e293b",
-            border: "1px solid #334155",
+            background: "#ffffff",
+            border: "1px solid #e5e7eb",
             borderRadius: 8,
-            color: "#e2e8f0",
+            color: "#252525",
             fontSize: 12,
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -66,14 +66,14 @@ export default function PriceChart({ data }: Props) {
           }}
         />
         <Legend
-          wrapperStyle={{ fontSize: 12, color: "#64748b" }}
+          wrapperStyle={{ fontSize: 12, color: "#9ca3af" }}
         />
-        <Bar yAxisId="vol" dataKey="volumeK" fill="#1e40af" opacity={0.5} name="Volume" />
+        <Bar yAxisId="vol" dataKey="volumeK" fill="#4a7c59" opacity={0.35} name="Volume" />
         <Line
           yAxisId="price"
           type="monotone"
           dataKey="close"
-          stroke="#60a5fa"
+          stroke="#2e8b57"
           strokeWidth={2}
           dot={false}
           name="close"

@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 :root {
-  --background: #0f172a;
-  --foreground: #e2e8f0;
+  --background: #fcfcfd;
+  --foreground: #252525;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  /* datap.ai brand greens */
-  --color-brand: #8fbc8f;
-  --color-brand-light: #a8d5a8;
-  --color-brand-dark: #4a7c59;
-  --color-brand-darker: #3d6b4a;
-  --color-brand-dim: #1a3a1a;
+  /* datap.ai brand greens — tuned for light backgrounds */
+  --color-brand: #2e8b57;       /* seagreen — primary text accent */
+  --color-brand-light: #4aac78; /* lighter hover variant */
+  --color-brand-dark: #1a6e3e;  /* button backgrounds */
+  --color-brand-darker: #145730; /* button hover */
+  --color-brand-bg: #f0f7f1;    /* very light green surface */
 }
 
 body {
