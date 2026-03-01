@@ -5,6 +5,8 @@ const BASE_URL =
 export interface PageContent {
   title: string;
   text: string;
+  finalUrl?: string;
+  tinyfishRunRef?: string; // run ID from TinyFish for audit trail
 }
 
 /**
@@ -36,12 +38,16 @@ function flattenToText(obj: unknown, depth = 0): string {
  * The content lives in the COMPLETE event under `resultJson` (a structured
  * JSON object). Earlier guesses ("done", "result.text", etc.) were wrong.
  */
-async function parseSseStream(stream: ReadableStream<Uint8Array>): Promise<PageContent> {
+async function parseSseStream(
+  stream: ReadableStream<Uint8Array>
+): Promise<PageContent> {
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   let text = "";
   let title = "";
+  let tinyfishRunRef: string | undefined;
+  let finalUrl: string | undefined;
 
   while (true) {
     const { done, value } = await reader.read();
@@ -59,10 +65,19 @@ async function parseSseStream(stream: ReadableStream<Uint8Array>): Promise<PageC
       try {
         const event = JSON.parse(jsonStr);
 
+        // Capture run reference from STARTED event (audit trail)
+        if (event.type === "STARTED") {
+          tinyfishRunRef = event.runId ?? event.run_id ?? event.id ?? undefined;
+        }
+
+        // Capture final URL from STREAMING_URL event
+        if (event.type === "STREAMING_URL") {
+          finalUrl = event.url ?? event.finalUrl ?? undefined;
+        }
+
         // ── Primary path: COMPLETE event with resultJson ──────────────────
         if (event.type === "COMPLETE" && event.resultJson) {
-          text = flattenToText(event.resultJson).replace(/\s+/g, " ").trim();
-          // Pull company name as title from the first section if available
+          text = flattenToText(event.resultJson).replace(/[ \t]+/g, " ").trim();
           const firstSection = Object.values(event.resultJson)[0];
           if (firstSection && typeof firstSection === "object") {
             const s = firstSection as Record<string, unknown>;
@@ -82,14 +97,13 @@ async function parseSseStream(stream: ReadableStream<Uint8Array>): Promise<PageC
           if (candidate) text = String(candidate).replace(/\s+/g, " ").trim();
           if (!title) title = event.result?.title ?? event.title ?? "";
         }
-
       } catch {
         // non-JSON SSE data line — skip silently
       }
     }
   }
 
-  return { title, text };
+  return { title, text, finalUrl, tinyfishRunRef };
 }
 
 async function callTinyFish(url: string): Promise<PageContent> {

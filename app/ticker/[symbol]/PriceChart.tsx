@@ -15,13 +15,16 @@ import type { PricePoint } from "@/lib/price";
 
 interface Props {
   data: PricePoint[];
+  scanDates?: string[]; // YYYY-MM-DD — mark scan dates on chart
 }
 
-export default function PriceChart({ data }: Props) {
+export default function PriceChart({ data, scanDates = [] }: Props) {
+  const scanSet = new Set(scanDates);
   const formatted = data.map((d) => ({
     ...d,
     date: d.date.slice(5), // MM-DD
     volumeK: Math.round(d.volume / 1000),
+    scanMarker: scanSet.has(d.date) ? d.close : null,
   }));
 
   return (
@@ -77,6 +80,16 @@ export default function PriceChart({ data }: Props) {
           strokeWidth={2}
           dot={false}
           name="close"
+        />
+        <Line
+          yAxisId="price"
+          type="monotone"
+          dataKey="scanMarker"
+          stroke="#f9b116"
+          strokeWidth={0}
+          dot={{ r: 5, fill: "#f9b116", strokeWidth: 0 }}
+          name="scan"
+          connectNulls={false}
         />
       </ComposedChart>
     </ResponsiveContainer>
