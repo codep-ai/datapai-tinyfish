@@ -153,3 +153,19 @@ export function getTickerSnapshots(ticker: string, limit = 2): Snapshot[] {
     )
     .all(ticker, limit) as Snapshot[];
 }
+
+/** Returns a map of ticker → latest Alert for all tickers that have at least one alert. */
+export function getAlertSummaryMap(): Record<string, Alert> {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT a.*
+       FROM alerts a
+       INNER JOIN (
+         SELECT ticker, MAX(computed_at) AS max_at
+         FROM alerts GROUP BY ticker
+       ) latest ON a.ticker = latest.ticker AND a.computed_at = latest.max_at`
+    )
+    .all() as Alert[];
+  return Object.fromEntries(rows.map((r) => [r.ticker, r]));
+}

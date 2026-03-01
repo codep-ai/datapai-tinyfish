@@ -1,80 +1,102 @@
-"use client";
-
-import { useState } from "react";
 import Link from "next/link";
 import { UNIVERSE } from "@/lib/universe";
+import { getAlertSummaryMap } from "@/lib/db";
+import RunScanButton from "./components/RunScanButton";
+
+export const dynamic = "force-dynamic";
+
+/** datap.ai yellow CTA style — uppercase, hover-lift, #f9b116 */
+const yellowCta = {
+  background: "#f9b116",
+  color: "#252525",
+  fontWeight: 700,
+  textTransform: "uppercase" as const,
+  letterSpacing: "0.06em",
+  borderRadius: "6px",
+  padding: "10px 28px",
+  fontSize: "0.875rem",
+  transition: "all 0.3s ease",
+  display: "inline-block",
+};
 
 export default function Home() {
-  const [running, setRunning] = useState(false);
-  const [result, setResult] = useState<string | null>(null);
-
-  async function handleRun() {
-    setRunning(true);
-    setResult(null);
-    try {
-      const res = await fetch("/api/run", { method: "POST" });
-      const data = await res.json();
-      const ok = data.results?.filter((r: { status: string }) => r.status === "ok").length ?? 0;
-      const err = data.results?.filter((r: { status: string }) => r.status === "error").length ?? 0;
-      setResult(`Done. ${ok} succeeded, ${err} failed.`);
-    } catch (e) {
-      setResult(`Error: ${String(e)}`);
-    } finally {
-      setRunning(false);
-    }
-  }
+  const alertMap = getAlertSummaryMap();
+  const alertCount = Object.keys(alertMap).length;
 
   return (
     <div>
-      {/* ── Full-width green gradient hero — datap.ai signature style ── */}
+      {/* ── Full-width green gradient hero ── */}
       <div
         className="w-full px-6 pt-14 pb-14 text-center"
         style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)" }}
       >
         <div className="max-w-3xl mx-auto space-y-5">
 
-          {/* Yellow pill badge — matching datap.ai's #f9b116 CTA highlight */}
-          <div className="inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-sm font-semibold"
-            style={{ background: "#f9b116", color: "#252525" }}>
-            <span className="w-2 h-2 rounded-full bg-[#252525]/40 animate-pulse inline-block" />
-            DataPAI &nbsp;·&nbsp; powered by TinyFish &amp; ag2
+          {/* Yellow badge — datap.ai #f9b116 CTA style */}
+          <div
+            className="inline-flex items-center gap-2 text-sm"
+            style={{
+              background: "#f9b116",
+              color: "#252525",
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              borderRadius: "6px",
+              padding: "8px 20px",
+              fontSize: "0.8rem",
+            }}
+          >
+            <span className="w-2 h-2 rounded-full bg-[#252525]/30 animate-pulse inline-block" />
+            DataPAI &nbsp;·&nbsp; Powered by TinyFish &amp; ag2
           </div>
 
           <h1 className="text-4xl font-bold text-white drop-shadow-sm">
             Stock Website Change Radar
           </h1>
           <p className="text-white/80 text-lg max-w-xl mx-auto">
-            Monitors IR/News pages of 20 US small-cap companies. Detects wording
-            shifts, scores language changes, and surfaces alerts with stock price context.
+            Monitors company news &amp; earnings pages of 20 US small-cap stocks.
+            Detects wording shifts, scores language changes, and surfaces alerts
+            with price context.
           </p>
 
-          <div className="flex flex-wrap gap-3 justify-center pt-2">
-            <Link
-              href="/alerts"
-              className="bg-white text-brand font-semibold px-6 py-2.5 rounded-lg hover:bg-white/90 transition-colors shadow-sm"
-            >
-              View Alerts →
-            </Link>
-            <button
-              onClick={handleRun}
-              disabled={running}
-              className="border border-white/60 text-white hover:bg-white/10 px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
-            >
-              {running ? "Fetching pages…" : "Run Scan Now"}
-            </button>
+          {/* CTAs */}
+          <div className="flex flex-wrap gap-4 justify-center pt-2 items-center">
+            {alertCount > 0 ? (
+              <Link
+                href="/alerts"
+                style={yellowCta}
+                className="hover:opacity-90"
+                onMouseOver={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+                  (e.currentTarget as HTMLAnchorElement).style.boxShadow = "0 4px 10px rgba(0,0,0,.25)";
+                }}
+                onMouseOut={(e) => {
+                  (e.currentTarget as HTMLAnchorElement).style.transform = "";
+                  (e.currentTarget as HTMLAnchorElement).style.boxShadow = "";
+                }}
+              >
+                View {alertCount} Alert{alertCount !== 1 ? "s" : ""} →
+              </Link>
+            ) : (
+              <Link
+                href="/alerts"
+                className="bg-white text-brand font-semibold px-6 py-2.5 rounded font-semibold uppercase tracking-wide text-sm hover:bg-white/90 transition-colors shadow-sm"
+              >
+                View Alerts →
+              </Link>
+            )}
+            <RunScanButton />
           </div>
 
-          {result && <p className="text-white/90 text-sm">{result}</p>}
-
-          {/* Partner logos strip inside hero */}
-          <div className="flex items-center justify-center gap-4 pt-4 opacity-80">
+          {/* Partner logo chips */}
+          <div className="flex items-center justify-center gap-4 pt-4 opacity-85">
             <span className="text-white/60 text-xs uppercase tracking-widest">Powered by</span>
-            <span className="bg-white/95 rounded-md px-3 py-1 flex items-center">
+            <span className="bg-white/95 rounded px-3 py-1 flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/tinyfish-logo.svg" alt="TinyFish" style={{ height: "20px", width: "auto" }} />
             </span>
             <span className="text-white/50 text-sm">&amp;</span>
-            <span className="bg-white/95 rounded-md px-3 py-1 flex items-center">
+            <span className="bg-white/95 rounded px-3 py-1 flex items-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/ag2-logo.png" alt="ag2" style={{ height: "20px", width: "auto" }} />
             </span>
@@ -83,16 +105,16 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Constrained content below the hero ── */}
+      {/* ── Constrained content ── */}
       <div className="max-w-6xl mx-auto px-6 py-10 space-y-12">
 
         {/* How it works */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[
-            { step: "1", label: "Fetch", desc: "TinyFish renders JS-heavy IR pages in a real browser" },
-            { step: "2", label: "Store", desc: "Daily snapshots stored in SQLite with content hashing" },
-            { step: "3", label: "Diff", desc: "Text diff detects added/removed language" },
-            { step: "4", label: "Score", desc: "Commitment, hedging, and risk word shifts computed" },
+            { step: "1", label: "Fetch", desc: "TinyFish renders JavaScript-heavy company pages in a real browser" },
+            { step: "2", label: "Store", desc: "Daily snapshots saved to database with content hashing" },
+            { step: "3", label: "Diff", desc: "Text diff detects added or removed language" },
+            { step: "4", label: "Score", desc: "Commitment, hedging, and risk word shifts computed via ag2 agents" },
           ].map((item) => (
             <div key={item.step} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
               <div className="text-brand font-bold text-2xl mb-2">{item.step}</div>
@@ -102,20 +124,68 @@ export default function Home() {
           ))}
         </div>
 
-        {/* Universe */}
+        {/* Monitored universe — ticker grid with live alert badges */}
         <div>
-          <h2 className="text-xl font-semibold text-[#252525] mb-4">Monitored Universe</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-[#252525]">Monitored Universe</h2>
+            {alertCount > 0 && (
+              <span className="text-xs text-gray-400">
+                <span className="inline-block w-3 h-3 rounded-sm mr-1 align-middle" style={{ background: "#f9b116" }} />
+                = page changed since last scan
+              </span>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
-            {UNIVERSE.map((t) => (
-              <Link
-                key={t.symbol}
-                href={`/ticker/${t.symbol}`}
-                className="bg-white border border-gray-200 hover:border-brand rounded-lg px-4 py-3 transition-colors group shadow-sm"
-              >
-                <div className="text-brand font-bold group-hover:text-brand-light">{t.symbol}</div>
-                <div className="text-gray-400 text-xs mt-0.5 truncate">{t.name}</div>
-              </Link>
-            ))}
+            {UNIVERSE.map((t) => {
+              const alert = alertMap[t.symbol];
+              const hasAlert = !!alert;
+
+              return (
+                <Link
+                  key={t.symbol}
+                  href={`/ticker/${t.symbol}`}
+                  className="relative rounded-lg px-4 py-3 transition-all duration-200 group shadow-sm"
+                  style={
+                    hasAlert
+                      ? {
+                          background: "#fffbea",
+                          border: "1.5px solid #f9b116",
+                        }
+                      : {
+                          background: "#ffffff",
+                          border: "1px solid #e5e7eb",
+                        }
+                  }
+                >
+                  {/* Alert badge — top right */}
+                  {hasAlert && (
+                    <span
+                      className="absolute -top-2 -right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow"
+                      style={{ background: "#f9b116", color: "#252525" }}
+                    >
+                      {alert.alert_score > 0 ? "+" : ""}
+                      {alert.alert_score.toFixed(1)}
+                    </span>
+                  )}
+
+                  <div className={`font-bold text-sm ${hasAlert ? "text-[#252525]" : "text-brand"} group-hover:opacity-80`}>
+                    {t.symbol}
+                  </div>
+                  <div className="text-gray-400 text-xs mt-0.5 truncate">{t.name}</div>
+
+                  {/* Diff summary line */}
+                  {hasAlert && (
+                    <div className="mt-1.5 text-[10px] font-medium" style={{ color: "#b45309" }}>
+                      {alert.percent_changed.toFixed(1)}% changed &nbsp;
+                      <span className="text-green-700">+{alert.added_lines}</span>
+                      {" / "}
+                      <span className="text-red-600">−{alert.removed_lines}</span>
+                    </div>
+                  )}
+                </Link>
+              );
+            })}
           </div>
         </div>
 

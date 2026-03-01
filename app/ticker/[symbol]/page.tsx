@@ -17,7 +17,7 @@ function deltaChip(label: string, value: number, invert = false) {
       <div className={`text-xl font-bold ${color}`}>
         {sign}{value.toFixed(2)}
       </div>
-      <div className="text-gray-300 text-xs mt-1">per 1K words</div>
+      <div className="text-gray-300 text-xs mt-1">per 1,000 words</div>
     </div>
   );
 }
@@ -40,6 +40,7 @@ export default async function TickerPage({
 
   return (
     <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
@@ -64,17 +65,49 @@ export default async function TickerPage({
         </Link>
       </div>
 
-      {/* Score Deltas */}
+      {/* Latest change */}
       {latest ? (
         <>
+          {/* Alert banner if score is notable */}
+          {Math.abs(latest.alert_score) > 0.5 && (
+            <div
+              className="rounded-lg px-5 py-3 text-sm font-semibold flex items-center gap-2"
+              style={
+                latest.alert_score > 1
+                  ? { background: "#fff3e0", color: "#92400e", border: "1.5px solid #fb923c" }
+                  : latest.alert_score < -1
+                  ? { background: "#f0fdf4", color: "#166534", border: "1.5px solid #4ade80" }
+                  : { background: "#fffbea", color: "#92400e", border: "1.5px solid #f9b116" }
+              }
+            >
+              <span>⚠</span>
+              {latest.alert_score > 1
+                ? "High-risk language detected — this company's page has shifted to more cautious wording."
+                : latest.alert_score < -1
+                ? "Positive signal — language has become more confident and committed."
+                : "Moderate change detected on this company's page."}
+            </div>
+          )}
+
+          {/* Score chips */}
           <div>
-            <h2 className="text-lg font-semibold text-[#252525] mb-3">Latest Language Shift</h2>
+            <h2 className="text-lg font-semibold text-[#252525] mb-1">Language Shift Scores</h2>
+            <p className="text-gray-400 text-xs mb-3">How the wording on this company's public page changed vs. the previous scan</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {deltaChip("Commitment Δ", latest.commitment_delta, true)}
-              {deltaChip("Hedging Δ", latest.hedging_delta)}
-              {deltaChip("Risk Δ", latest.risk_delta)}
-              <div className="bg-white border border-gray-200 rounded-lg p-4 text-center shadow-sm">
-                <div className="text-gray-400 text-xs mb-1">Alert Score</div>
+              {deltaChip("Commitment ↓ bad", latest.commitment_delta, true)}
+              {deltaChip("Hedging ↑ bad", latest.hedging_delta)}
+              {deltaChip("Risk Words ↑ bad", latest.risk_delta)}
+              <div
+                className="rounded-lg p-4 text-center shadow-sm"
+                style={
+                  latest.alert_score > 1
+                    ? { background: "#fff3e0", border: "1.5px solid #fb923c" }
+                    : latest.alert_score < -1
+                    ? { background: "#f0fdf4", border: "1.5px solid #4ade80" }
+                    : { background: "#fffbea", border: "1.5px solid #f9b116" }
+                }
+              >
+                <div className="text-gray-400 text-xs mb-1">Overall Risk Score</div>
                 <div
                   className={`text-xl font-bold ${
                     latest.alert_score > 1
@@ -86,47 +119,48 @@ export default async function TickerPage({
                 >
                   {latest.alert_score > 0 ? "+" : ""}{latest.alert_score.toFixed(2)}
                 </div>
-                <div className="text-gray-300 text-xs mt-1">composite</div>
+                <div className="text-gray-400 text-xs mt-1">composite score</div>
               </div>
             </div>
           </div>
 
-          {/* Diff snippet */}
+          {/* What changed */}
           <div>
-            <h2 className="text-lg font-semibold text-[#252525] mb-3">
-              Diff Snippet — {latest.percent_changed.toFixed(1)}% changed
+            <h2 className="text-lg font-semibold text-[#252525] mb-1">
+              What Changed on Their Page
             </h2>
+            <p className="text-gray-400 text-xs mb-3">
+              {latest.percent_changed.toFixed(1)}% of the page content changed since last scan
+            </p>
             <pre className="bg-gray-50 border border-gray-200 rounded-xl p-5 text-sm overflow-x-auto whitespace-pre-wrap text-gray-700 font-mono leading-relaxed">
               {latest.snippet}
             </pre>
             <div className="flex gap-6 mt-2 text-xs text-gray-400">
-              <span className="text-green-600">+{latest.added_lines} added</span>
-              <span className="text-red-600">−{latest.removed_lines} removed</span>
-              <span>{new Date(latest.computed_at).toLocaleString()}</span>
+              <span className="text-green-600 font-medium">+{latest.added_lines} lines added</span>
+              <span className="text-red-600 font-medium">−{latest.removed_lines} lines removed</span>
+              <span>Detected: {new Date(latest.computed_at).toLocaleString()}</span>
             </div>
           </div>
         </>
       ) : (
         <div className="bg-white border border-gray-200 rounded-xl p-8 text-center text-gray-400 shadow-sm">
-          No alerts yet for {ticker.symbol}. Run a scan to collect snapshots.
+          No changes detected yet for {ticker.symbol}. Run a scan to start tracking.
         </div>
       )}
 
       {/* Price Chart */}
       <div>
-        <h2 className="text-lg font-semibold text-[#252525] mb-3">30-Day Price (Mock)</h2>
+        <h2 className="text-lg font-semibold text-[#252525] mb-1">30-Day Price</h2>
+        <p className="text-gray-400 text-xs mb-3">Mock data — for layout purposes only</p>
         <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
           <PriceChart data={prices} />
         </div>
-        <p className="text-gray-400 text-xs mt-2">
-          * Mock price data for demo purposes only. Not financial data.
-        </p>
       </div>
 
-      {/* Alert History */}
+      {/* Change history */}
       {alerts.length > 1 && (
         <div>
-          <h2 className="text-lg font-semibold text-[#252525] mb-3">Alert History</h2>
+          <h2 className="text-lg font-semibold text-[#252525] mb-3">Change History</h2>
           <div className="space-y-2">
             {alerts.map((a) => (
               <div
@@ -138,7 +172,10 @@ export default async function TickerPage({
                     {new Date(a.computed_at).toLocaleString()}
                   </span>
                   <div className="text-sm text-gray-700 mt-0.5">
-                    {a.percent_changed.toFixed(1)}% changed · +{a.added_lines} / −{a.removed_lines}
+                    {a.percent_changed.toFixed(1)}% of page changed &nbsp;·&nbsp;
+                    <span className="text-green-600">+{a.added_lines}</span>
+                    {" / "}
+                    <span className="text-red-600">−{a.removed_lines} lines</span>
                   </div>
                 </div>
                 <div
@@ -158,10 +195,10 @@ export default async function TickerPage({
         </div>
       )}
 
-      {/* Snapshot info */}
+      {/* Page scan history */}
       {snapshots.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-[#252525] mb-3">Snapshots</h2>
+          <h2 className="text-lg font-semibold text-[#252525] mb-3">Page Scan History</h2>
           <div className="space-y-2">
             {snapshots.map((s) => (
               <div
@@ -170,12 +207,13 @@ export default async function TickerPage({
               >
                 <span className="text-gray-400">{new Date(s.fetched_at).toLocaleString()}</span>
                 <span className="text-gray-300 font-mono text-xs">{s.content_hash.slice(0, 16)}…</span>
-                <span className="text-gray-400">{s.text.split(" ").length.toLocaleString()} words</span>
+                <span className="text-gray-400">{s.text.split(" ").length.toLocaleString()} words captured</span>
               </div>
             ))}
           </div>
         </div>
       )}
+
     </div>
   );
 }
