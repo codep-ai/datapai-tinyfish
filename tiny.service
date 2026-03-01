@@ -15,11 +15,13 @@ EnvironmentFile=/home/ec2-user/.env.dev
 Environment=PORT=3085
 Environment=NODE_ENV=production
 Environment=HOSTNAME=0.0.0.0
+# Explicitly add Node 20 bin to PATH so npm shell scripts can find node
+Environment=PATH=/home/ec2-user/.nvm/versions/node/v20.20.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
 WorkingDirectory=/home/ec2-user/git/datapai-tinyfish
 
-# Use Node 20 via full nvm path (avoids system Node 8)
-ExecStart=/home/ec2-user/.nvm/versions/node/v20.20.0/bin/npm start
+# Call node directly — more reliable than npm in systemd (no shell PATH dependency)
+ExecStart=/home/ec2-user/.nvm/versions/node/v20.20.0/bin/node node_modules/next/dist/bin/next start
 
 # Restart on crash, wait 10s between attempts
 Restart=always
