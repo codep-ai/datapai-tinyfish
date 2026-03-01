@@ -26,37 +26,43 @@ export default function Home() {
 
   return (
     <div className="space-y-12">
-      {/* Hero */}
-      <div className="text-center space-y-4 pt-8">
-        <div className="inline-flex items-center gap-2 bg-brand-bg border border-brand rounded-full px-4 py-1 text-brand text-sm">
-          <span className="w-2 h-2 rounded-full bg-brand animate-pulse inline-block" />
-          Powered by TinyFish real-browser fetching
+
+      {/* Hero — datap.ai green gradient, full-width breakout */}
+      <div
+        className="-mx-6 -mt-8 px-6 pt-14 pb-12 text-center space-y-5"
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)" }}
+      >
+        {/* Co-brand badge */}
+        <div className="inline-flex items-center gap-2 bg-white/20 border border-white/30 rounded-full px-4 py-1 text-white/90 text-sm backdrop-blur-sm">
+          <span className="w-2 h-2 rounded-full bg-white animate-pulse inline-block" />
+          DataP.ai &nbsp;·&nbsp; powered by TinyFish real-browser
         </div>
-        <h1 className="text-4xl font-bold text-[#252525]">
+
+        <h1 className="text-4xl font-bold text-white drop-shadow-sm">
           Stock Website Change Radar
         </h1>
-        <p className="text-gray-500 max-w-xl mx-auto text-lg">
+        <p className="text-white/80 max-w-xl mx-auto text-lg">
           Monitors IR/News pages of 20 US small-cap companies. Detects wording
           shifts, scores language changes, and surfaces alerts with stock price
           context.
         </p>
-        <div className="flex gap-4 justify-center pt-4">
+        <div className="flex gap-4 justify-center pt-2">
           <Link
             href="/alerts"
-            className="bg-brand-dark hover:bg-brand-darker text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
+            className="bg-white text-brand font-semibold px-6 py-2.5 rounded-lg hover:bg-white/90 transition-colors shadow-sm"
           >
             View Alerts →
           </Link>
           <button
             onClick={handleRun}
             disabled={running}
-            className="border border-gray-300 hover:border-gray-500 text-gray-600 hover:text-[#252525] px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
+            className="border border-white/60 text-white hover:bg-white/10 px-6 py-2.5 rounded-lg font-medium transition-colors disabled:opacity-50"
           >
             {running ? "Fetching pages…" : "Run Scan Now"}
           </button>
         </div>
         {result && (
-          <p className="text-brand text-sm">{result}</p>
+          <p className="text-white/90 text-sm">{result}</p>
         )}
       </div>
 
@@ -92,6 +98,7 @@ export default function Home() {
           ))}
         </div>
       </div>
+
     </div>
   );
 }
