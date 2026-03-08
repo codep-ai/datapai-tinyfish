@@ -9,5 +9,6 @@ rsync -avz --delete --progress \
   --exclude 'node_modules/' \
   --exclude '.next/' \
   --exclude '.env*' \
+  --exclude 'data/' \
   /Users/linlin/git/datapai-tinyfish/ \
   ec2-user@platform.datap.ai:/home/ec2-user/git/datapai-tinyfish/
