@@ -91,19 +91,30 @@ function initSchema(db: Database.Database) {
 
     -- AI analysis per diff
     CREATE TABLE IF NOT EXISTS analyses (
-      id                      TEXT PRIMARY KEY,
-      snapshot_new_id         TEXT REFERENCES snapshots(id),
-      diff_id                 TEXT REFERENCES diffs(id),
-      commitment_delta        REAL,
-      hedging_delta           REAL,
-      risk_delta              REAL,
-      alert_score             REAL,
-      confidence              REAL,
-      categories_json         TEXT,
-      llm_summary_paid        TEXT,
-      llm_summary_private     TEXT,
-      reasoning_evidence_json TEXT,
-      signal_type             TEXT DEFAULT 'CONTENT_CHANGE'
+      id                        TEXT PRIMARY KEY,
+      snapshot_new_id           TEXT REFERENCES snapshots(id),
+      diff_id                   TEXT REFERENCES diffs(id),
+      commitment_delta          REAL,
+      hedging_delta             REAL,
+      risk_delta                REAL,
+      alert_score               REAL,
+      confidence                REAL,
+      categories_json           TEXT,
+      llm_summary_paid          TEXT,
+      llm_summary_private       TEXT,
+      reasoning_evidence_json   TEXT,
+      signal_type               TEXT DEFAULT 'CONTENT_CHANGE',
+      -- V3: AG2 agent pipeline results
+      agent_signal_type         TEXT,
+      agent_severity            TEXT,
+      agent_confidence          REAL,
+      agent_financial_relevance TEXT,
+      agent_evidence_json       TEXT,
+      validation_status         TEXT,
+      validation_summary        TEXT,
+      validation_evidence_json  TEXT,
+      agent_what_changed        TEXT,
+      agent_why_matters         TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_analyses_snap
       ON analyses(snapshot_new_id);
@@ -145,6 +156,25 @@ function initSchema(db: Database.Database) {
   const aColNames = aCols.map((c) => c.name);
   if (!aColNames.includes("signal_type")) {
     db.exec("ALTER TABLE analyses ADD COLUMN signal_type TEXT DEFAULT 'CONTENT_CHANGE'");
+  }
+
+  // V3 migrations — agent pipeline columns
+  const v3AnalysisCols: [string, string][] = [
+    ["agent_signal_type", "TEXT"],
+    ["agent_severity", "TEXT"],
+    ["agent_confidence", "REAL"],
+    ["agent_financial_relevance", "TEXT"],
+    ["agent_evidence_json", "TEXT"],
+    ["validation_status", "TEXT"],
+    ["validation_summary", "TEXT"],
+    ["validation_evidence_json", "TEXT"],
+    ["agent_what_changed", "TEXT"],
+    ["agent_why_matters", "TEXT"],
+  ];
+  for (const [col, type] of v3AnalysisCols) {
+    if (!aColNames.includes(col)) {
+      db.exec(`ALTER TABLE analyses ADD COLUMN ${col} ${type}`);
+    }
   }
 }
 
@@ -225,6 +255,17 @@ export interface Analysis {
   llm_summary_private: string | null;
   reasoning_evidence_json: string | null;
   signal_type: string;
+  // V3: AG2 agent pipeline results
+  agent_signal_type: string | null;
+  agent_severity: string | null;
+  agent_confidence: number | null;
+  agent_financial_relevance: string | null;
+  agent_evidence_json: string | null;
+  validation_status: string | null;
+  validation_summary: string | null;
+  validation_evidence_json: string | null;
+  agent_what_changed: string | null;
+  agent_why_matters: string | null;
 }
 
 export interface ScanEvent {
@@ -371,11 +412,17 @@ export function insertAnalysis(a: Analysis): void {
       `INSERT INTO analyses
          (id, snapshot_new_id, diff_id, commitment_delta, hedging_delta,
           risk_delta, alert_score, confidence, categories_json,
-          llm_summary_paid, llm_summary_private, reasoning_evidence_json, signal_type)
+          llm_summary_paid, llm_summary_private, reasoning_evidence_json, signal_type,
+          agent_signal_type, agent_severity, agent_confidence, agent_financial_relevance,
+          agent_evidence_json, validation_status, validation_summary,
+          validation_evidence_json, agent_what_changed, agent_why_matters)
        VALUES
          (@id, @snapshot_new_id, @diff_id, @commitment_delta, @hedging_delta,
           @risk_delta, @alert_score, @confidence, @categories_json,
-          @llm_summary_paid, @llm_summary_private, @reasoning_evidence_json, @signal_type)`
+          @llm_summary_paid, @llm_summary_private, @reasoning_evidence_json, @signal_type,
+          @agent_signal_type, @agent_severity, @agent_confidence, @agent_financial_relevance,
+          @agent_evidence_json, @validation_status, @validation_summary,
+          @validation_evidence_json, @agent_what_changed, @agent_why_matters)`
     )
     .run(a);
 }

@@ -150,7 +150,7 @@ export default function LiveScanProgress() {
 
   const statusColor: Record<TickerStatus, string> = {
     pending: "#d1d5db",
-    scanning: "#f9b116",
+    scanning: "#fd8412",
     completed: "#2e8b57",
     failed: "#ef4444",
   };
@@ -189,7 +189,7 @@ export default function LiveScanProgress() {
                 className="h-full rounded-full transition-all duration-500"
                 style={{
                   width: `${progress}%`,
-                  background: isDone ? "#2e8b57" : "#f9b116",
+                  background: isDone ? "#2e8b57" : "#fd8412",
                 }}
               />
             </div>
@@ -229,7 +229,7 @@ export default function LiveScanProgress() {
                     </div>
                   )}
                   {isChanged && state.score != null && (
-                    <div className="text-[10px] mt-0.5" style={{ color: "#f9b116" }}>
+                    <div className="text-[10px] mt-0.5" style={{ color: "#fd8412" }}>
                       {state.score > 0 ? "+" : ""}{state.score.toFixed(1)}
                     </div>
                   )}
@@ -251,7 +251,7 @@ export default function LiveScanProgress() {
           {isDone && run && (
             <div className="border-t border-white/20 pt-3 flex flex-wrap gap-4 text-sm text-white/80">
               <span>✓ {run.scanned_count} scanned</span>
-              <span style={{ color: "#f9b116" }}>⚡ {run.changed_count} changed</span>
+              <span style={{ color: "#fd8412" }}>⚡ {run.changed_count} changed</span>
               {run.failed_count > 0 && (
                 <span style={{ color: "#ef4444" }}>✗ {run.failed_count} failed</span>
               )}
@@ -272,7 +272,7 @@ export default function LiveScanProgress() {
               <a
                 href="/alerts"
                 className="px-4 py-2 rounded-lg text-sm font-semibold"
-                style={{ background: "#f9b116", color: "#fff", fontWeight: 800 }}
+                style={{ background: "#fd8412", color: "#fff", fontWeight: 800 }}
               >
                 View Alerts
               </a>

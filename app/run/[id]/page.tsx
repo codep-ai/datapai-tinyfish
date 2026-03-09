@@ -32,7 +32,7 @@ function tickerDisplayStatus(ticker: string, changed_pct: number | null, scanEve
 function statusStyle(status: string): React.CSSProperties {
   if (status === "Completed") return { color: "#2e8b57" };
   if (status === "Failed") return { color: "#dc2626" };
-  if (status === "Scanning") return { color: "#f9b116" };
+  if (status === "Scanning") return { color: "#fd8412" };
   return { color: "#9ca3af" };
 }
 
@@ -234,7 +234,7 @@ export default async function RunDetailPage({
                   <span className="font-bold text-[#252525] w-12 flex-shrink-0">{e.ticker}</span>
                   <span
                     className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                    style={{ background: e.status === "done" ? "#2e8b57" : e.status === "error" ? "#ef4444" : "#f9b116" }}
+                    style={{ background: e.status === "done" ? "#2e8b57" : e.status === "error" ? "#ef4444" : "#fd8412" }}
                   />
                   <span className="text-gray-600">{e.step}</span>
                   {e.message && <span className="text-gray-400 ml-auto">{e.message}</span>}

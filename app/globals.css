@@ -14,6 +14,9 @@
   --color-brand-dark: #1a6e3e;  /* button backgrounds */
   --color-brand-darker: #145730; /* button hover */
   --color-brand-bg: #f0f7f1;    /* very light green surface */
+  /* datap.ai CTA orange — matches datap.ai/genai "Get Started" button */
+  --color-cta: #fd8412;         /* primary CTA / alert highlight */
+  --color-cta-hover: #e07208;   /* CTA hover */
 }
 
 body {

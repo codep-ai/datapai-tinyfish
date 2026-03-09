@@ -23,7 +23,7 @@ export default function ViewAlertsButton({ count }: Props) {
       href="/alerts"
       className="inline-block font-bold uppercase tracking-wide text-sm rounded transition-all duration-300"
       style={{
-        background: "#f9b116",
+        background: "#fd8412",
         color: "#ffffff",
         fontWeight: 800,
         padding: "10px 28px",

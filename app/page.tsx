@@ -43,7 +43,7 @@ export default function Home() {
               <Link
                 href="/alerts"
                 className="px-7 py-3 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
-                style={{ fontSize: "0.9rem", background: "#f9b116", color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}
+                style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}
               >
                 ⚡ View {alertCount} Alert{alertCount !== 1 ? "s" : ""} →
               </Link>
@@ -60,7 +60,7 @@ export default function Home() {
           <div className="flex items-center gap-4 text-sm text-gray-500 border border-gray-100 rounded-lg px-4 py-3 bg-white shadow-sm">
             <span
               className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-              style={{ background: lastRun.status === "SUCCESS" ? "#2e8b57" : lastRun.status === "RUNNING" ? "#f9b116" : "#ef4444" }}
+              style={{ background: lastRun.status === "SUCCESS" ? "#2e8b57" : lastRun.status === "RUNNING" ? "#fd8412" : "#ef4444" }}
             />
             <span>Last scan: <strong>{new Date(lastRun.started_at).toLocaleString()}</strong></span>
             <span className="text-gray-300">·</span>
@@ -78,12 +78,12 @@ export default function Home() {
 
         {/* Monitored universe */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-semibold text-[#252525]">Monitored Universe</h2>
-            <div className="flex items-center gap-4 text-xs text-gray-400">
+          <div className="flex items-center justify-between mb-5">
+            <h2 className="text-3xl font-bold text-[#252525]">Monitored Universe</h2>
+            <div className="flex items-center gap-4 text-sm text-gray-400">
               {alertCount > 0 && (
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: "#f9b116" }} />
+                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: "#fd8412" }} />
                   = change detected
                 </span>
               )}
@@ -91,7 +91,7 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {UNIVERSE.map((t) => {
               const analysis = alertMap[t.symbol];
               const hasAlert = !!analysis;
@@ -101,30 +101,30 @@ export default function Home() {
                 <Link
                   key={t.symbol}
                   href={`/ticker/${t.symbol}`}
-                  className="relative rounded-lg px-4 py-3 transition-all duration-200 group shadow-sm hover:-translate-y-0.5"
+                  className="relative rounded-xl px-5 py-4 transition-all duration-200 group shadow-sm hover:-translate-y-0.5"
                   style={hasAlert
-                    ? { background: "#fffbea", border: "1.5px solid #f9b116" }
+                    ? { background: "#fffbea", border: "1.5px solid #fd8412" }
                     : { background: "#ffffff", border: "1px solid #e5e7eb" }
                   }
                 >
                   {hasAlert && (
                     <span
-                      className="absolute -top-2 -right-2 text-[10px] font-bold px-1.5 py-0.5 rounded-full shadow"
-                      style={{ background: "#f9b116", color: "#252525" }}
+                      className="absolute -top-2.5 -right-2.5 text-xs font-bold px-2 py-0.5 rounded-full shadow"
+                      style={{ background: "#fd8412", color: "#252525" }}
                     >
                       {analysis.alert_score > 0 ? "+" : ""}{analysis.alert_score.toFixed(1)}
                     </span>
                   )}
-                  <div className={`font-bold text-sm ${hasAlert ? "text-[#252525]" : "text-brand"} group-hover:opacity-80`}>
+                  <div className={`font-bold text-base ${hasAlert ? "text-[#252525]" : "text-brand"} group-hover:opacity-80`}>
                     {t.symbol}
                   </div>
-                  <div className="text-gray-400 text-xs mt-0.5 truncate">{t.name}</div>
+                  <div className="text-gray-400 text-sm mt-0.5 truncate">{t.name}</div>
                   {hasAlert && (
-                    <div className="mt-1.5 space-y-0.5">
-                      <div className="text-[10px] font-medium" style={{ color: "#b45309" }}>
+                    <div className="mt-2 space-y-0.5">
+                      <div className="text-xs font-medium" style={{ color: "#b45309" }}>
                         {(analysis as { changed_pct?: number }).changed_pct?.toFixed(1) ?? "?"}% changed
                       </div>
-                      <div className="text-[9px] text-gray-400">
+                      <div className="text-xs text-gray-400">
                         conf {Math.round(confidence * 100)}%
                       </div>
                     </div>
@@ -137,7 +137,7 @@ export default function Home() {
 
         {/* How it works */}
         <div>
-          <h2 className="text-2xl font-semibold text-[#252525] mb-6">How It Works</h2>
+          <h2 className="text-3xl font-bold text-[#252525] mb-6">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
               { step: "1", label: "TinyFish Fetches", desc: "Real browser rendering of JavaScript-heavy investor pages — no scraping shortcuts" },
@@ -145,31 +145,31 @@ export default function Home() {
               { step: "3", label: "Diff & Score", desc: "Text diff detects wording shifts. Word-list scores measure commitment/hedging/risk" },
               { step: "4", label: "AI Signal", desc: "GPT/Gemini summary with direct quotes, confidence score, and price chart context" },
             ].map((item) => (
-              <div key={item.step} className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
-                <div className="text-brand font-bold text-2xl mb-2">{item.step}</div>
-                <div className="text-[#252525] font-semibold mb-1">{item.label}</div>
-                <div className="text-gray-500 text-sm">{item.desc}</div>
+              <div key={item.step} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+                <div className="text-brand font-bold text-3xl mb-3">{item.step}</div>
+                <div className="text-[#252525] font-bold text-lg mb-2">{item.label}</div>
+                <div className="text-gray-500 text-base">{item.desc}</div>
               </div>
             ))}
           </div>
         </div>
 
         {/* Trust layer callout */}
-        <div className="border border-gray-200 rounded-xl p-6 bg-white shadow-sm">
-          <h3 className="font-semibold text-[#252525] mb-3">
+        <div className="border border-gray-200 rounded-2xl p-8 bg-white shadow-sm">
+          <h3 className="font-bold text-xl text-[#252525] mb-4">
             DataP.ai Trust Layer — every alert is fully reproducible
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-gray-500">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-base text-gray-500">
             <div>
-              <div className="font-medium text-gray-700 mb-1">Source &amp; Audit</div>
+              <div className="font-semibold text-gray-700 mb-2">Source &amp; Audit</div>
               Source URL · Snapshot hash · TinyFish run ID · Scan timestamp
             </div>
             <div>
-              <div className="font-medium text-gray-700 mb-1">Evidence</div>
+              <div className="font-semibold text-gray-700 mb-2">Evidence</div>
               Before/after text · Diff snippet · Direct quotes from changed lines
             </div>
             <div>
-              <div className="font-medium text-gray-700 mb-1">AI Layer</div>
+              <div className="font-semibold text-gray-700 mb-2">AI Layer</div>
               Paid LLM summary (GPT/Gemini) · Signal classification · Confidence score
             </div>
           </div>

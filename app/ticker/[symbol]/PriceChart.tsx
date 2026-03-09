@@ -85,9 +85,9 @@ export default function PriceChart({ data, scanDates = [] }: Props) {
           yAxisId="price"
           type="monotone"
           dataKey="scanMarker"
-          stroke="#f9b116"
+          stroke="#fd8412"
           strokeWidth={0}
-          dot={{ r: 5, fill: "#f9b116", strokeWidth: 0 }}
+          dot={{ r: 5, fill: "#fd8412", strokeWidth: 0 }}
           name="scan"
           connectNulls={false}
         />
