@@ -17,7 +17,7 @@
  */
 
 const AGENT_BASE = (process.env.AGENT_BACKEND_BASE_URL ?? "").replace(/\/$/, "");
-const TIMEOUT_MS = 15_000; // increased for full pipeline call
+const TIMEOUT_MS = 60_000; // full pipeline = 5 LLM calls, needs ~30-60s
 
 // ─── Response types ────────────────────────────────────────────────────────
 

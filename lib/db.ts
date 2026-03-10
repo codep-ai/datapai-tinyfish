@@ -462,33 +462,35 @@ export function insertAnalysis(a: Analysis): void {
     .run(a);
 }
 
-export function getLatestAnalyses(limit = 50): (Analysis & Pick<Snapshot, "ticker" | "fetched_at" | "url">)[] {
+export function getLatestAnalyses(limit = 50): (Analysis & Pick<Snapshot, "ticker" | "fetched_at" | "url"> & { changed_pct: number | null })[] {
   return getDb()
     .prepare(
-      `SELECT a.*, s.ticker, s.fetched_at, s.url
+      `SELECT a.*, s.ticker, s.fetched_at, s.url, d.changed_pct
        FROM analyses a
        JOIN snapshots s ON a.snapshot_new_id = s.id
+       LEFT JOIN diffs d ON a.diff_id = d.id
        ORDER BY a.alert_score DESC
        LIMIT ?`
     )
-    .all(limit) as (Analysis & Pick<Snapshot, "ticker" | "fetched_at" | "url">)[];
+    .all(limit) as (Analysis & Pick<Snapshot, "ticker" | "fetched_at" | "url"> & { changed_pct: number | null })[];
 }
 
 export function getLatestAnalysesBySignalType(
   signalType: string | null,
   limit = 50
-): (Analysis & Pick<Snapshot, "ticker" | "fetched_at" | "url">)[] {
+): (Analysis & Pick<Snapshot, "ticker" | "fetched_at" | "url"> & { changed_pct: number | null })[] {
   if (!signalType) return getLatestAnalyses(limit);
   return getDb()
     .prepare(
-      `SELECT a.*, s.ticker, s.fetched_at, s.url
+      `SELECT a.*, s.ticker, s.fetched_at, s.url, d.changed_pct
        FROM analyses a
        JOIN snapshots s ON a.snapshot_new_id = s.id
+       LEFT JOIN diffs d ON a.diff_id = d.id
        WHERE a.signal_type = ?
        ORDER BY a.alert_score DESC
        LIMIT ?`
     )
-    .all(signalType, limit) as (Analysis & Pick<Snapshot, "ticker" | "fetched_at" | "url">)[];
+    .all(signalType, limit) as (Analysis & Pick<Snapshot, "ticker" | "fetched_at" | "url"> & { changed_pct: number | null })[];
 }
 
 export function getTickerAnalyses(ticker: string, limit = 5): (Analysis & Pick<Snapshot, "fetched_at" | "url">)[] {

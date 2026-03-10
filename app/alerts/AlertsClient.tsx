@@ -12,7 +12,7 @@ interface Analysis {
   confidence: number;
   categories_json: string | null;
   signal_type: string;
-  changed_pct?: number;
+  changed_pct?: number | null;
   quality_flags_json?: string;
   // V3 agent fields
   agent_signal_type: string | null;
