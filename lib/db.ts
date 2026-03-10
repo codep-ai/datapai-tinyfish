@@ -1,8 +1,10 @@
 /**
- * lib/db.ts  (V2.1)
- * Full V2 schema + V2.1 additions:
+ * lib/db.ts  (V3.1 — v1.5 alignment)
+ * Full V2 schema + V2.1 + V3 additions:
  *   - runs: planned_count, completed_count
- *   - analyses: signal_type
+ *   - analyses: signal_type, V3 agent columns
+ *   - analyses: V3.1/v1.5 change_type, change_quality_score, financial_relevance_score,
+ *               investigation_summary, investigation_sources, corroborating_count
  *   - scan_events: per-ticker step log
  */
 
@@ -114,7 +116,14 @@ function initSchema(db: Database.Database) {
       validation_summary        TEXT,
       validation_evidence_json  TEXT,
       agent_what_changed        TEXT,
-      agent_why_matters         TEXT
+      agent_why_matters         TEXT,
+      -- V3.1 / v1.5: Signal Quality Filter + Investigation Agent
+      change_type               TEXT DEFAULT 'CONTENT_CHANGE',
+      change_quality_score      REAL,
+      financial_relevance_score REAL,
+      investigation_summary     TEXT,
+      investigation_sources     TEXT,
+      corroborating_count       INTEGER DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_analyses_snap
       ON analyses(snapshot_new_id);
@@ -172,6 +181,21 @@ function initSchema(db: Database.Database) {
     ["agent_why_matters", "TEXT"],
   ];
   for (const [col, type] of v3AnalysisCols) {
+    if (!aColNames.includes(col)) {
+      db.exec(`ALTER TABLE analyses ADD COLUMN ${col} ${type}`);
+    }
+  }
+
+  // V3.1 / v1.5 migrations — Signal Quality Filter + Investigation Agent
+  const v15AnalysisCols: [string, string][] = [
+    ["change_type", "TEXT DEFAULT 'CONTENT_CHANGE'"],
+    ["change_quality_score", "REAL"],
+    ["financial_relevance_score", "REAL"],
+    ["investigation_summary", "TEXT"],
+    ["investigation_sources", "TEXT"],
+    ["corroborating_count", "INTEGER DEFAULT 0"],
+  ];
+  for (const [col, type] of v15AnalysisCols) {
     if (!aColNames.includes(col)) {
       db.exec(`ALTER TABLE analyses ADD COLUMN ${col} ${type}`);
     }
@@ -266,6 +290,13 @@ export interface Analysis {
   validation_evidence_json: string | null;
   agent_what_changed: string | null;
   agent_why_matters: string | null;
+  // V3.1 / v1.5: Signal Quality Filter + Investigation Agent
+  change_type: string;
+  change_quality_score: number | null;
+  financial_relevance_score: number | null;
+  investigation_summary: string | null;
+  investigation_sources: string | null;   // JSON array of source names
+  corroborating_count: number;
 }
 
 export interface ScanEvent {
@@ -415,14 +446,18 @@ export function insertAnalysis(a: Analysis): void {
           llm_summary_paid, llm_summary_private, reasoning_evidence_json, signal_type,
           agent_signal_type, agent_severity, agent_confidence, agent_financial_relevance,
           agent_evidence_json, validation_status, validation_summary,
-          validation_evidence_json, agent_what_changed, agent_why_matters)
+          validation_evidence_json, agent_what_changed, agent_why_matters,
+          change_type, change_quality_score, financial_relevance_score,
+          investigation_summary, investigation_sources, corroborating_count)
        VALUES
          (@id, @snapshot_new_id, @diff_id, @commitment_delta, @hedging_delta,
           @risk_delta, @alert_score, @confidence, @categories_json,
           @llm_summary_paid, @llm_summary_private, @reasoning_evidence_json, @signal_type,
           @agent_signal_type, @agent_severity, @agent_confidence, @agent_financial_relevance,
           @agent_evidence_json, @validation_status, @validation_summary,
-          @validation_evidence_json, @agent_what_changed, @agent_why_matters)`
+          @validation_evidence_json, @agent_what_changed, @agent_why_matters,
+          @change_type, @change_quality_score, @financial_relevance_score,
+          @investigation_summary, @investigation_sources, @corroborating_count)`
     )
     .run(a);
 }

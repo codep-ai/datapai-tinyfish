@@ -1,5 +1,5 @@
 /**
- * POST /api/run  (V3 — AI Agentic Pipeline)
+ * POST /api/run  (V3.1 — AI Agentic Pipeline / v1.5)
  * Non-blocking: creates run immediately, returns {runId}.
  * Scan runs asynchronously in background — no permission loops.
  * Client polls GET /api/run/:id for status.
@@ -10,10 +10,8 @@
  *   3. Quality check
  *   4. Diff against previous snapshot
  *   5. Local word-list scoring (commitment / hedging / risk)
- *   6. AG2 Agent pipeline (if AGENT_BACKEND_BASE_URL configured):
- *      6a. Detect financial signal
- *      6b. Cross-validate signal
- *      6c. Generate AI explanation
+ *   6. AG2 Full pipeline (if AGENT_BACKEND_BASE_URL configured):
+ *      classify change type → signal agents → investigate → validate → explain
  *   7. Paid-LLM fallback summary (if no agent explanation)
  */
 
@@ -26,11 +24,7 @@ import { checkQuality, passesQualityGate } from "@/lib/quality";
 import { diffTexts } from "@/lib/diff";
 import { computeScoreDeltas } from "@/lib/score";
 import { generatePaidSummary, getPrivateLLMNote, PRIVATE_LLM_ENABLED } from "@/lib/llm";
-import {
-  detectFinancialSignal,
-  crossValidateSignal,
-  generateAgentSummary,
-} from "@/lib/agent";
+import { runFullPipeline } from "@/lib/agent";
 import {
   insertRun,
   startRun,
@@ -177,7 +171,7 @@ async function processTicker(
     const scores = computeScoreDeltas(prev.cleaned_text, cleaned, diff.added_line_texts);
     const signalType = classifySignal(diff.added_line_texts, diff.changed_pct, scores.risk_delta);
 
-    // ── Step 6: AG2 Agent pipeline (optional) ─────────────────────────────
+    // ── Step 6: AG2 Full pipeline (optional, v1.5) ────────────────────────
     let agentSignalType: string | null = null;
     let agentSeverity: string | null = null;
     let agentConfidence: number | null = null;
@@ -188,11 +182,17 @@ async function processTicker(
     let validationEvidenceJson: string | null = null;
     let agentWhatChanged: string | null = null;
     let agentWhyMatters: string | null = null;
+    // v1.5 fields
+    let changeType: string = "CONTENT_CHANGE";
+    let changeQualityScore: number | null = null;
+    let financialRelevanceScore: number | null = null;
+    let investigationSummary: string | null = null;
+    let investigationSources: string | null = null;
+    let corroboratingCount = 0;
 
     if (AGENT_ENABLED && passesQualityGate(quality)) {
-      // 6a: Detect financial signal
-      logStep(runId, t.symbol, "Detecting financial signal", "start");
-      const signalResult = await detectFinancialSignal(
+      logStep(runId, t.symbol, "Running full pipeline", "start");
+      const pipelineResult = await runFullPipeline(
         t.symbol,
         t.name,
         t.url,
@@ -200,62 +200,35 @@ async function processTicker(
         cleaned,
         diff.snippet
       );
-      if (signalResult) {
-        agentSignalType = signalResult.signal_type;
-        agentSeverity = signalResult.severity;
-        agentConfidence = signalResult.confidence;
-        agentFinancialRelevance = signalResult.financial_relevance;
-        agentEvidenceJson = JSON.stringify(signalResult.evidence_quotes);
+      if (pipelineResult) {
+        agentSignalType = pipelineResult.signal_type;
+        agentSeverity = pipelineResult.severity;
+        agentConfidence = pipelineResult.confidence;
+        agentFinancialRelevance = pipelineResult.financial_relevance;
+        agentEvidenceJson = JSON.stringify(pipelineResult.evidence_quotes);
+        validationStatus = pipelineResult.validation_status;
+        validationSummary = pipelineResult.validation_summary;
+        validationEvidenceJson = JSON.stringify(pipelineResult.validation_evidence);
+        agentWhatChanged = pipelineResult.what_changed;
+        agentWhyMatters = pipelineResult.why_it_matters;
+        // v1.5
+        changeType = pipelineResult.change_type ?? "CONTENT_CHANGE";
+        changeQualityScore = pipelineResult.change_quality_score ?? null;
+        financialRelevanceScore = pipelineResult.financial_relevance_score ?? null;
+        investigationSummary = pipelineResult.investigation_summary || null;
+        investigationSources = pipelineResult.investigation_sources?.length
+          ? JSON.stringify(pipelineResult.investigation_sources)
+          : null;
+        corroboratingCount = pipelineResult.corroborating_count ?? 0;
         logStep(
           runId,
           t.symbol,
-          "Detecting financial signal",
+          "Running full pipeline",
           "done",
           agentSignalType ?? "no signal"
         );
       } else {
-        logStep(runId, t.symbol, "Detecting financial signal", "error", "backend unavailable");
-      }
-
-      // 6b: Cross-validate (only if a signal was detected)
-      if (agentSignalType) {
-        logStep(runId, t.symbol, "Cross-validating signal", "start");
-        const validationResult = await crossValidateSignal(
-          t.symbol,
-          t.name,
-          agentSignalType
-        );
-        if (validationResult) {
-          validationStatus = validationResult.validation_status;
-          validationSummary = validationResult.validation_summary;
-          validationEvidenceJson = JSON.stringify(validationResult.validation_evidence);
-          logStep(
-            runId,
-            t.symbol,
-            "Cross-validating signal",
-            "done",
-            validationStatus
-          );
-        } else {
-          logStep(runId, t.symbol, "Cross-validating signal", "error", "backend unavailable");
-        }
-
-        // 6c: Generate AI explanation
-        logStep(runId, t.symbol, "Generating AI explanation", "start");
-        const summaryResult = await generateAgentSummary(
-          t.symbol,
-          diff.snippet,
-          signalResult?.evidence_quotes ?? scores.evidence_quotes,
-          agentSignalType,
-          validationStatus ?? "NOT_CONFIRMED_YET"
-        );
-        if (summaryResult) {
-          agentWhatChanged = summaryResult.what_changed;
-          agentWhyMatters = summaryResult.why_it_matters;
-          logStep(runId, t.symbol, "Generating AI explanation", "done");
-        } else {
-          logStep(runId, t.symbol, "Generating AI explanation", "error", "backend unavailable");
-        }
+        logStep(runId, t.symbol, "Running full pipeline", "error", "backend unavailable");
       }
     }
 
@@ -305,6 +278,13 @@ async function processTicker(
       validation_evidence_json: validationEvidenceJson,
       agent_what_changed: agentWhatChanged,
       agent_why_matters: agentWhyMatters,
+      // V3.1 / v1.5
+      change_type: changeType,
+      change_quality_score: changeQualityScore,
+      financial_relevance_score: financialRelevanceScore,
+      investigation_summary: investigationSummary,
+      investigation_sources: investigationSources,
+      corroborating_count: corroboratingCount,
     });
 
     return { changed: true, alerted: true, failed: false };

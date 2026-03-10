@@ -4,7 +4,7 @@ import { UNIVERSE } from "@/lib/universe";
 import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs } from "@/lib/db";
 import { fetchPrices } from "@/lib/price";
 import PriceChart from "./PriceChart";
-import { agentSignalLabel, validationLabel } from "@/lib/agent";
+import { agentSignalLabel, validationLabel, changeTypeLabel } from "@/lib/agent";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +25,24 @@ function ValidationBadge({ status }: { status: string | null }) {
       style={{ background: c.bg, border: `2px solid ${c.border}`, color: c.text }}
     >
       {c.icon} {validationLabel(s)}
+    </span>
+  );
+}
+
+function ChangeTypeBadge({ changeType }: { changeType: string | null }) {
+  if (!changeType) return null;
+  const config: Record<string, { bg: string; border: string; text: string }> = {
+    CONTENT_CHANGE: { bg: "#f0fdf4", border: "#4ade80", text: "#166534" },
+    ARCHIVE_CHANGE: { bg: "#f9fafb", border: "#d1d5db", text: "#6b7280" },
+    LAYOUT_CHANGE:  { bg: "#f0f9ff", border: "#7dd3fc", text: "#0c4a6e" },
+  };
+  const c = config[changeType] ?? { bg: "#f9fafb", border: "#d1d5db", text: "#6b7280" };
+  return (
+    <span
+      className="text-xs font-semibold px-3 py-1 rounded-full"
+      style={{ background: c.bg, border: `1.5px solid ${c.border}`, color: c.text }}
+    >
+      {changeTypeLabel(changeType)}
     </span>
   );
 }
@@ -77,6 +95,10 @@ export default async function TickerPage({
   const hasFlags = Object.values(qualityFlags).some(Boolean);
   const hasAgentSignal = !!latest?.agent_signal_type;
   const hasValidation = !!latest?.validation_status;
+  const hasInvestigation = !!latest?.investigation_summary;
+  const investigationSources: string[] = latest?.investigation_sources
+    ? JSON.parse(latest.investigation_sources)
+    : [];
 
   return (
     <div>
@@ -144,8 +166,16 @@ export default async function TickerPage({
         <span className="text-gray-300 text-lg">→</span>
         <span>Diff Engine</span>
         <span className="text-gray-300 text-lg">→</span>
+        <span className={latest?.change_type === "CONTENT_CHANGE" ? "text-green-600 font-semibold" : latest?.change_type ? "text-gray-400" : ""}>
+          Signal Quality Filter
+        </span>
+        <span className="text-gray-300 text-lg">→</span>
         <span className={hasAgentSignal ? "text-amber-600 font-semibold" : ""}>
           Financial Signal Agent
+        </span>
+        <span className="text-gray-300 text-lg">→</span>
+        <span className={hasInvestigation ? "text-purple-600 font-semibold" : ""}>
+          Investigation Agent
         </span>
         <span className="text-gray-300 text-lg">→</span>
         <span className={hasValidation ? "text-blue-600 font-semibold" : ""}>
@@ -163,11 +193,14 @@ export default async function TickerPage({
       {/* ── Financial Signal ───────────────────────────────────────────────── */}
       {latest && (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
             <h2 className="text-3xl font-bold text-[#252525]">🎯 Financial Signal</h2>
-            <span className="text-base text-gray-400">
-              {hasAgentSignal ? "Detected by AG2 agent" : "Local scoring only"}
-            </span>
+            <div className="flex items-center gap-3 flex-wrap">
+              <ChangeTypeBadge changeType={latest.change_type} />
+              <span className="text-base text-gray-400">
+                {hasAgentSignal ? "Detected by AG2 agent" : "Local scoring only"}
+              </span>
+            </div>
           </div>
           <div className="px-8 py-8 grid grid-cols-2 md:grid-cols-4 gap-8">
             <div>
@@ -201,8 +234,21 @@ export default async function TickerPage({
               </div>
             </div>
             <div>
-              <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Validation</div>
-              <ValidationBadge status={latest.validation_status} />
+              <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Relevance Score</div>
+              {latest.financial_relevance_score != null ? (
+                <div
+                  className="text-4xl font-bold"
+                  style={{
+                    color: latest.financial_relevance_score >= 0.6 ? "#dc2626"
+                      : latest.financial_relevance_score >= 0.3 ? "#f97316"
+                      : "#9ca3af",
+                  }}
+                >
+                  {Math.round(latest.financial_relevance_score * 100)}%
+                </div>
+              ) : (
+                <ValidationBadge status={latest.validation_status} />
+              )}
             </div>
           </div>
           {latest.agent_financial_relevance && (
@@ -308,6 +354,51 @@ export default async function TickerPage({
         </div>
       </div>
 
+      {/* ── Investigation Agent ────────────────────────────────────────────── */}
+      <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h2 className="text-3xl font-bold text-[#252525]">🔎 Investigation Agent</h2>
+            <p className="text-sm text-gray-400 mt-1">Probes press releases · exchange filings · IR pages for corroborating evidence</p>
+          </div>
+          {hasInvestigation && (latest?.corroborating_count ?? 0) > 0 && (
+            <span className="px-4 py-2 rounded-full text-sm font-bold"
+              style={{ background: "#f3e8ff", color: "#6b21a8", border: "1.5px solid #d8b4fe" }}>
+              {latest!.corroborating_count} corroborating source{(latest!.corroborating_count ?? 0) !== 1 ? "s" : ""}
+            </span>
+          )}
+        </div>
+        <div className="px-8 py-8 space-y-5">
+          {hasInvestigation ? (
+            <>
+              <p className="text-base text-gray-700 leading-relaxed bg-purple-50 rounded-xl p-6 border border-purple-100">
+                {latest!.investigation_summary}
+              </p>
+              {investigationSources.length > 0 && (
+                <div>
+                  <div className="text-gray-400 text-sm mb-3 uppercase tracking-wider font-medium">Sources checked</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {investigationSources.map((src) => (
+                      <span key={src} className="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
+                        {src}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          ) : (
+            <p className="text-base text-gray-400 bg-gray-50 rounded-xl p-6 border border-gray-100">
+              {!latest
+                ? "No scan data yet. Run a scan to populate."
+                : !process.env.AGENT_BACKEND_BASE_URL
+                ? "Investigation requires the AG2 agent backend. Set AGENT_BACKEND_BASE_URL to enable."
+                : "No investigation data — signal may have been suppressed by quality filter, or no backend signal detected."}
+            </p>
+          )}
+        </div>
+      </div>
+
       {/* ── Price Context ──────────────────────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-100">
@@ -368,9 +459,16 @@ export default async function TickerPage({
                       {new Date(a.fetched_at).toLocaleString()}
                     </div>
                     <div className="flex gap-2 mt-1 flex-wrap items-center">
+                      <ChangeTypeBadge changeType={a.change_type} />
                       {a.agent_signal_type && (
                         <span className="text-xs px-3 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold">
                           {agentSignalLabel(a.agent_signal_type)}
+                        </span>
+                      )}
+                      {(a.corroborating_count ?? 0) > 0 && (
+                        <span className="text-xs px-3 py-1 rounded-full font-semibold"
+                          style={{ background: "#f3e8ff", color: "#6b21a8" }}>
+                          🔎 {a.corroborating_count} source{a.corroborating_count !== 1 ? "s" : ""}
                         </span>
                       )}
                       {aCats.map((c) => (

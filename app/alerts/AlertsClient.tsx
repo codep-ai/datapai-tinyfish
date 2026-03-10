@@ -18,6 +18,9 @@ interface Analysis {
   agent_signal_type: string | null;
   agent_severity: string | null;
   validation_status: string | null;
+  // V3.1 / v1.5 fields
+  change_type: string | null;
+  corroborating_count: number | null;
 }
 
 interface Props {
@@ -66,6 +69,23 @@ function signalTypeBadge(signalType: string) {
       style={{ background: c.bg, color: c.text }}
     >
       {signalType.replace(/_/g, " ")}
+    </span>
+  );
+}
+
+function changeTypeBadge(changeType: string | null) {
+  if (!changeType || changeType === "CONTENT_CHANGE") return null;
+  const config: Record<string, { bg: string; text: string; label: string }> = {
+    ARCHIVE_CHANGE: { bg: "#f9fafb", text: "#6b7280", label: "Archive" },
+    LAYOUT_CHANGE:  { bg: "#f0f9ff", text: "#0c4a6e", label: "Layout" },
+  };
+  const c = config[changeType] ?? { bg: "#f9fafb", text: "#6b7280", label: changeType };
+  return (
+    <span
+      className="text-xs font-semibold px-2.5 py-1 rounded-full"
+      style={{ background: c.bg, color: c.text, border: `1px solid ${c.text}30` }}
+    >
+      {c.label}
     </span>
   );
 }
@@ -133,6 +153,7 @@ export default function AlertsClient({ contentOnly, allSignals, universe }: Prop
   const changed = analyses.filter((a) => a.alert_score !== 0).length;
   const highConf = analyses.filter((a) => a.confidence >= 0.6).length;
   const withAgentSignal = analyses.filter((a) => a.agent_signal_type).length;
+  const withInvestigation = analyses.filter((a) => (a.corroborating_count ?? 0) > 0).length;
 
   return (
     <div className="max-w-6xl mx-auto px-8 py-12 space-y-8">
@@ -162,6 +183,12 @@ export default function AlertsClient({ contentOnly, allSignals, universe }: Prop
           {withAgentSignal > 0 && (
             <span className="text-base px-5 py-2 rounded-full bg-amber-50 text-amber-700 font-semibold">
               {withAgentSignal} AG2 signal{withAgentSignal !== 1 ? "s" : ""}
+            </span>
+          )}
+          {withInvestigation > 0 && (
+            <span className="text-base px-5 py-2 rounded-full font-semibold"
+              style={{ background: "#f3e8ff", color: "#6b21a8" }}>
+              🔎 {withInvestigation} investigated
             </span>
           )}
         </div>
@@ -290,7 +317,14 @@ export default function AlertsClient({ contentOnly, allSignals, universe }: Prop
                           ? agentSignalBadge(a.agent_signal_type)
                           : signalTypeBadge(a.signal_type ?? "CONTENT_CHANGE")}
                         <div className="flex gap-1.5 flex-wrap">
+                          {changeTypeBadge(a.change_type)}
                           {severityBadge(a.agent_severity)}
+                          {(a.corroborating_count ?? 0) > 0 && (
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
+                              style={{ background: "#f3e8ff", color: "#6b21a8" }}>
+                              🔎 {a.corroborating_count}
+                            </span>
+                          )}
                           {cats.slice(0, 1).map((c) => (
                             <span key={c} className="text-xs px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 font-medium">
                               {c.replace(/_/g, " ")}
