@@ -47,9 +47,11 @@ export default function RootLayout({
 
             {/* Centre: DataP.ai chip + Powered by TinyFish & ag2 */}
             <div className="flex items-center gap-5">
-              <span className="bg-white rounded-lg px-3 py-2 flex items-center" style={{ boxShadow: "0 1px 4px rgba(0,0,0,.12)" }}>
+              <a href="https://www.datap.ai" target="_blank" rel="noopener noreferrer" title="DataP.ai"
+                className="bg-white rounded-lg px-3 py-2 flex items-center transition-transform duration-200 hover:scale-105"
+                style={{ boxShadow: "0 1px 4px rgba(0,0,0,.12)" }}>
                 <Image src="/logos/datapai.png" width={120} height={44} alt="DataP.ai" style={{ height: "44px", width: "auto" }} />
-              </span>
+              </a>
               <span className="text-gray-400 text-sm font-semibold uppercase tracking-widest">Powered by</span>
               <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer" title="TinyFish">
                 <Image

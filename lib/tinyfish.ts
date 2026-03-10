@@ -148,6 +148,8 @@ export async function fetchPageText(url: string): Promise<PageContent> {
   try {
     return await callTinyFish(url);
   } catch (err) {
+    // Don't retry on timeout/abort — it would just hang again for another 90s
+    if (err instanceof Error && err.name === "AbortError") throw err;
     console.warn(`TinyFish retry for ${url}:`, err);
     return await callTinyFish(url);
   }

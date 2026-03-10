@@ -197,11 +197,11 @@ export default async function TickerPage({
       {latest && (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
-            <h2 className="text-3xl font-bold text-[#252525]">🎯 Financial Signal</h2>
+            <h2 className="text-3xl font-bold text-[#252525]">🎯 DataP.ai Financial Intelligent Agent — Signal Detection</h2>
             <div className="flex items-center gap-3 flex-wrap">
               <ChangeTypeBadge changeType={latest.change_type} />
               <span className="text-base text-gray-400">
-                {hasAgentSignal ? "Detected by AG2 agent" : "Local scoring only"}
+                {hasAgentSignal ? "Detected & powered by DataP.ai Financial Agents" : "Local scoring only"}
               </span>
             </div>
           </div>
@@ -325,7 +325,7 @@ export default async function TickerPage({
       {/* ── Cross-Validation ───────────────────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-100">
-          <h2 className="text-3xl font-bold text-[#252525]">🔍 Cross-Validation</h2>
+          <h2 className="text-3xl font-bold text-[#252525]">🔍 DataP.ai Financial Intelligent Agent — Cross-Validation</h2>
           <p className="text-sm text-gray-400 mt-1">Signal verified against filings · press releases · public sources</p>
         </div>
         <div className="px-8 py-8 space-y-5">
@@ -361,7 +361,7 @@ export default async function TickerPage({
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-3xl font-bold text-[#252525]">🔎 Investigation Agent</h2>
+            <h2 className="text-3xl font-bold text-[#252525]">🔎 DataP.ai Financial Intelligent Agent — Investigation</h2>
             <p className="text-sm text-gray-400 mt-1">Probes press releases · exchange filings · IR pages for corroborating evidence</p>
           </div>
           {hasInvestigation && (latest?.corroborating_count ?? 0) > 0 && (
