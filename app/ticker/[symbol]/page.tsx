@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { UNIVERSE } from "@/lib/universe";
+import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
 import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs } from "@/lib/db";
 import { fetchPrices } from "@/lib/price";
 import PriceChart from "./PriceChart";
@@ -73,7 +73,7 @@ export default async function TickerPage({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  const ticker = UNIVERSE.find((t) => t.symbol === symbol.toUpperCase());
+  const ticker = UNIVERSE_ALL.find((t) => t.symbol === symbol.toUpperCase());
   if (!ticker) notFound();
 
   const sym = symbol.toUpperCase();
@@ -222,19 +222,25 @@ export default async function TickerPage({
             </div>
             <div>
               <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Confidence</div>
-              <div
-                className="text-4xl font-bold"
-                style={{
-                  color:
-                    (latest.agent_confidence ?? latest.confidence) >= 0.7
-                      ? "#2e8b57"
-                      : (latest.agent_confidence ?? latest.confidence) >= 0.4
-                      ? "#f97316"
-                      : "#9ca3af",
-                }}
-              >
-                {Math.round((latest.agent_confidence ?? latest.confidence) * 100)}%
-              </div>
+              {(() => {
+                const conf = latest.agent_confidence ?? latest.confidence;
+                const pct = Math.round(conf * 100);
+                const color = conf >= 0.7 ? "#2e8b57" : conf >= 0.4 ? "#f97316" : "#9ca3af";
+                const label = conf >= 0.7 ? "High" : conf >= 0.4 ? "Growing" : "Early signal";
+                const tooltip = conf < 0.5
+                  ? "Confidence increases with more scan history and corroborating sources"
+                  : undefined;
+                return (
+                  <div>
+                    <div className="text-4xl font-bold" style={{ color }}>{pct}%</div>
+                    {/* Visual bar */}
+                    <div className="mt-2 h-1.5 rounded-full bg-gray-100 w-24">
+                      <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: color }} />
+                    </div>
+                    <div className="text-xs mt-1 font-medium" style={{ color }} title={tooltip}>{label}</div>
+                  </div>
+                );
+              })()}
             </div>
             <div>
               <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Relevance Score</div>

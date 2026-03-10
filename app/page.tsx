@@ -3,6 +3,7 @@ import Image from "next/image";
 import { UNIVERSE } from "@/lib/universe";
 import { getAlertSummaryMap, getRecentRuns } from "@/lib/db";
 import LiveScanProgress from "./components/LiveScanProgress";
+import TickerSearch from "./components/TickerSearch";
 
 export const dynamic = "force-dynamic";
 
@@ -32,8 +33,14 @@ export default function Home() {
             DataP.ai converts wording changes into financial signals.
           </p>
 
+          {/* Try your own ticker */}
+          <div className="pt-1">
+            <p className="text-white/60 text-sm mb-2 font-medium uppercase tracking-wide">Try any ticker — US or ASX</p>
+            <TickerSearch />
+          </div>
+
           {/* Live scan widget — Feature 12 */}
-          <div className="pt-2 flex justify-start">
+          <div className="pt-1 flex justify-start">
             <LiveScanProgress />
           </div>
 
@@ -79,7 +86,7 @@ export default function Home() {
         {/* Monitored universe */}
         <div>
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-3xl font-bold text-[#252525]">Monitored Universe</h2>
+            <h2 className="text-3xl font-bold text-[#252525]">Monitored Universe <span className="text-lg font-normal text-gray-400 ml-1">🇺🇸 US Markets</span></h2>
             <div className="flex items-center gap-4 text-sm text-gray-400">
               {alertCount > 0 && (
                 <span className="flex items-center gap-1">
@@ -87,6 +94,7 @@ export default function Home() {
                   = change detected
                 </span>
               )}
+              <Link href="/asx" className="text-brand hover:underline font-medium">🇦🇺 Australia →</Link>
               <Link href="/alerts" className="text-brand hover:underline">View all alerts →</Link>
             </div>
           </div>
@@ -121,8 +129,18 @@ export default function Home() {
                   <div className="text-gray-400 text-sm mt-0.5 truncate">{t.name}</div>
                   {hasAlert && (
                     <div className="mt-2 space-y-0.5">
-                      <div className="text-xs font-medium" style={{ color: "#b45309" }}>
-                        {analysis.changed_pct != null ? analysis.changed_pct.toFixed(1) : "—"}% changed
+                      <div
+                        className="text-xs font-medium"
+                        style={{ color: "#b45309" }}
+                        title={analysis.changed_pct != null && analysis.changed_pct > 90
+                          ? "Large baseline diff — page content significantly changed vs. initial snapshot"
+                          : undefined}
+                      >
+                        {analysis.changed_pct != null
+                          ? analysis.changed_pct > 90
+                            ? "Significant change"
+                            : `${analysis.changed_pct.toFixed(1)}% changed`
+                          : "—"}
                       </div>
                       <div className="text-xs text-gray-400">
                         conf {Math.round(confidence * 100)}%

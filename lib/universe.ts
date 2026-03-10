@@ -2,6 +2,7 @@ export interface TickerInfo {
   symbol: string;
   name: string;
   url: string;
+  exchange?: "NASDAQ" | "NYSE" | "ASX";
 }
 
 export const UNIVERSE: TickerInfo[] = [
@@ -26,3 +27,22 @@ export const UNIVERSE: TickerInfo[] = [
   { symbol: "SHYF",  name: "The Shyft Group",         url: "https://ir.theshyftgroup.com/news-releases" },
   { symbol: "TMDX",  name: "TransMedics Group",       url: "https://ir.transmedics.com/news-releases" },
 ];
+
+/** ASX-listed Australian companies monitored for website change intelligence. */
+export const ASX_UNIVERSE: TickerInfo[] = [
+  { symbol: "BHP",  name: "BHP Group",               url: "https://www.asx.com.au/asx/1/company/BHP/announcements?count=20", exchange: "ASX" },
+  { symbol: "CBA",  name: "Commonwealth Bank",        url: "https://www.asx.com.au/asx/1/company/CBA/announcements?count=20", exchange: "ASX" },
+  { symbol: "CSL",  name: "CSL Limited",              url: "https://www.asx.com.au/asx/1/company/CSL/announcements?count=20", exchange: "ASX" },
+  { symbol: "NAB",  name: "Natl Australia Bank",      url: "https://www.asx.com.au/asx/1/company/NAB/announcements?count=20", exchange: "ASX" },
+  { symbol: "ANZ",  name: "ANZ Group",                url: "https://www.asx.com.au/asx/1/company/ANZ/announcements?count=20", exchange: "ASX" },
+  { symbol: "WBC",  name: "Westpac Banking",          url: "https://www.asx.com.au/asx/1/company/WBC/announcements?count=20", exchange: "ASX" },
+  { symbol: "WES",  name: "Wesfarmers",               url: "https://www.asx.com.au/asx/1/company/WES/announcements?count=20", exchange: "ASX" },
+  { symbol: "MQG",  name: "Macquarie Group",          url: "https://www.asx.com.au/asx/1/company/MQG/announcements?count=20", exchange: "ASX" },
+  { symbol: "TLS",  name: "Telstra",                  url: "https://www.asx.com.au/asx/1/company/TLS/announcements?count=20", exchange: "ASX" },
+  { symbol: "WOW",  name: "Woolworths Group",         url: "https://www.asx.com.au/asx/1/company/WOW/announcements?count=20", exchange: "ASX" },
+  { symbol: "RIO",  name: "Rio Tinto",                url: "https://www.asx.com.au/asx/1/company/RIO/announcements?count=20", exchange: "ASX" },
+  { symbol: "FMG",  name: "Fortescue",                url: "https://www.asx.com.au/asx/1/company/FMG/announcements?count=20", exchange: "ASX" },
+];
+
+/** All monitored tickers across all markets. */
+export const UNIVERSE_ALL: TickerInfo[] = [...UNIVERSE, ...ASX_UNIVERSE];
