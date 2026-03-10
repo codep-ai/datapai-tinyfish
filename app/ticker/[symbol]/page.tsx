@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
-import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs } from "@/lib/db";
+import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, lookupStock } from "@/lib/db";
 import { fetchPrices } from "@/lib/price";
 import PriceChart from "./PriceChart";
 import { agentSignalLabel, validationLabel, changeTypeLabel } from "@/lib/agent";
@@ -77,6 +77,12 @@ export default async function TickerPage({
 
   // ── Graceful "not monitored yet" page for unknown tickers ─────────────────
   if (!ticker) {
+    // Check stock directory for company info (may be empty before seeding)
+    const dirEntry = lookupStock(sym);
+    const isAsxTicker = dirEntry?.exchange === "ASX" || sym.length <= 3;
+    const companyName = dirEntry?.name ?? null;
+    const exchangeLabel = dirEntry?.exchange ?? (isAsxTicker ? "ASX" : "US");
+
     return (
       <div>
         <div
@@ -87,8 +93,21 @@ export default async function TickerPage({
             <Link href="/" className="text-white/70 hover:text-white text-sm font-medium inline-block">
               ← Back to Home
             </Link>
-            <h1 className="text-6xl font-bold text-white drop-shadow-sm">{sym}</h1>
-            <p className="text-white/80 text-xl font-light">Not yet in our monitored universe</p>
+            <div className="flex items-end gap-4 flex-wrap">
+              <h1 className="text-6xl font-bold text-white drop-shadow-sm">{sym}</h1>
+              {companyName && (
+                <span className="text-2xl text-white/80 font-light pb-1">{companyName}</span>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-white/60 text-sm px-3 py-1 rounded-full border border-white/20 bg-white/10">
+                {exchangeLabel}
+              </span>
+              {dirEntry?.sector && (
+                <span className="text-white/50 text-sm">{dirEntry.sector}</span>
+              )}
+              <span className="text-white/50 text-sm">Not yet in monitored universe</span>
+            </div>
           </div>
         </div>
 
@@ -96,8 +115,11 @@ export default async function TickerPage({
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8">
             <h2 className="text-xl font-bold text-amber-900 mb-3">📡 {sym} is not yet monitored</h2>
             <p className="text-amber-800 mb-6 text-base leading-relaxed">
-              We don&apos;t currently track <strong>{sym}</strong> in our financial signal monitoring universe.
-              Our AI agents are actively watching <strong>{UNIVERSE_ALL.length} companies</strong> across US and ASX markets for guidance withdrawals, risk disclosure changes, and tone shifts.
+              {companyName
+                ? <>We don&apos;t currently track <strong>{sym} — {companyName}</strong> in our financial signal monitoring universe.</>
+                : <>We don&apos;t currently track <strong>{sym}</strong> in our financial signal monitoring universe.</>
+              }
+              {" "}Our AI agents are actively watching <strong>{UNIVERSE_ALL.length} companies</strong> across US and ASX markets for guidance withdrawals, risk disclosure changes, and tone shifts.
             </p>
             <div className="flex gap-3 flex-wrap">
               <Link

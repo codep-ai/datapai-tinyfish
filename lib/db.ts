@@ -11,7 +11,7 @@
 import Database from "better-sqlite3";
 import path from "path";
 import fs from "fs";
-import { UNIVERSE } from "./universe";
+import { UNIVERSE_ALL } from "./universe";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -149,6 +149,16 @@ function initSchema(db: Database.Database) {
       volume  REAL,
       PRIMARY KEY (ticker, date)
     );
+
+    -- Full stock directory (ASX 2000+ and US stocks for ticker lookup)
+    CREATE TABLE IF NOT EXISTS stock_directory (
+      symbol    TEXT NOT NULL,
+      name      TEXT NOT NULL,
+      exchange  TEXT NOT NULL,
+      sector    TEXT,
+      PRIMARY KEY (symbol, exchange)
+    );
+    CREATE INDEX IF NOT EXISTS idx_stock_dir_symbol ON stock_directory(symbol);
   `);
 
   // V2.1 migrations — safe ALTER TABLE for existing DBs
@@ -202,14 +212,14 @@ function initSchema(db: Database.Database) {
   }
 }
 
-/** Upsert companies from UNIVERSE on every startup */
+/** Upsert companies from UNIVERSE_ALL (US + ASX) on every startup */
 function seedCompanies(db: Database.Database) {
   const upsert = db.prepare(`
     INSERT OR IGNORE INTO companies (ticker, name, website_root, page_urls_json)
     VALUES (@ticker, @name, @website_root, @page_urls_json)
   `);
   const seedAll = db.transaction(() => {
-    for (const t of UNIVERSE) {
+    for (const t of UNIVERSE_ALL) {
       upsert.run({
         ticker: t.symbol,
         name: t.name,
@@ -575,4 +585,73 @@ export function getCachedPrices(
        ORDER BY date DESC LIMIT ?`
     )
     .all(ticker, limit) as { date: string; close: number; volume: number }[];
+}
+
+// ─── Stock Directory ──────────────────────────────────────────────────────────
+
+export interface StockDirectoryEntry {
+  symbol: string;
+  name: string;
+  exchange: string;
+  sector: string | null;
+}
+
+/** Look up a ticker symbol across all exchanges. Returns null if not found. */
+export function lookupStock(symbol: string): StockDirectoryEntry | null {
+  const row = getDb()
+    .prepare(
+      `SELECT symbol, name, exchange, sector FROM stock_directory
+       WHERE symbol = ? ORDER BY exchange LIMIT 1`
+    )
+    .get(symbol.toUpperCase()) as StockDirectoryEntry | undefined;
+  return row ?? null;
+}
+
+/** Search stock directory by prefix (for autocomplete), max 20 results. */
+export function searchStocks(
+  query: string,
+  exchange?: string
+): StockDirectoryEntry[] {
+  const like = `${query.toUpperCase()}%`;
+  if (exchange) {
+    return getDb()
+      .prepare(
+        `SELECT symbol, name, exchange, sector FROM stock_directory
+         WHERE symbol LIKE ? AND exchange = ? ORDER BY symbol LIMIT 20`
+      )
+      .all(like, exchange) as StockDirectoryEntry[];
+  }
+  return getDb()
+    .prepare(
+      `SELECT symbol, name, exchange, sector FROM stock_directory
+       WHERE symbol LIKE ? ORDER BY symbol LIMIT 20`
+    )
+    .all(like) as StockDirectoryEntry[];
+}
+
+/** Upsert a batch of stock directory entries (used by seed script). */
+export function upsertStockDirectory(entries: StockDirectoryEntry[]): void {
+  const db = getDb();
+  const stmt = db.prepare(
+    `INSERT OR REPLACE INTO stock_directory (symbol, name, exchange, sector)
+     VALUES (@symbol, @name, @exchange, @sector)`
+  );
+  const batch = db.transaction((rows: StockDirectoryEntry[]) => {
+    for (const row of rows) stmt.run(row);
+  });
+  batch(entries);
+}
+
+/** Count entries in stock_directory, optionally filtered by exchange. */
+export function countStockDirectory(exchange?: string): number {
+  if (exchange) {
+    const row = getDb()
+      .prepare(`SELECT COUNT(*) as cnt FROM stock_directory WHERE exchange = ?`)
+      .get(exchange) as { cnt: number };
+    return row.cnt;
+  }
+  const row = getDb()
+    .prepare(`SELECT COUNT(*) as cnt FROM stock_directory`)
+    .get() as { cnt: number };
+  return row.cnt;
 }
