@@ -4,6 +4,8 @@ import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, lookupStock } fr
 import { fetchPrices } from "@/lib/price";
 import PriceChart from "./PriceChart";
 import { agentSignalLabel, validationLabel, changeTypeLabel } from "@/lib/agent";
+import { resolveTickerUrl } from "@/lib/scan-pipeline";
+import TickerScanButton from "../../components/TickerScanButton";
 
 export const dynamic = "force-dynamic";
 
@@ -73,98 +75,112 @@ export default async function TickerPage({
 }) {
   const { symbol } = await params;
   const sym = symbol.toUpperCase();
-  const ticker = UNIVERSE_ALL.find((t) => t.symbol === sym);
 
-  // ── Graceful "not monitored yet" page for unknown tickers ─────────────────
+  // Resolve display info regardless of universe membership
+  let ticker: typeof UNIVERSE_ALL[number] | undefined = UNIVERSE_ALL.find((t) => t.symbol === sym);
+  const dirEntry = ticker ? null : lookupStock(sym);
+  const exchangeLabel = (ticker?.exchange ?? dirEntry?.exchange ?? "NASDAQ") as string;
+  const companyName = ticker?.name ?? dirEntry?.name ?? sym;
+  const defaultUrl = ticker?.url ?? resolveTickerUrl(sym, exchangeLabel);
+
+  // ── Unknown ticker: check if we already have scan data in DB ─────────────
   if (!ticker) {
-    // Check stock directory for company info (may be empty before seeding)
-    const dirEntry = lookupStock(sym);
-    const isAsxTicker = dirEntry?.exchange === "ASX" || sym.length <= 3;
-    const companyName = dirEntry?.name ?? null;
-    const exchangeLabel = dirEntry?.exchange ?? (isAsxTicker ? "ASX" : "US");
-
-    return (
-      <div>
-        <div
-          className="w-full"
-          style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "32px", paddingBottom: "36px" }}
-        >
-          <div className="max-w-5xl mx-auto px-8 space-y-3">
-            <Link href="/" className="text-white/70 hover:text-white text-sm font-medium inline-block">
-              ← Back to Home
-            </Link>
-            <div className="flex items-end gap-4 flex-wrap">
-              <h1 className="text-6xl font-bold text-white drop-shadow-sm">{sym}</h1>
-              {companyName && (
-                <span className="text-2xl text-white/80 font-light pb-1">{companyName}</span>
-              )}
+    // If there are existing snapshots from a previous on-demand scan,
+    // construct a virtual ticker and fall through to the full page render.
+    const existingSnaps = getTickerSnapshots(sym, 1);
+    if (existingSnaps.length > 0) {
+      ticker = {
+        symbol: sym,
+        name: companyName,
+        url: existingSnaps[0].url,
+        exchange: exchangeLabel as "NASDAQ" | "NYSE" | "ASX",
+      };
+    } else {
+      // No data yet — show "not monitored" page with prominent Scan button
+      return (
+        <div>
+          <div
+            className="w-full"
+            style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "32px", paddingBottom: "36px" }}
+          >
+            <div className="max-w-5xl mx-auto px-8 space-y-4">
+              <Link href="/" className="text-white/70 hover:text-white text-sm font-medium inline-block">
+                ← Back to Home
+              </Link>
+              <div className="flex items-end gap-4 flex-wrap">
+                <h1 className="text-6xl font-bold text-white drop-shadow-sm">{sym}</h1>
+                <span className="text-2xl text-white/80 font-light pb-1">{companyName !== sym ? companyName : ""}</span>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-white/60 text-sm px-3 py-1 rounded-full border border-white/20 bg-white/10">
+                  {exchangeLabel}
+                </span>
+                {dirEntry?.sector && (
+                  <span className="text-white/50 text-sm">{dirEntry.sector}</span>
+                )}
+              </div>
+              {/* ── Scan button — the hero CTA ── */}
+              <div className="pt-2">
+                <TickerScanButton symbol={sym} isMonitored={false} resolvedUrl={defaultUrl} />
+              </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-white/60 text-sm px-3 py-1 rounded-full border border-white/20 bg-white/10">
-                {exchangeLabel}
-              </span>
-              {dirEntry?.sector && (
-                <span className="text-white/50 text-sm">{dirEntry.sector}</span>
-              )}
-              <span className="text-white/50 text-sm">Not yet in monitored universe</span>
+          </div>
+
+          <div className="max-w-5xl mx-auto px-8 py-10 space-y-6">
+            {/* What the scan will do */}
+            <div className="bg-white border border-gray-100 rounded-2xl p-7 shadow-sm space-y-4">
+              <h2 className="text-lg font-bold text-gray-800">
+                ⚡ Run a full AI signal scan on {sym}
+              </h2>
+              <p className="text-gray-600 text-sm leading-relaxed">
+                The scan will run the complete DataP.ai pipeline against <strong>{sym}</strong>:
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                {[
+                  ["🌊 TinyFish Fetch", "Retrieves the latest IR page content using a real browser"],
+                  ["🔍 Diff Engine", "Compares against the previous snapshot to find what changed"],
+                  ["🎯 Signal Quality Filter", "Classifies the change as content, archive, or layout noise"],
+                  ["🤖 Forward Guidance Agent", "Detects guidance withdrawal or hedging language"],
+                  ["⚠️ Risk Disclosure Agent", "Identifies new or expanded risk language"],
+                  ["📊 Tone Shift Agent", "Measures shift from confident to cautious language"],
+                  ["🔬 Investigation Agent", "Cross-validates via ASX/SEC filings and press releases"],
+                  ["✅ Cross-Validation", "Confirms signal across multiple data sources"],
+                ].map(([title, desc]) => (
+                  <div key={title as string} className="flex gap-3 p-3 bg-gray-50 rounded-xl">
+                    <span className="text-base">{(title as string).split(" ")[0]}</span>
+                    <div>
+                      <p className="font-semibold text-gray-700 text-xs">{(title as string).slice(2)}</p>
+                      <p className="text-gray-400 text-xs mt-0.5">{desc as string}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-gray-400 pt-2">
+                Source URL: <span className="font-mono">{defaultUrl}</span>
+              </p>
+            </div>
+
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm text-sm text-gray-500">
+              <p className="font-semibold text-gray-700 mb-3">Monitored universe</p>
+              <div className="flex flex-wrap gap-2">
+                {UNIVERSE_ALL.map((t) => (
+                  <Link
+                    key={t.symbol}
+                    href={`/ticker/${t.symbol}`}
+                    className="px-3 py-1 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5"
+                    style={t.exchange === "ASX"
+                      ? { background: "#eff6ff", color: "#003087", border: "1px solid #bfdbfe" }
+                      : { background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
+                  >
+                    {t.symbol}
+                  </Link>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-
-        <div className="max-w-5xl mx-auto px-8 py-12 space-y-6">
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8">
-            <h2 className="text-xl font-bold text-amber-900 mb-3">📡 {sym} is not yet monitored</h2>
-            <p className="text-amber-800 mb-6 text-base leading-relaxed">
-              {companyName
-                ? <>We don&apos;t currently track <strong>{sym} — {companyName}</strong> in our financial signal monitoring universe.</>
-                : <>We don&apos;t currently track <strong>{sym}</strong> in our financial signal monitoring universe.</>
-              }
-              {" "}Our AI agents are actively watching <strong>{UNIVERSE_ALL.length} companies</strong> across US and ASX markets for guidance withdrawals, risk disclosure changes, and tone shifts.
-            </p>
-            <div className="flex gap-3 flex-wrap">
-              <Link
-                href="/"
-                className="px-5 py-2.5 rounded-lg font-bold text-white text-sm transition-all hover:-translate-y-0.5"
-                style={{ background: "#2e8b57" }}
-              >
-                🇺🇸 US Markets
-              </Link>
-              <Link
-                href="/asx"
-                className="px-5 py-2.5 rounded-lg font-bold text-white text-sm transition-all hover:-translate-y-0.5"
-                style={{ background: "#003087" }}
-              >
-                🇦🇺 ASX Markets
-              </Link>
-              <Link
-                href="/alerts"
-                className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:-translate-y-0.5 border border-gray-200 bg-white text-gray-700"
-              >
-                ⚡ View All Alerts
-              </Link>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm text-sm text-gray-500">
-            <p className="font-semibold text-gray-700 mb-2">Currently monitored tickers</p>
-            <div className="flex flex-wrap gap-2 mt-3">
-              {UNIVERSE_ALL.map((t) => (
-                <Link
-                  key={t.symbol}
-                  href={`/ticker/${t.symbol}`}
-                  className="px-3 py-1 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5"
-                  style={t.exchange === "ASX"
-                    ? { background: "#eff6ff", color: "#003087", border: "1px solid #bfdbfe" }
-                    : { background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
-                >
-                  {t.symbol}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+      );
+    }
   }
 
   const [snapshots, analyses, diffs, prices] = await Promise.all([
@@ -235,8 +251,8 @@ export default async function TickerPage({
             </p>
           )}
 
-          {/* Orange CTA — compact button, opens in new tab */}
-          <div className="pt-1">
+          {/* CTAs — Report + Re-scan */}
+          <div className="pt-1 flex items-center gap-3 flex-wrap">
             <Link
               href={`/ticker/${sym}/report`}
               target="_blank"
@@ -246,6 +262,7 @@ export default async function TickerPage({
             >
               📋 View Full AI Report →
             </Link>
+            <TickerScanButton symbol={sym} isMonitored={true} resolvedUrl={ticker.url} />
           </div>
         </div>
       </div>
