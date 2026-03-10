@@ -42,6 +42,12 @@ export const ASX_UNIVERSE: TickerInfo[] = [
   { symbol: "WOW",  name: "Woolworths Group",         url: "https://www.asx.com.au/asx/1/company/WOW/announcements?count=20", exchange: "ASX" },
   { symbol: "RIO",  name: "Rio Tinto",                url: "https://www.asx.com.au/asx/1/company/RIO/announcements?count=20", exchange: "ASX" },
   { symbol: "FMG",  name: "Fortescue",                url: "https://www.asx.com.au/asx/1/company/FMG/announcements?count=20", exchange: "ASX" },
+  { symbol: "TWE",  name: "Treasury Wine Estates",    url: "https://www.asx.com.au/asx/1/company/TWE/announcements?count=20", exchange: "ASX" },
+  { symbol: "GMG",  name: "Goodman Group",            url: "https://www.asx.com.au/asx/1/company/GMG/announcements?count=20", exchange: "ASX" },
+  { symbol: "STO",  name: "Santos",                   url: "https://www.asx.com.au/asx/1/company/STO/announcements?count=20", exchange: "ASX" },
+  { symbol: "ORG",  name: "Origin Energy",            url: "https://www.asx.com.au/asx/1/company/ORG/announcements?count=20", exchange: "ASX" },
+  { symbol: "WDS",  name: "Woodside Energy",          url: "https://www.asx.com.au/asx/1/company/WDS/announcements?count=20", exchange: "ASX" },
+  { symbol: "NCM",  name: "Newmont (ASX)",            url: "https://www.asx.com.au/asx/1/company/NCM/announcements?count=20", exchange: "ASX" },
 ];
 
 /** All monitored tickers across all markets. */

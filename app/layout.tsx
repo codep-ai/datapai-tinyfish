@@ -37,7 +37,7 @@ export default function RootLayout({
             <a href="https://www.datap.ai" target="_blank" rel="noopener noreferrer" title="DataP.ai"
               className="transition-transform duration-200 hover:scale-105 inline-flex">
               <Image
-                src="/logos/datapai.svg"
+                src="/logos/datapai.png"
                 width={160}
                 height={41}
                 alt="DataP.ai"
@@ -101,7 +101,7 @@ export default function RootLayout({
             {/* Logo row: DataP.ai × TinyFish & ag2 */}
             <div className="flex items-center gap-6">
               <span className="bg-white rounded px-2 py-1 flex items-center">
-                <Image src="/logos/datapai.svg" width={80} height={20} alt="DataP.ai" style={{ height: "20px", width: "auto" }} />
+                <Image src="/logos/datapai.png" width={80} height={20} alt="DataP.ai" style={{ height: "20px", width: "auto" }} />
               </span>
               <span className="text-gray-600 text-xl font-extralight select-none">×</span>
               <span className="bg-white rounded px-2 py-0.5 flex items-center">

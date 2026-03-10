@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import Link from "next/link";
 import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
 import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs } from "@/lib/db";
@@ -73,10 +72,79 @@ export default async function TickerPage({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  const ticker = UNIVERSE_ALL.find((t) => t.symbol === symbol.toUpperCase());
-  if (!ticker) notFound();
-
   const sym = symbol.toUpperCase();
+  const ticker = UNIVERSE_ALL.find((t) => t.symbol === sym);
+
+  // ── Graceful "not monitored yet" page for unknown tickers ─────────────────
+  if (!ticker) {
+    return (
+      <div>
+        <div
+          className="w-full"
+          style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "32px", paddingBottom: "36px" }}
+        >
+          <div className="max-w-5xl mx-auto px-8 space-y-3">
+            <Link href="/" className="text-white/70 hover:text-white text-sm font-medium inline-block">
+              ← Back to Home
+            </Link>
+            <h1 className="text-6xl font-bold text-white drop-shadow-sm">{sym}</h1>
+            <p className="text-white/80 text-xl font-light">Not yet in our monitored universe</p>
+          </div>
+        </div>
+
+        <div className="max-w-5xl mx-auto px-8 py-12 space-y-6">
+          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-8">
+            <h2 className="text-xl font-bold text-amber-900 mb-3">📡 {sym} is not yet monitored</h2>
+            <p className="text-amber-800 mb-6 text-base leading-relaxed">
+              We don&apos;t currently track <strong>{sym}</strong> in our financial signal monitoring universe.
+              Our AI agents are actively watching <strong>{UNIVERSE_ALL.length} companies</strong> across US and ASX markets for guidance withdrawals, risk disclosure changes, and tone shifts.
+            </p>
+            <div className="flex gap-3 flex-wrap">
+              <Link
+                href="/"
+                className="px-5 py-2.5 rounded-lg font-bold text-white text-sm transition-all hover:-translate-y-0.5"
+                style={{ background: "#2e8b57" }}
+              >
+                🇺🇸 US Markets
+              </Link>
+              <Link
+                href="/asx"
+                className="px-5 py-2.5 rounded-lg font-bold text-white text-sm transition-all hover:-translate-y-0.5"
+                style={{ background: "#003087" }}
+              >
+                🇦🇺 ASX Markets
+              </Link>
+              <Link
+                href="/alerts"
+                className="px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:-translate-y-0.5 border border-gray-200 bg-white text-gray-700"
+              >
+                ⚡ View All Alerts
+              </Link>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm text-sm text-gray-500">
+            <p className="font-semibold text-gray-700 mb-2">Currently monitored tickers</p>
+            <div className="flex flex-wrap gap-2 mt-3">
+              {UNIVERSE_ALL.map((t) => (
+                <Link
+                  key={t.symbol}
+                  href={`/ticker/${t.symbol}`}
+                  className="px-3 py-1 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5"
+                  style={t.exchange === "ASX"
+                    ? { background: "#eff6ff", color: "#003087", border: "1px solid #bfdbfe" }
+                    : { background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
+                >
+                  {t.symbol}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const [snapshots, analyses, diffs, prices] = await Promise.all([
     Promise.resolve(getTickerSnapshots(sym, 5)),
     Promise.resolve(getTickerAnalyses(sym, 5)),
