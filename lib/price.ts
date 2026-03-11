@@ -1,6 +1,7 @@
 /**
- * lib/price.ts  (V2)
+ * lib/price.ts  (V3)
  * Fetches real 30-day price data from Yahoo Finance chart API.
+ * ASX-listed stocks use the ".AX" suffix required by Yahoo Finance.
  * Falls back to deterministic mock if the request fails.
  */
 
@@ -14,13 +15,17 @@ export interface PricePoint {
 
 export async function fetchPrices(
   ticker: string,
-  days = 30
+  days = 30,
+  exchange?: string
 ): Promise<PricePoint[]> {
+  // Yahoo Finance requires ".AX" suffix for ASX-listed stocks
+  const yahooSymbol = exchange === "ASX" ? `${ticker}.AX` : ticker;
+
   try {
     const now = Math.floor(Date.now() / 1000);
     const from = now - days * 24 * 60 * 60;
     const url =
-      `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}` +
+      `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}` +
       `?period1=${from}&period2=${now}&interval=1d`;
 
     const res = await fetch(url, {
@@ -55,22 +60,33 @@ export async function fetchPrices(
 
     return points.slice(-days);
   } catch (err) {
-    console.warn(`[price] Yahoo Finance failed for ${ticker}, using mock:`, err);
-    return getMockPrices(ticker, days);
+    console.warn(`[price] Yahoo Finance failed for ${yahooSymbol}, using mock:`, err);
+    return getMockPrices(ticker, days, exchange);
   }
 }
 
 // ─── Mock fallback (deterministic, seeded by ticker) ─────────────────────
 
-const BASE_PRICES: Record<string, number> = {
+// US stock approximate prices (USD)
+const BASE_PRICES_US: Record<string, number> = {
   ACMR: 22, AEHR: 12, ATRC: 18, CRVL: 95, ERII: 90,
   FLNC: 14, GATO: 8,  HIMS: 22, IIIV: 22, KTOS: 25,
   LBRT: 19, MARA: 18, MGNI: 9,  MNDY: 230, NOVA: 11,
   NTST: 14, PHAT: 8,  PRTS: 5,  SHYF: 15, TMDX: 55,
 };
 
-export function getMockPrices(ticker: string, days = 30): PricePoint[] {
-  const base = BASE_PRICES[ticker] ?? 20;
+// ASX stock approximate prices (AUD)
+const BASE_PRICES_ASX: Record<string, number> = {
+  BHP: 45,  CBA: 155, CSL: 280, WBC: 32,  ANZ: 30,
+  NAB: 38,  RIO: 115, WES: 70,  FMG: 22,  MQG: 215,
+  TWE: 12,  GMG: 35,  STO: 8,   ORG: 11,  WDS: 28,
+  NCM: 23,  TLS: 4,   WOW: 35,
+};
+
+export function getMockPrices(ticker: string, days = 30, exchange?: string): PricePoint[] {
+  const priceMap = exchange === "ASX" ? BASE_PRICES_ASX : BASE_PRICES_US;
+  const defaultBase = exchange === "ASX" ? 15 : 20;
+  const base = priceMap[ticker] ?? defaultBase;
   const points: PricePoint[] = [];
   let price = base;
 

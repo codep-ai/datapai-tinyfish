@@ -187,7 +187,7 @@ export default async function TickerPage({
     Promise.resolve(getTickerSnapshots(sym, 5)),
     Promise.resolve(getTickerAnalyses(sym, 5)),
     Promise.resolve(getTickerDiffs(sym, 5)),
-    fetchPrices(sym, 30),
+    fetchPrices(sym, 30, exchangeLabel),
   ]);
 
   const latest = analyses[0] ?? null;
@@ -525,6 +525,7 @@ export default async function TickerPage({
           <PriceChart
             data={prices}
             scanDates={snapshots.map((s) => s.fetched_at.slice(0, 10))}
+            exchange={exchangeLabel}
           />
           {prices.length > 0 && (() => {
             const sorted = [...prices].sort((a, b) => a.date.localeCompare(b.date));
@@ -534,10 +535,11 @@ export default async function TickerPage({
             const last5 = sorted.slice(-5);
             const low5  = Math.min(...last5.map((p) => p.close));
             const high5 = Math.max(...last5.map((p) => p.close));
+            const cp = exchangeLabel === "ASX" ? "A$" : "$";
             return (
               <div className="mt-6 grid grid-cols-3 gap-6">
                 {[
-                  { label: "Last close", value: `$${last.close.toFixed(2)}`, color: "#252525" },
+                  { label: "Last close", value: `${cp}${last.close.toFixed(2)}`, color: "#252525" },
                   {
                     label: "1d change",
                     value: oneDayChange != null
@@ -545,7 +547,7 @@ export default async function TickerPage({
                       : "—",
                     color: oneDayChange == null ? "#9ca3af" : oneDayChange >= 0 ? "#2e8b57" : "#dc2626",
                   },
-                  { label: "5d range", value: `$${low5.toFixed(2)} – $${high5.toFixed(2)}`, color: "#252525" },
+                  { label: "5d range", value: `${cp}${low5.toFixed(2)} – ${cp}${high5.toFixed(2)}`, color: "#252525" },
                 ].map(({ label, value, color }) => (
                   <div key={label} className="bg-gray-50 rounded-xl p-5 text-center border border-gray-100">
                     <div className="text-gray-400 text-sm mb-2">{label}</div>

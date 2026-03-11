@@ -21,7 +21,7 @@ export async function GET(
     Promise.resolve(getTickerSnapshots(sym, 5)),
     Promise.resolve(getTickerAnalyses(sym, 5)),
     Promise.resolve(getTickerDiffs(sym, 5)),
-    fetchPrices(sym, 30),
+    fetchPrices(sym, 30, ticker?.exchange),
   ]);
 
   return NextResponse.json({ ticker, snapshots, analyses, diffs, prices });

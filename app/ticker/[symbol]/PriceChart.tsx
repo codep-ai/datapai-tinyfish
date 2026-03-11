@@ -16,9 +16,11 @@ import type { PricePoint } from "@/lib/price";
 interface Props {
   data: PricePoint[];
   scanDates?: string[]; // YYYY-MM-DD — mark scan dates on chart
+  exchange?: string;    // "ASX" → show A$ currency, otherwise $
 }
 
-export default function PriceChart({ data, scanDates = [] }: Props) {
+export default function PriceChart({ data, scanDates = [], exchange }: Props) {
+  const currencyPrefix = exchange === "ASX" ? "A$" : "$";
   const scanSet = new Set(scanDates);
   const formatted = data.map((d) => ({
     ...d,
@@ -44,7 +46,7 @@ export default function PriceChart({ data, scanDates = [] }: Props) {
           tick={{ fill: "#9ca3af", fontSize: 11 }}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(v) => `$${v}`}
+          tickFormatter={(v) => `${currencyPrefix}${v}`}
         />
         <YAxis
           yAxisId="vol"
@@ -64,7 +66,7 @@ export default function PriceChart({ data, scanDates = [] }: Props) {
           }}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           formatter={(val: any, name: any) => {
-            if (name === "close") return [`$${(val ?? 0).toFixed(2)}`, "Close"];
+            if (name === "close") return [`${currencyPrefix}${(val ?? 0).toFixed(2)}`, "Close"];
             return [`${val ?? 0}K`, "Volume"];
           }}
         />
