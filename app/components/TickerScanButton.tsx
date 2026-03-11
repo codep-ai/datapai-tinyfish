@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 
 const STEPS = [
   "Fetching page",
@@ -40,7 +39,6 @@ export default function TickerScanButton({ symbol, isMonitored = false, resolved
   const [run, setRun] = useState<RunData | null>(null);
   const [scanUrl, setScanUrl] = useState<string>(resolvedUrl ?? "");
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const router = useRouter();
 
   function stopPolling() {
     if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
@@ -183,7 +181,7 @@ export default function TickerScanButton({ symbol, isMonitored = false, resolved
         <div className="flex gap-2 flex-wrap pt-1">
           {phase === "done" && (
             <button
-              onClick={() => router.refresh()}
+              onClick={() => { window.location.href = `/ticker/${symbol}`; }}
               className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
