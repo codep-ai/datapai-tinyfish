@@ -59,8 +59,10 @@ export default async function RootLayout({
                 style={{ fontSize: "0.92rem" }}>ASX</a>
               <a href="/watchlist" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>Watchlist</a>
-              <a href="/pricing" className="font-bold px-4 py-2 rounded-md transition-all hover:-translate-y-0.5"
-                style={{ fontSize: "0.92rem", color: "#2e8b57", background: "#f0fdf4", border: "1px solid #bbf7d0" }}>Pricing</a>
+              <a href="/intel" className="text-gray-500 hover:text-[#6366f1] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
+                style={{ fontSize: "0.92rem" }}>AI Intel</a>
+              <a href="/pricing" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
+                style={{ fontSize: "0.92rem" }}>Pricing</a>
             </nav>
 
             {/* Right: sponsor logos + auth */}

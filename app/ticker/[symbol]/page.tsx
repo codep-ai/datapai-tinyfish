@@ -266,7 +266,7 @@ export default async function TickerPage({
             </p>
           )}
 
-          {/* CTAs — Report + Re-scan + Watchlist */}
+          {/* CTAs — AI Intel + Report + Re-scan + Watchlist */}
           <div className="pt-1 flex items-center gap-3 flex-wrap">
             <WatchlistButton
               symbol={sym}
@@ -274,13 +274,20 @@ export default async function TickerPage({
               name={ticker.name}
             />
             <Link
+              href={`/ticker/${sym}/intel`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
+            >
+              ⚡ AI Intel →
+            </Link>
+            <Link
               href={`/ticker/${sym}/report`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
-              📋 View Full AI Report →
+              📋 Full Report →
             </Link>
             <TickerScanButton symbol={sym} isMonitored={true} resolvedUrl={ticker.url} />
           </div>

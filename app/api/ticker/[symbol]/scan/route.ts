@@ -16,7 +16,51 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { UNIVERSE_ALL } from "@/lib/universe";
 import { scanTicker, resolveTickerUrl, AGENT_ENABLED } from "@/lib/scan-pipeline";
-import { insertRun, startRun, finishRun, failRun, lookupStock, getDb } from "@/lib/db";
+import { insertRun, startRun, finishRun, failRun, lookupStock, getDb, getTickerSnapshots } from "@/lib/db";
+
+// Internal base URL so AI cache pre-warming calls stay on localhost.
+const INTERNAL_BASE = `http://localhost:${process.env.PORT ?? "3085"}`;
+
+/**
+ * Pre-warm the AI signal caches after a scan completes.
+ * Fires fire-and-forget: failures are silently logged, never block the scan result.
+ */
+async function prewarmAiCaches(symbol: string, exchange: string): Promise<void> {
+  const base = `${INTERNAL_BASE}/api/ticker/${symbol}`;
+  const tasks: Promise<unknown>[] = [
+    // TA signal: force-fresh since scan just updated IR data
+    fetch(`${base}/ta-signal?fresh=1`, { method: "POST", signal: AbortSignal.timeout(120_000) }),
+    // Chart analysis: fresh 3-panel chart
+    fetch(`${base}/chart-analysis?fresh=1`, { method: "POST", signal: AbortSignal.timeout(120_000) }),
+  ];
+
+  // ASX Trading Signal: needs the latest IR snapshot text as context
+  if (exchange === "ASX") {
+    const snap = getTickerSnapshots(symbol, 1)[0];
+    const announcementText = (snap?.cleaned_text ?? snap?.text ?? "").slice(0, 4000);
+    tasks.push(
+      fetch(`${base}/asx-trading-signal`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          announcement_text: announcementText,
+          headline: `${symbol} — IR page updated`,
+          doc_type: "IR Update",
+          market_sensitive: false,
+        }),
+        signal: AbortSignal.timeout(180_000),
+      })
+    );
+  }
+
+  await Promise.allSettled(tasks).then((results) => {
+    results.forEach((r, i) => {
+      if (r.status === "rejected") {
+        console.warn(`[scan:${symbol}] AI cache pre-warm task ${i} failed (non-fatal):`, r.reason);
+      }
+    });
+  });
+}
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -48,6 +92,13 @@ async function runSingleTickerAsync(
       alerts: result.alerted ? 1 : 0,
       failed: result.failed ? 1 : 0,
     });
+
+    // ── Pre-warm AI caches so the /intel page is instant on first view ──────
+    // Fire-and-forget: do not await, do not fail the scan if these fail.
+    prewarmAiCaches(symbol, exchange).catch((err) => {
+      console.warn(`[scan:${symbol}] AI cache pre-warm failed (non-fatal):`, err);
+    });
+
   } catch (err) {
     failRun(runId, new Date().toISOString(), String(err).slice(0, 200));
   }

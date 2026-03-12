@@ -3,7 +3,13 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-export default function TickerSearch() {
+export default function TickerSearch({
+  placeholder,
+  intelMode = false,
+}: {
+  placeholder?: string;
+  intelMode?: boolean;
+} = {}) {
   const [symbol, setSymbol] = useState("");
   const [market, setMarket] = useState<"US" | "ASX">("US");
   const router = useRouter();
@@ -12,7 +18,10 @@ export default function TickerSearch() {
     e.preventDefault();
     const clean = symbol.trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
     if (!clean) return;
-    const path = market === "ASX" ? `/asx/${clean}` : `/ticker/${clean}`;
+    // intelMode: always go to /ticker/[symbol]/intel regardless of market
+    const path = intelMode
+      ? `/ticker/${clean}/intel`
+      : market === "ASX" ? `/asx/${clean}` : `/ticker/${clean}`;
     router.push(path);
   }
 
@@ -49,7 +58,7 @@ export default function TickerSearch() {
         type="text"
         value={symbol}
         onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-        placeholder={market === "ASX" ? "e.g. BHP, CBA, CSL" : "e.g. AAPL, NVDA, TSLA"}
+        placeholder={placeholder ?? (market === "ASX" ? "e.g. BHP, CBA, CSL" : "e.g. AAPL, NVDA, TSLA")}
         maxLength={6}
         className="rounded-lg px-4 py-2 text-[#252525] font-bold text-base placeholder:font-normal placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
         style={{ width: "200px", background: "rgba(255,255,255,0.95)" }}
