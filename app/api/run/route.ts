@@ -16,21 +16,23 @@
  */
 
 import crypto from "crypto";
-import { NextResponse } from "next/server";
-import { UNIVERSE_ALL } from "@/lib/universe";
-import { scanTicker, AGENT_ENABLED } from "@/lib/scan-pipeline";
-import { insertRun, startRun, finishRun, failRun, getDb } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
+import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
+import type { TickerInfo } from "@/lib/universe";
+import { scanTicker, AGENT_ENABLED, resolveTickerUrl } from "@/lib/scan-pipeline";
+import { insertRun, startRun, finishRun, failRun, getDb, getWatchlist } from "@/lib/db";
+import { getAuthUser } from "@/lib/auth";
 
 export const maxDuration = 300;
 
 // ─── Background scan ─────────────────────────────────────────────────────────
 
-async function runScanAsync(runId: string) {
+async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
   try {
     startRun(runId);
 
     const CONCURRENCY = 3;
-    const queue = [...UNIVERSE_ALL];
+    const queue = [...universe];
     let scanned = 0, changed = 0, alerted = 0, failed = 0;
 
     async function worker() {
@@ -51,7 +53,7 @@ async function runScanAsync(runId: string) {
     }
 
     const workers = Array.from(
-      { length: Math.min(CONCURRENCY, UNIVERSE_ALL.length) },
+      { length: Math.min(CONCURRENCY, universe.length) },
       worker
     );
     await Promise.all(workers);
@@ -69,12 +71,45 @@ async function runScanAsync(runId: string) {
 
 // ─── Main handler ─────────────────────────────────────────────────────────────
 
-export async function POST() {
+export async function POST(req: NextRequest) {
+  const exchange = req.nextUrl.searchParams.get("exchange") ?? null;
+  const useWatchlist = req.nextUrl.searchParams.get("watchlist") === "true";
+
+  let universe: TickerInfo[];
+
+  if (useWatchlist) {
+    // Watchlist scan requires auth — universe is user-specific
+    const user = await getAuthUser();
+    if (!user) {
+      return NextResponse.json(
+        { error: "Login required to scan your watchlist" },
+        { status: 401 }
+      );
+    }
+    const watchlistItems = getWatchlist(user.userId);
+    universe = watchlistItems.map((item) => {
+      const known = UNIVERSE_ALL.find((t) => t.symbol === item.symbol);
+      if (known) return known;
+      const exch = item.exchange ?? "US";
+      return {
+        symbol: item.symbol,
+        name: item.name ?? item.symbol,
+        url: resolveTickerUrl(item.symbol, exch),
+        exchange: exch as TickerInfo["exchange"],
+      };
+    });
+  } else {
+    universe =
+      exchange === "ASX" ? ASX_UNIVERSE
+      : exchange === "US"  ? UNIVERSE
+      : UNIVERSE_ALL;
+  }
+
   const runId = crypto.randomUUID();
   const startedAt = new Date().toISOString();
-  insertRun(runId, startedAt, UNIVERSE_ALL.length);
+  insertRun(runId, startedAt, universe.length);
 
-  runScanAsync(runId).catch((err) => {
+  runScanAsync(runId, universe).catch((err) => {
     console.error("[run] background scan error:", err);
   });
 

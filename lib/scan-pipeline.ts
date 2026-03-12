@@ -101,7 +101,7 @@ export async function scanTicker(
   try {
     // ── Step 1: Fetch ───────────────────────────────────────────────────────
     logStep(runId, t.symbol, "Fetching page", "start");
-    const { text, title, finalUrl, tinyfishRunRef } = await fetchPageText(t.url);
+    const { text, title, finalUrl, tinyfishRunRef, structured_source } = await fetchPageText(t.url);
     logStep(runId, t.symbol, "Fetching page", "done");
     const now = new Date().toISOString();
 
@@ -190,7 +190,10 @@ export async function scanTicker(
     let investigationSources: string | null = null;
     let corroboratingCount = 0;
 
-    if (AGENT_ENABLED && passesQualityGate(quality)) {
+    // Structured API sources (e.g. ASX JSON) are always clean — skip word-count gate
+    const qualityOkForAgent = structured_source ? quality.confidence >= 0.2 : passesQualityGate(quality);
+
+    if (AGENT_ENABLED && qualityOkForAgent) {
       logStep(runId, t.symbol, "Running full pipeline", "start");
       const pipelineResult = await runFullPipeline(
         t.symbol,
@@ -228,7 +231,7 @@ export async function scanTicker(
     // ── Step 7: Paid-LLM fallback ───────────────────────────────────────────
     logStep(runId, t.symbol, "Running AI analysis", "start");
     let llmSummaryPaid: string | null = null;
-    if (passesQualityGate(quality) && scores.evidence_quotes.length > 0) {
+    if ((structured_source || passesQualityGate(quality)) && scores.evidence_quotes.length > 0) {
       llmSummaryPaid = await generatePaidSummary(t.symbol, diff.snippet, scores.evidence_quotes);
     }
     const llmSummaryPrivate = PRIVATE_LLM_ENABLED

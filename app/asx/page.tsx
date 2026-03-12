@@ -4,6 +4,7 @@ import { ASX_UNIVERSE } from "@/lib/universe";
 import { getAlertSummaryMap, getRecentRuns } from "@/lib/db";
 import LiveScanProgress from "../components/LiveScanProgress";
 import TickerSearch from "../components/TickerSearch";
+import WatchlistButton from "../components/WatchlistButton";
 
 export const dynamic = "force-dynamic";
 
@@ -20,57 +21,33 @@ export default function AsxPage() {
         className="w-full flex flex-col justify-center"
         style={{
           background: "linear-gradient(45deg, seagreen, darkseagreen)",
-          paddingTop: "36px",
-          paddingBottom: "36px",
+          paddingTop: "28px",
+          paddingBottom: "28px",
         }}
       >
-        <div className="max-w-6xl mx-auto px-6 space-y-4">
-          {/* Badge */}
-          <div className="flex items-center gap-3">
-            <span className="bg-white/20 text-white text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full border border-white/30">
-              🇦🇺 ASX · Australia
-            </span>
-            <Image src="/logos/asx.svg" width={40} height={22} alt="ASX" style={{ height: "22px", width: "auto" }} />
-          </div>
+        <div className="max-w-6xl mx-auto px-6 space-y-3">
 
-          {/* Headline */}
-          <h1 className="text-5xl font-bold text-white drop-shadow-sm leading-tight">
-            ASX Company Intelligence<br />
-            <span className="text-white/80">Powered by DataP.ai &amp; TinyFish</span>
+          <h1 className="text-2xl font-bold text-white">
+            ASX Company Intelligence
           </h1>
 
-          <p className="text-white/75 text-xl">
-            Monitoring ASX announcements for financial signals —<br />
-            guidance changes, risk disclosures &amp; tone shifts.
+          <p className="text-white/80 text-sm font-medium">
+            Spot language shifts on company websites before they move stock prices —{" "}
+            <span className="text-white font-bold">2,000+ ASX stocks</span>{" "}
+            covered · powered by AI agents
           </p>
 
-          {/* Try your own ASX ticker */}
-          <div className="pt-1">
-            <p className="text-white/60 text-sm mb-2 font-medium uppercase tracking-wide">Try any ASX ticker</p>
-            <TickerSearch />
-          </div>
+          <TickerSearch />
 
-          {/* Scan button — same component as home page */}
-          <div className="pt-1">
-            <LiveScanProgress />
-          </div>
-
-          {/* CTA */}
-          <div className="flex gap-3 pt-1">
+          <div className="flex gap-3 items-center flex-wrap">
             <Link
               href="/alerts"
-              className="px-6 py-3 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
+              className="px-6 py-2.5 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
               style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff" }}
             >
               ⚡ View All Alerts →
             </Link>
-            <Link
-              href="/"
-              className="px-6 py-3 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5 border border-white/30 text-white/90"
-              style={{ fontSize: "0.9rem", background: "rgba(255,255,255,0.15)" }}
-            >
-              🇺🇸 US Markets
-            </Link>
+            <LiveScanProgress exchange="ASX" heroButton />
           </div>
         </div>
       </div>
@@ -115,9 +92,8 @@ export default function AsxPage() {
               const confidence = analysis?.confidence ?? 0;
 
               return (
-                <Link
+                <div
                   key={t.symbol}
-                  href={`/ticker/${t.symbol}`}
                   className="relative rounded-xl px-4 py-4 transition-all duration-200 group shadow-sm hover:-translate-y-0.5"
                   style={hasAlert
                     ? { background: "#f0fff4", border: "1.5px solid #4ade80" }
@@ -132,30 +108,36 @@ export default function AsxPage() {
                       {analysis.alert_score > 0 ? "+" : ""}{analysis.alert_score.toFixed(1)}
                     </span>
                   )}
-                  <div className={`font-bold text-base ${hasAlert ? "text-[#003087]" : "text-[#003087]"} group-hover:opacity-80`}>
-                    {t.symbol}
+                  {/* Watchlist star — top-right of card */}
+                  <div className="absolute top-1.5 right-1.5 z-10">
+                    <WatchlistButton compact symbol={t.symbol} exchange="ASX" name={t.name} />
                   </div>
-                  <div className="text-gray-400 text-xs mt-0.5 truncate">{t.name}</div>
-                  {hasAlert && (
-                    <div className="mt-2 space-y-0.5">
-                      <div className="text-xs font-medium" style={{ color: "#92400e" }}>
-                        {analysis.changed_pct != null && analysis.changed_pct > 90
-                          ? "Significant change"
-                          : analysis.changed_pct != null
-                          ? `${analysis.changed_pct.toFixed(1)}% changed`
-                          : "—"}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        conf {Math.round(confidence * 100)}%
-                      </div>
+                  <Link href={`/ticker/${t.symbol}`} className="block pr-6">
+                    <div className="font-bold text-base text-[#003087] group-hover:opacity-80">
+                      {t.symbol}
                     </div>
-                  )}
-                  {!hasAlert && (
-                    <div className="mt-2">
-                      <span className="text-xs text-gray-300">Not yet scanned</span>
-                    </div>
-                  )}
-                </Link>
+                    <div className="text-gray-400 text-xs mt-0.5 truncate">{t.name}</div>
+                    {hasAlert && (
+                      <div className="mt-2 space-y-0.5">
+                        <div className="text-xs font-medium" style={{ color: "#92400e" }}>
+                          {analysis.changed_pct != null && analysis.changed_pct > 90
+                            ? "Significant change"
+                            : analysis.changed_pct != null
+                            ? `${analysis.changed_pct.toFixed(1)}% changed`
+                            : "—"}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          conf {Math.round(confidence * 100)}%
+                        </div>
+                      </div>
+                    )}
+                    {!hasAlert && (
+                      <div className="mt-2">
+                        <span className="text-xs text-gray-300">Not yet scanned</span>
+                      </div>
+                    )}
+                  </Link>
+                </div>
               );
             })}
           </div>

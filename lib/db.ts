@@ -150,6 +150,42 @@ function initSchema(db: Database.Database) {
       PRIMARY KEY (ticker, date)
     );
 
+    -- TA signal results cache — persists Gemini+GPT generated technical signals
+    -- TTL default 6 hours (intraday signals stay relevant for a trading session)
+    CREATE TABLE IF NOT EXISTS ta_signals (
+      id               TEXT PRIMARY KEY,
+      ticker           TEXT NOT NULL,
+      exchange         TEXT NOT NULL DEFAULT 'US',
+      signal_md        TEXT NOT NULL,
+      current_price    REAL,
+      change_pct       REAL,
+      rsi              REAL,
+      rsi_label        TEXT,
+      trend            TEXT,
+      macd_label       TEXT,
+      bb_label         TEXT,
+      indicators_json  TEXT,
+      generated_at     TEXT NOT NULL,
+      expires_at       TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_ta_signals_ticker
+      ON ta_signals(ticker, generated_at DESC);
+
+    -- Chart analysis cache — persists rendered 3-panel chart + Gemini Vision analysis
+    -- TTL default 24 hours (charts are stable across the trading day)
+    CREATE TABLE IF NOT EXISTS chart_analyses (
+      id               TEXT PRIMARY KEY,
+      ticker           TEXT NOT NULL,
+      timeframe        TEXT NOT NULL DEFAULT '1d',
+      chart_b64        TEXT NOT NULL,
+      analysis_md      TEXT NOT NULL,
+      indicators_json  TEXT,
+      generated_at     TEXT NOT NULL,
+      expires_at       TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_chart_analyses_ticker
+      ON chart_analyses(ticker, generated_at DESC);
+
     -- Full stock directory (ASX 2000+ and US stocks for ticker lookup)
     CREATE TABLE IF NOT EXISTS stock_directory (
       symbol    TEXT NOT NULL,
@@ -159,6 +195,37 @@ function initSchema(db: Database.Database) {
       PRIMARY KEY (symbol, exchange)
     );
     CREATE INDEX IF NOT EXISTS idx_stock_dir_symbol ON stock_directory(symbol);
+
+    -- Users — registered accounts
+    CREATE TABLE IF NOT EXISTS users (
+      id            TEXT PRIMARY KEY,
+      email         TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at    TEXT NOT NULL
+    );
+
+    -- Sessions — httpOnly cookie-based auth
+    CREATE TABLE IF NOT EXISTS sessions (
+      token      TEXT PRIMARY KEY,
+      user_id    TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      expires_at TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+    -- User watchlist — per-user list of tickers to monitor on-demand
+    -- NOTE: if the old schema (symbol PRIMARY KEY, no user_id) exists, it is
+    -- migrated below in the migration block.
+    CREATE TABLE IF NOT EXISTS watchlist (
+      user_id   TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      symbol    TEXT NOT NULL,
+      exchange  TEXT NOT NULL DEFAULT 'US',
+      name      TEXT,
+      added_at  TEXT NOT NULL,
+      PRIMARY KEY (user_id, symbol)
+    );
+    -- NOTE: idx_watchlist_user is created conditionally below, after verifying
+    -- the watchlist table has the user_id column (guards against old schema).
   `);
 
   // V2.1 migrations — safe ALTER TABLE for existing DBs
@@ -209,6 +276,37 @@ function initSchema(db: Database.Database) {
     if (!aColNames.includes(col)) {
       db.exec(`ALTER TABLE analyses ADD COLUMN ${col} ${type}`);
     }
+  }
+
+  // Watchlist migration — if old schema (symbol PK, no user_id) exists, recreate.
+  // SQLite cannot alter PRIMARY KEY so we rename → recreate → drop old.
+  // NOTE: The CREATE INDEX for user_id is intentionally NOT in the big exec above
+  // because on DBs with the old watchlist schema (no user_id), it would throw and
+  // roll back the entire exec. Instead we create it here after schema verification.
+  const wCols = db.prepare("PRAGMA table_info(watchlist)").all() as { name: string }[];
+  if (wCols.length > 0 && !wCols.some((c) => c.name === "user_id")) {
+    // Old schema — migrate to user-scoped schema
+    db.pragma("foreign_keys = OFF");
+    db.exec(`
+      ALTER TABLE watchlist RENAME TO watchlist_old;
+
+      CREATE TABLE watchlist (
+        user_id   TEXT NOT NULL,
+        symbol    TEXT NOT NULL,
+        exchange  TEXT NOT NULL DEFAULT 'US',
+        name      TEXT,
+        added_at  TEXT NOT NULL,
+        PRIMARY KEY (user_id, symbol)
+      );
+      CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist(user_id);
+
+      DROP TABLE watchlist_old;
+    `);
+    db.pragma("foreign_keys = ON");
+  } else {
+    // New schema already in place — ensure index exists (safe for both new and
+    // already-migrated DBs; IF NOT EXISTS prevents duplicate-index errors)
+    db.exec("CREATE INDEX IF NOT EXISTS idx_watchlist_user ON watchlist(user_id)");
   }
 }
 
@@ -516,6 +614,42 @@ export function getTickerAnalyses(ticker: string, limit = 5): (Analysis & Pick<S
     .all(ticker, limit) as (Analysis & Pick<Snapshot, "fetched_at" | "url">)[];
 }
 
+/**
+ * Returns the most recent analysis for a ticker that contains a real AI signal
+ * (i.e. agent_signal_type is not null / not NO_SIGNAL, and agent_what_changed
+ * has meaningful content). Falls back to null if none exists.
+ *
+ * Used as a "best-signal" fallback so the ticker page can always display the
+ * last meaningful AI result even when the most-recent scan returned NO_SIGNAL.
+ */
+export function getLatestAnalysisWithAgentContent(
+  ticker: string
+): (Analysis & Pick<Snapshot, "fetched_at" | "url">) | null {
+  const row = getDb()
+    .prepare(
+      `SELECT a.*, s.fetched_at, s.url
+       FROM analyses a
+       JOIN snapshots s ON a.snapshot_new_id = s.id
+       WHERE s.ticker = ?
+         AND a.agent_signal_type IS NOT NULL
+         AND a.agent_signal_type != 'NO_SIGNAL'
+         AND a.agent_what_changed IS NOT NULL
+         AND a.agent_what_changed != ''
+       ORDER BY s.fetched_at DESC
+       LIMIT 1`
+    )
+    .get(ticker);
+  return (row as (Analysis & Pick<Snapshot, "fetched_at" | "url">) | undefined) ?? null;
+}
+
+/** Returns the total number of scans (snapshots) for a ticker. */
+export function getTickerScanCount(ticker: string): number {
+  const row = getDb()
+    .prepare(`SELECT COUNT(*) as cnt FROM snapshots WHERE ticker = ?`)
+    .get(ticker) as { cnt: number } | undefined;
+  return row?.cnt ?? 0;
+}
+
 /** Latest analysis per ticker — used for home page alert badges */
 export function getAlertSummaryMap(): Record<
   string,
@@ -654,4 +788,232 @@ export function countStockDirectory(exchange?: string): number {
     .prepare(`SELECT COUNT(*) as cnt FROM stock_directory`)
     .get() as { cnt: number };
   return row.cnt;
+}
+
+// ─── Users & Sessions ─────────────────────────────────────────────────────────
+
+export interface User {
+  id: string;
+  email: string;
+  password_hash: string;
+  created_at: string;
+}
+
+export interface SessionRow {
+  token: string;
+  user_id: string;
+  email: string;  // joined from users
+  expires_at: string;
+  created_at: string;
+}
+
+export function createUser(id: string, email: string, passwordHash: string): void {
+  getDb()
+    .prepare(
+      `INSERT INTO users (id, email, password_hash, created_at) VALUES (?, ?, ?, ?)`
+    )
+    .run(id, email.toLowerCase().trim(), passwordHash, new Date().toISOString());
+}
+
+export function getUserByEmail(email: string): User | null {
+  const row = getDb()
+    .prepare(`SELECT * FROM users WHERE email = ?`)
+    .get(email.toLowerCase().trim()) as User | undefined;
+  return row ?? null;
+}
+
+export function getUserById(id: string): User | null {
+  const row = getDb()
+    .prepare(`SELECT * FROM users WHERE id = ?`)
+    .get(id) as User | undefined;
+  return row ?? null;
+}
+
+export function createSession(token: string, userId: string, expiresAt: string): void {
+  getDb()
+    .prepare(
+      `INSERT INTO sessions (token, user_id, expires_at, created_at) VALUES (?, ?, ?, ?)`
+    )
+    .run(token, userId, expiresAt, new Date().toISOString());
+}
+
+/** Returns the session row (joined with user email) if valid and not expired. */
+export function getSession(token: string): SessionRow | null {
+  const row = getDb()
+    .prepare(
+      `SELECT s.token, s.user_id, s.expires_at, s.created_at, u.email
+       FROM sessions s JOIN users u ON s.user_id = u.id
+       WHERE s.token = ? AND s.expires_at > ?`
+    )
+    .get(token, new Date().toISOString()) as SessionRow | undefined;
+  return row ?? null;
+}
+
+export function deleteSession(token: string): void {
+  getDb().prepare(`DELETE FROM sessions WHERE token = ?`).run(token);
+}
+
+// ─── Watchlist ────────────────────────────────────────────────────────────────
+
+export interface WatchlistItem {
+  user_id: string;
+  symbol: string;
+  exchange: string;
+  name: string | null;
+  added_at: string;
+}
+
+/** Return all watchlist entries for a user, most-recently added first. */
+export function getWatchlist(userId: string): WatchlistItem[] {
+  return getDb()
+    .prepare(
+      `SELECT user_id, symbol, exchange, name, added_at
+       FROM watchlist WHERE user_id = ? ORDER BY added_at DESC`
+    )
+    .all(userId) as WatchlistItem[];
+}
+
+/** Add (or silently replace) a symbol in the user's watchlist. */
+export function addToWatchlist(
+  userId: string,
+  symbol: string,
+  exchange: string,
+  name: string | null
+): void {
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO watchlist (user_id, symbol, exchange, name, added_at)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(userId, symbol.toUpperCase(), exchange, name, new Date().toISOString());
+}
+
+/** Remove a symbol from the user's watchlist. No-op if not present. */
+export function removeFromWatchlist(userId: string, symbol: string): void {
+  getDb()
+    .prepare(`DELETE FROM watchlist WHERE user_id = ? AND symbol = ?`)
+    .run(userId, symbol.toUpperCase());
+}
+
+/** Returns true if the symbol is in the user's watchlist. */
+export function isInWatchlist(userId: string, symbol: string): boolean {
+  const row = getDb()
+    .prepare(`SELECT 1 FROM watchlist WHERE user_id = ? AND symbol = ? LIMIT 1`)
+    .get(userId, symbol.toUpperCase());
+  return !!row;
+}
+
+// ─── TA Signal cache ───────────────────────────────────────────────────────
+// Persists Gemini+GPT generated technical signals so they are not regenerated
+// on every page load. Default TTL = 6 hours (valid for one trading session).
+
+export interface TaSignalRow {
+  id:               string;
+  ticker:           string;
+  exchange:         string;
+  signal_md:        string;
+  current_price:    number | null;
+  change_pct:       number | null;
+  rsi:              number | null;
+  rsi_label:        string | null;
+  trend:            string | null;
+  macd_label:       string | null;
+  bb_label:         string | null;
+  indicators_json:  string | null;
+  generated_at:     string;
+  expires_at:       string;
+}
+
+/**
+ * Returns the most recent non-expired TA signal for a ticker, or null.
+ * maxAgeHours: how old the cached signal can be before it's considered stale.
+ */
+export function getCachedTaSignal(ticker: string, maxAgeHours = 6): TaSignalRow | null {
+  const cutoff = new Date(Date.now() - maxAgeHours * 3_600_000).toISOString();
+  const row = getDb()
+    .prepare(
+      `SELECT * FROM ta_signals
+       WHERE ticker = ? AND generated_at > ?
+       ORDER BY generated_at DESC LIMIT 1`
+    )
+    .get(ticker.toUpperCase(), cutoff) as TaSignalRow | undefined;
+  return row ?? null;
+}
+
+/** Insert or replace a TA signal result in the cache. */
+export function upsertTaSignal(row: Omit<TaSignalRow, "id">): void {
+  const id = `${row.ticker}_${row.generated_at}`;
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO ta_signals
+         (id, ticker, exchange, signal_md, current_price, change_pct,
+          rsi, rsi_label, trend, macd_label, bb_label, indicators_json,
+          generated_at, expires_at)
+       VALUES
+         (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      id, row.ticker, row.exchange, row.signal_md,
+      row.current_price, row.change_pct,
+      row.rsi, row.rsi_label, row.trend, row.macd_label, row.bb_label,
+      row.indicators_json, row.generated_at, row.expires_at
+    );
+}
+
+// ─── Chart Analysis cache ──────────────────────────────────────────────────
+// Persists rendered chart PNG (base64) + Gemini Vision analysis.
+// Default TTL = 24 hours (chart patterns are stable across a full trading day).
+
+export interface ChartAnalysisRow {
+  id:               string;
+  ticker:           string;
+  timeframe:        string;
+  chart_b64:        string;
+  analysis_md:      string;
+  indicators_json:  string | null;
+  generated_at:     string;
+  expires_at:       string;
+}
+
+/**
+ * Returns the most recent non-expired chart analysis for a ticker, or null.
+ */
+export function getCachedChartAnalysis(ticker: string, timeframe = "1d", maxAgeHours = 24): ChartAnalysisRow | null {
+  const cutoff = new Date(Date.now() - maxAgeHours * 3_600_000).toISOString();
+  const row = getDb()
+    .prepare(
+      `SELECT * FROM chart_analyses
+       WHERE ticker = ? AND timeframe = ? AND generated_at > ?
+       ORDER BY generated_at DESC LIMIT 1`
+    )
+    .get(ticker.toUpperCase(), timeframe, cutoff) as ChartAnalysisRow | undefined;
+  return row ?? null;
+}
+
+/** Insert or replace a chart analysis result in the cache. */
+export function upsertChartAnalysis(row: Omit<ChartAnalysisRow, "id">): void {
+  const id = `${row.ticker}_${row.timeframe}_${row.generated_at}`;
+  getDb()
+    .prepare(
+      `INSERT OR REPLACE INTO chart_analyses
+         (id, ticker, timeframe, chart_b64, analysis_md,
+          indicators_json, generated_at, expires_at)
+       VALUES
+         (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      id, row.ticker, row.timeframe, row.chart_b64, row.analysis_md,
+      row.indicators_json, row.generated_at, row.expires_at
+    );
+}
+
+/** Return the N most recent TA signals for a ticker (history view). */
+export function getTaSignalHistory(ticker: string, limit = 10): TaSignalRow[] {
+  return getDb()
+    .prepare(
+      `SELECT * FROM ta_signals
+       WHERE ticker = ?
+       ORDER BY generated_at DESC LIMIT ?`
+    )
+    .all(ticker.toUpperCase(), limit) as TaSignalRow[];
 }

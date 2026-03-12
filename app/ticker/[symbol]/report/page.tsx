@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { UNIVERSE_ALL } from "@/lib/universe";
-import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, lookupStock } from "@/lib/db";
+import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, getLatestAnalysisWithAgentContent, getTickerScanCount, lookupStock } from "@/lib/db";
 import { agentSignalLabel, validationLabel } from "@/lib/agent";
 import { PRIVATE_LLM_ENABLED } from "@/lib/llm";
 
@@ -59,18 +59,25 @@ export default async function TickerReportPage({
   const latestDiff = diffs[0] ?? null;
   const latestSnap = snapshots[0] ?? null;
   const prevSnap   = snapshots[1] ?? null;
+  const totalScans = getTickerScanCount(sym);
+
+  // Best-signal fallback: surface last scan with a real agent signal
+  const latestSignal = getLatestAnalysisWithAgentContent(sym);
+  const signalIsFromLatest = latestSignal?.snapshot_new_id === latest?.snapshot_new_id;
+  const signalSource = latestSignal ?? latest;
 
   const evidenceQuotes: string[] = latest?.reasoning_evidence_json
     ? JSON.parse(latest.reasoning_evidence_json) : [];
-  const agentEvidence: string[] = latest?.agent_evidence_json
-    ? JSON.parse(latest.agent_evidence_json) : [];
-  const validationEvidence: string[] = latest?.validation_evidence_json
-    ? JSON.parse(latest.validation_evidence_json) : [];
+  const agentEvidence: string[] = (signalSource ?? latest)?.agent_evidence_json
+    ? JSON.parse((signalSource ?? latest)!.agent_evidence_json!) : [];
+  const validationEvidence: string[] = (signalSource ?? latest)?.validation_evidence_json
+    ? JSON.parse((signalSource ?? latest)!.validation_evidence_json!) : [];
   const qualityFlags = latestSnap?.quality_flags_json
     ? (JSON.parse(latestSnap.quality_flags_json) as Record<string, boolean>) : {};
   const hasFlags = Object.values(qualityFlags).some(Boolean);
   const displayEvidence = agentEvidence.length > 0 ? agentEvidence : evidenceQuotes;
-  const hasAgentExplanation = !!(latest?.agent_what_changed || latest?.agent_why_matters);
+  const hasAgentExplanation = !!((signalSource ?? latest)?.agent_what_changed || (signalSource ?? latest)?.agent_why_matters);
+  const latestIsNoSignal = latest?.agent_signal_type === "NO_SIGNAL";
 
   return (
     <div className="max-w-4xl mx-auto px-8 py-12 space-y-10">
@@ -91,11 +98,20 @@ export default async function TickerReportPage({
               AI Report
             </span>
           </div>
-          {latestSnap && (
-            <div className="text-sm text-gray-400 mt-2">
-              Last scanned: {new Date(latestSnap.fetched_at).toLocaleString()}
-            </div>
-          )}
+          <div className="text-sm text-gray-400 mt-2 space-y-1">
+            {latestSnap && (
+              <div>Last scanned: {new Date(latestSnap.fetched_at).toLocaleString()}</div>
+            )}
+            <div>📦 {totalScans} scans stored permanently · all results retained in database</div>
+            {!signalIsFromLatest && latestSignal && (
+              <div className="text-amber-600 font-medium">
+                ⚡ Showing AI signal from {new Date(latestSignal.fetched_at).toLocaleDateString()} — latest scan returned no new signal
+              </div>
+            )}
+            {latestIsNoSignal && signalIsFromLatest && (
+              <div className="text-green-600 font-medium">✓ Latest scan confirmed: no new financial signal</div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -112,49 +128,66 @@ export default async function TickerReportPage({
       )}
 
       {/* ── AG2 AI Explanation ─────────────────────────────────────────────── */}
-      {latest && hasAgentExplanation && (
+      {latest && hasAgentExplanation && signalSource && (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="px-8 py-6 border-b border-gray-100 flex items-center gap-3">
+          <div className="px-8 py-6 border-b border-gray-100 flex items-center gap-3 flex-wrap">
             <h2 className="text-2xl font-bold text-[#252525]">🤖 AI Explanation</h2>
             <span className="text-sm px-3 py-1 rounded-full bg-amber-50 text-amber-700 font-semibold">
               DataP.ai · AG2
             </span>
+            {!signalIsFromLatest && (
+              <span className="text-xs px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 border border-yellow-200">
+                📅 From {new Date(signalSource.fetched_at).toLocaleDateString()} · latest scan had no new signal
+              </span>
+            )}
           </div>
           <div className="px-8 py-8 space-y-8">
-            {latest.agent_what_changed && (
+            {signalSource.agent_what_changed && (
               <div>
                 <div className="text-gray-400 text-sm uppercase tracking-wider font-medium mb-3">
                   What Changed
                 </div>
                 <p className="text-xl text-gray-800 leading-relaxed font-medium">
-                  {latest.agent_what_changed}
+                  {signalSource.agent_what_changed}
                 </p>
               </div>
             )}
-            {latest.agent_why_matters && (
+            {signalSource.agent_why_matters && (
               <div>
                 <div className="text-gray-400 text-sm uppercase tracking-wider font-medium mb-3">
                   Why It Matters
                 </div>
                 <p className="text-xl text-gray-800 leading-relaxed font-medium">
-                  {latest.agent_why_matters}
+                  {signalSource.agent_why_matters}
                 </p>
               </div>
             )}
-            {latest.validation_status && (
+            {signalSource.validation_status && (
               <div>
                 <div className="text-gray-400 text-sm uppercase tracking-wider font-medium mb-3">
                   Validation Result
                 </div>
                 <div className="flex items-center gap-4 flex-wrap">
-                  <ValidationBadge status={latest.validation_status} />
-                  {latest.validation_summary && (
-                    <span className="text-base text-gray-600">{latest.validation_summary}</span>
+                  <ValidationBadge status={signalSource.validation_status} />
+                  {signalSource.validation_summary && (
+                    <span className="text-base text-gray-600">{signalSource.validation_summary}</span>
                   )}
                 </div>
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* ── No-signal / All clear ───────────────────────────────────────────── */}
+      {latest && !hasAgentExplanation && latestIsNoSignal && (
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-8 text-center">
+          <div className="text-3xl mb-2">✅</div>
+          <div className="text-xl font-bold text-green-800 mb-2">No Financial Signal Detected</div>
+          <p className="text-green-700 text-base">
+            The AI agent monitored {ticker.name} across {totalScans} scan{totalScans !== 1 ? "s" : ""} and found
+            no guidance withdrawal, risk expansion, or tone softening. All clear.
+          </p>
         </div>
       )}
 

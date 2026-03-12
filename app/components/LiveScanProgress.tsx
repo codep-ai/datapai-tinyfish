@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { UNIVERSE_ALL } from "@/lib/universe";
+import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
+import type { TickerInfo } from "@/lib/universe";
 
 type TickerStatus = "pending" | "scanning" | "completed" | "failed";
 
@@ -36,6 +37,13 @@ interface SnapshotRow {
   changed_pct: number | null;
 }
 
+interface WatchlistApiItem {
+  symbol: string;
+  exchange: string;
+  name: string | null;
+  added_at: string;
+}
+
 const STEPS = [
   "Fetching page",
   "Extracting content",
@@ -44,7 +52,50 @@ const STEPS = [
   "Running AI analysis",
 ];
 
-export default function LiveScanProgress() {
+export default function LiveScanProgress({
+  exchange,
+  watchlist,
+  heroButton,
+}: {
+  exchange?: "ASX" | "US";
+  watchlist?: boolean;
+  heroButton?: boolean; // solid orange CTA style, for inline placement alongside other buttons
+}) {
+  // For watchlist mode we fetch the universe dynamically from the API
+  const [watchlistUniverse, setWatchlistUniverse] = useState<TickerInfo[]>([]);
+  const [watchlistLoaded, setWatchlistLoaded] = useState(false);
+
+  useEffect(() => {
+    if (!watchlist) return;
+    fetch("/api/watchlist")
+      .then((r) => r.json())
+      .then((data) => {
+        const items: WatchlistApiItem[] = data.items ?? [];
+        const tickers: TickerInfo[] = items.map((item) => {
+          const known = UNIVERSE_ALL.find((t) => t.symbol === item.symbol);
+          return (
+            known ?? {
+              symbol: item.symbol,
+              name: item.name ?? item.symbol,
+              url: "",
+              exchange: item.exchange as TickerInfo["exchange"],
+            }
+          );
+        });
+        setWatchlistUniverse(tickers);
+        setWatchlistLoaded(true);
+      })
+      .catch(() => setWatchlistLoaded(true));
+  }, [watchlist]);
+
+  const staticUniverse =
+    exchange === "ASX" ? ASX_UNIVERSE
+    : exchange === "US"  ? UNIVERSE
+    : UNIVERSE_ALL;
+
+  const universe = watchlist ? watchlistUniverse : staticUniverse;
+  const isReady = !watchlist || watchlistLoaded;
+
   const [phase, setPhase] = useState<"idle" | "running" | "done">("idle");
   const [runId, setRunId] = useState<string | null>(null);
   const [tickers, setTickers] = useState<Record<string, TickerState>>({});
@@ -68,7 +119,7 @@ export default function LiveScanProgress() {
 
       // Build ticker state from scan_events + snapshots
       const newTickers: Record<string, TickerState> = {};
-      for (const t of UNIVERSE_ALL) {
+      for (const t of universe) {
         newTickers[t.symbol] = { status: "pending" };
       }
 
@@ -111,14 +162,32 @@ export default function LiveScanProgress() {
   }
 
   async function startScan() {
+    // For watchlist mode, refresh the watchlist universe right before scanning
+    let scanUniverse = universe;
+    if (watchlist) {
+      try {
+        const r = await fetch("/api/watchlist");
+        const data = await r.json();
+        const items: WatchlistApiItem[] = data.items ?? [];
+        scanUniverse = items.map((item) => {
+          const known = UNIVERSE_ALL.find((t) => t.symbol === item.symbol);
+          return known ?? { symbol: item.symbol, name: item.name ?? item.symbol, url: "", exchange: item.exchange as TickerInfo["exchange"] };
+        });
+        setWatchlistUniverse(scanUniverse);
+      } catch { /* use existing */ }
+    }
+
     setPhase("running");
     setRun(null);
     const initial: Record<string, TickerState> = {};
-    for (const t of UNIVERSE_ALL) initial[t.symbol] = { status: "pending" };
+    for (const t of scanUniverse) initial[t.symbol] = { status: "pending" };
     setTickers(initial);
 
     try {
-      const res = await fetch("/api/run", { method: "POST" });
+      const url = watchlist
+        ? "/api/run?watchlist=true"
+        : exchange ? `/api/run?exchange=${exchange}` : "/api/run";
+      const res = await fetch(url, { method: "POST" });
       const data = await res.json() as { runId: string };
       setRunId(data.runId);
 
@@ -137,7 +206,7 @@ export default function LiveScanProgress() {
   const completedCount = Object.values(tickers).filter(
     (t) => t.status === "completed" || t.status === "failed"
   ).length;
-  const total = run?.planned_count || UNIVERSE_ALL.length;
+  const total = run?.planned_count || universe.length;
   const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
   const isDone = phase === "done";
 
@@ -156,16 +225,32 @@ export default function LiveScanProgress() {
   };
 
   return (
-    <div className="w-full space-y-4">
+    <div className={heroButton ? "space-y-4" : "w-full space-y-4"}>
       {/* Trigger button */}
       {phase === "idle" && (
-        <button
-          onClick={startScan}
-          className="px-6 py-3 rounded-lg font-semibold text-white transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
-          style={{ background: "rgba(255,255,255,0.2)", border: "1.5px solid rgba(255,255,255,0.6)" }}
-        >
-          ▶ Run Live Scan
-        </button>
+        <>
+          {watchlist && !watchlistLoaded ? (
+            <button disabled className="px-6 py-3 rounded-lg font-semibold text-white/50 cursor-wait"
+              style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.3)" }}>
+              ⟳ Loading watchlist...
+            </button>
+          ) : watchlist && universe.length === 0 ? (
+            <div className="text-white/60 text-sm py-2">
+              ☆ Your watchlist is empty — add stocks using the ⭐ button on any ticker page.
+            </div>
+          ) : (
+            <button
+              onClick={startScan}
+              className="px-6 py-3 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
+              style={heroButton
+                ? { fontSize: "0.9rem", background: "#fd8412", color: "#fff" }
+                : { background: "rgba(255,255,255,0.2)", border: "1.5px solid rgba(255,255,255,0.6)", color: "#fff", fontWeight: 600 }
+              }
+            >
+              ▶ {watchlist ? `Scan My Watchlist (${universe.length})` : "Run Live Scan"}
+            </button>
+          )}
+        </>
       )}
 
       {/* Running button (disabled) */}
@@ -200,7 +285,7 @@ export default function LiveScanProgress() {
 
           {/* Ticker grid */}
           <div className="grid grid-cols-5 sm:grid-cols-6 md:grid-cols-8 gap-1.5">
-            {UNIVERSE_ALL.map((t) => {
+            {universe.map((t) => {
               const state = tickers[t.symbol] ?? { status: "pending" };
               const isChanged = state.status === "completed" && state.changed;
               return (

@@ -7,6 +7,9 @@ export interface PageContent {
   text: string;
   finalUrl?: string;
   tinyfishRunRef?: string; // run ID from TinyFish for audit trail
+  /** True when content comes from a clean structured API (e.g. ASX JSON).
+   *  Scan pipeline uses this to bypass the word-count quality gate. */
+  structured_source?: boolean;
 }
 
 /**
@@ -144,7 +147,10 @@ async function callTinyFish(url: string): Promise<PageContent> {
   }
 }
 
+// ─── Public entry point ───────────────────────────────────────────────────────
+
 export async function fetchPageText(url: string): Promise<PageContent> {
+  // All URLs — use TinyFish browser automation
   try {
     return await callTinyFish(url);
   } catch (err) {

@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
-import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, lookupStock } from "@/lib/db";
+import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, getLatestAnalysisWithAgentContent, getTickerScanCount, lookupStock } from "@/lib/db";
 import { fetchPrices } from "@/lib/price";
 import PriceChart from "./PriceChart";
 import { agentSignalLabel, validationLabel, changeTypeLabel } from "@/lib/agent";
 import { resolveTickerUrl } from "@/lib/scan-pipeline";
 import TickerScanButton from "../../components/TickerScanButton";
+import WatchlistButton from "../../components/WatchlistButton";
+import TechAnalyticsPanel from "../../components/TechAnalyticsPanel";
 
 export const dynamic = "force-dynamic";
 
@@ -119,9 +121,14 @@ export default async function TickerPage({
                   <span className="text-white/50 text-sm">{dirEntry.sector}</span>
                 )}
               </div>
-              {/* ── Scan button — the hero CTA ── */}
-              <div className="pt-2">
+              {/* ── Scan + Watchlist CTAs ── */}
+              <div className="pt-2 flex items-center gap-3 flex-wrap">
                 <TickerScanButton symbol={sym} isMonitored={false} resolvedUrl={defaultUrl} />
+                <WatchlistButton
+                  symbol={sym}
+                  exchange={exchangeLabel}
+                  name={companyName !== sym ? companyName : undefined}
+                />
               </div>
             </div>
           </div>
@@ -193,17 +200,25 @@ export default async function TickerPage({
   const latest = analyses[0] ?? null;
   const latestDiff = diffs[0] ?? null;
   const latestSnap = snapshots[0] ?? null;
+  const totalScans = getTickerScanCount(sym);
+
+  // Best-signal fallback: if the most recent scan has no AI signal, surface the
+  // last scan that DID detect something so the page never looks empty.
+  const latestSignal = getLatestAnalysisWithAgentContent(sym);
+  const signalIsFromLatest = latestSignal?.snapshot_new_id === latest?.snapshot_new_id;
+  const signalSource = latestSignal ?? latest; // what we'll show for AI signal sections
+  const latestIsNoSignal = latest?.agent_signal_type === "NO_SIGNAL";
 
   const cats: string[] = latest?.categories_json ? JSON.parse(latest.categories_json) : [];
   const qualityFlags = latestSnap?.quality_flags_json
     ? (JSON.parse(latestSnap.quality_flags_json) as Record<string, boolean>)
     : {};
   const hasFlags = Object.values(qualityFlags).some(Boolean);
-  const hasAgentSignal = !!latest?.agent_signal_type;
-  const hasValidation = !!latest?.validation_status;
-  const hasInvestigation = !!latest?.investigation_summary;
-  const investigationSources: string[] = latest?.investigation_sources
-    ? JSON.parse(latest.investigation_sources)
+  const hasAgentSignal = !!signalSource?.agent_signal_type && signalSource.agent_signal_type !== "NO_SIGNAL";
+  const hasValidation = !!signalSource?.validation_status;
+  const hasInvestigation = !!signalSource?.investigation_summary;
+  const investigationSources: string[] = signalSource?.investigation_sources
+    ? JSON.parse(signalSource.investigation_sources)
     : [];
 
   return (
@@ -251,8 +266,13 @@ export default async function TickerPage({
             </p>
           )}
 
-          {/* CTAs — Report + Re-scan */}
+          {/* CTAs — Report + Re-scan + Watchlist */}
           <div className="pt-1 flex items-center gap-3 flex-wrap">
+            <WatchlistButton
+              symbol={sym}
+              exchange={ticker.exchange ?? "US"}
+              name={ticker.name}
+            />
             <Link
               href={`/ticker/${sym}/report`}
               target="_blank"
@@ -271,44 +291,68 @@ export default async function TickerPage({
       <div className="max-w-5xl mx-auto px-8 py-10 space-y-10">
 
       {/* ── Agent Flow ─────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl border border-gray-100 bg-gray-50 px-8 py-5 flex items-center gap-3 flex-wrap text-sm font-medium text-gray-500">
-        <span className="text-brand font-bold text-base">TinyFish</span>
-        <span className="text-gray-300 text-lg">→</span>
-        <span>Diff Engine</span>
-        <span className="text-gray-300 text-lg">→</span>
-        <span className={latest?.change_type === "CONTENT_CHANGE" ? "text-green-600 font-semibold" : latest?.change_type ? "text-gray-400" : ""}>
-          Signal Quality Filter
-        </span>
-        <span className="text-gray-300 text-lg">→</span>
-        <span className={hasAgentSignal ? "text-amber-600 font-semibold" : ""}>
-          Financial Signal Agent
-        </span>
-        <span className="text-gray-300 text-lg">→</span>
-        <span className={hasInvestigation ? "text-purple-600 font-semibold" : ""}>
-          Investigation Agent
-        </span>
-        <span className="text-gray-300 text-lg">→</span>
-        <span className={hasValidation ? "text-blue-600 font-semibold" : ""}>
-          Cross-Validation Agent
-        </span>
-        <span className="text-gray-300 text-lg">→</span>
-        <span className={latest?.agent_what_changed ? "text-green-600 font-semibold" : ""}>
-          AI Explanation
-        </span>
-        <span className="ml-auto text-gray-300 text-xs hidden md:block">
-          Web execution by TinyFish · Financial intelligence by DataP.ai
-        </span>
+      <div className="rounded-2xl border border-gray-100 bg-gray-50 px-8 py-5 space-y-3">
+        <div className="flex items-center gap-3 flex-wrap text-sm font-medium text-gray-500">
+          <span className="text-brand font-bold text-base">TinyFish</span>
+          <span className="text-gray-300 text-lg">→</span>
+          <span>Diff Engine</span>
+          <span className="text-gray-300 text-lg">→</span>
+          <span className={latest?.change_type === "CONTENT_CHANGE" ? "text-green-600 font-semibold" : latest?.change_type ? "text-gray-400" : ""}>
+            Signal Quality Filter
+          </span>
+          <span className="text-gray-300 text-lg">→</span>
+          <span className={hasAgentSignal ? "text-amber-600 font-semibold" : ""}>
+            Financial Signal Agent
+          </span>
+          <span className="text-gray-300 text-lg">→</span>
+          <span className={hasInvestigation ? "text-purple-600 font-semibold" : ""}>
+            Investigation Agent
+          </span>
+          <span className="text-gray-300 text-lg">→</span>
+          <span className={hasValidation ? "text-blue-600 font-semibold" : ""}>
+            Cross-Validation Agent
+          </span>
+          <span className="text-gray-300 text-lg">→</span>
+          <span className={signalSource?.agent_what_changed ? "text-green-600 font-semibold" : ""}>
+            AI Explanation
+          </span>
+        </div>
+        <div className="flex items-center gap-4 text-xs text-gray-400 flex-wrap">
+          <span>📦 {totalScans} scans stored permanently in database</span>
+          {latestSnap && <span>🕐 Last scan: {new Date(latestSnap.fetched_at).toLocaleString()}</span>}
+          {latestSignal && !signalIsFromLatest && (
+            <span className="text-amber-600 font-medium">
+              ⚡ Showing AI signal from {new Date(latestSignal.fetched_at).toLocaleDateString()} — latest scan was no-signal
+            </span>
+          )}
+          {latestIsNoSignal && signalIsFromLatest && (
+            <span className="text-green-600 font-medium">✓ No new financial signal in latest scan</span>
+          )}
+          <span className="ml-auto hidden md:block">Web execution by TinyFish · Financial intelligence by DataP.ai</span>
+        </div>
       </div>
 
       {/* ── Financial Signal ───────────────────────────────────────────────── */}
       {latest && (
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
-            <h2 className="text-3xl font-bold text-[#252525]">🎯 DataP.ai Financial Intelligent Agent — Signal Detection</h2>
+            <div>
+              <h2 className="text-3xl font-bold text-[#252525]">🎯 Signal Detection</h2>
+              {!signalIsFromLatest && latestSignal && (
+                <p className="text-sm text-amber-600 mt-1 font-medium">
+                  📅 Signal from {new Date(latestSignal.fetched_at).toLocaleDateString()} · latest scan ({new Date(latest.fetched_at).toLocaleDateString()}) returned no new signal
+                </p>
+              )}
+              {latestIsNoSignal && signalIsFromLatest && (
+                <p className="text-sm text-green-600 mt-1 font-medium">
+                  ✓ Latest scan confirmed: no new financial signal detected
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-3 flex-wrap">
               <ChangeTypeBadge changeType={latest.change_type} />
               <span className="text-base text-gray-400">
-                {hasAgentSignal ? "Detected & powered by DataP.ai Financial Agents" : "Local scoring only"}
+                {hasAgentSignal ? "Detected & powered by DataP.ai Financial Agents" : "Monitored · no signal"}
               </span>
             </div>
           </div>
@@ -317,20 +361,22 @@ export default async function TickerPage({
               <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Signal Type</div>
               <div className="font-bold text-[#252525] text-lg leading-snug">
                 {hasAgentSignal
-                  ? agentSignalLabel(latest.agent_signal_type)
-                  : <span className="text-gray-300 font-normal">Not detected</span>}
+                  ? agentSignalLabel(signalSource?.agent_signal_type ?? null)
+                  : latestIsNoSignal
+                  ? <span className="text-green-600 font-semibold text-base">✓ All clear</span>
+                  : <span className="text-gray-300 font-normal">Not yet detected</span>}
               </div>
             </div>
             <div>
               <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Severity</div>
-              {latest.agent_severity
-                ? <SeverityBadge severity={latest.agent_severity} />
+              {signalSource?.agent_severity && hasAgentSignal
+                ? <SeverityBadge severity={signalSource.agent_severity} />
                 : <span className="text-gray-300 text-lg">—</span>}
             </div>
             <div>
               <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Confidence</div>
               {(() => {
-                const conf = latest.agent_confidence ?? latest.confidence;
+                const conf = (signalSource ?? latest).agent_confidence ?? (signalSource ?? latest).confidence;
                 const pct = Math.round(conf * 100);
                 const color = conf >= 0.7 ? "#2e8b57" : conf >= 0.4 ? "#f97316" : "#9ca3af";
                 const label = conf >= 0.7 ? "High" : conf >= 0.4 ? "Growing" : "Early signal";
@@ -340,7 +386,6 @@ export default async function TickerPage({
                 return (
                   <div>
                     <div className="text-4xl font-bold" style={{ color }}>{pct}%</div>
-                    {/* Visual bar */}
                     <div className="mt-2 h-1.5 rounded-full bg-gray-100 w-24">
                       <div className="h-1.5 rounded-full" style={{ width: `${pct}%`, background: color }} />
                     </div>
@@ -351,26 +396,26 @@ export default async function TickerPage({
             </div>
             <div>
               <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Relevance Score</div>
-              {latest.financial_relevance_score != null ? (
+              {(signalSource ?? latest).financial_relevance_score != null ? (
                 <div
                   className="text-4xl font-bold"
                   style={{
-                    color: latest.financial_relevance_score >= 0.6 ? "#dc2626"
-                      : latest.financial_relevance_score >= 0.3 ? "#f97316"
+                    color: ((signalSource ?? latest).financial_relevance_score ?? 0) >= 0.6 ? "#dc2626"
+                      : ((signalSource ?? latest).financial_relevance_score ?? 0) >= 0.3 ? "#f97316"
                       : "#9ca3af",
                   }}
                 >
-                  {Math.round(latest.financial_relevance_score * 100)}%
+                  {Math.round(((signalSource ?? latest).financial_relevance_score ?? 0) * 100)}%
                 </div>
               ) : (
-                <ValidationBadge status={latest.validation_status} />
+                <ValidationBadge status={(signalSource ?? latest).validation_status} />
               )}
             </div>
           </div>
-          {latest.agent_financial_relevance && (
+          {(signalSource ?? latest).agent_financial_relevance && (
             <div className="px-8 pb-8">
               <div className="text-gray-400 text-sm mb-2 uppercase tracking-wider font-medium">Financial Relevance</div>
-              <p className="text-base text-gray-700 leading-relaxed">{latest.agent_financial_relevance}</p>
+              <p className="text-base text-gray-700 leading-relaxed">{(signalSource ?? latest).agent_financial_relevance}</p>
             </div>
           )}
         </div>
@@ -438,32 +483,40 @@ export default async function TickerPage({
       {/* ── Cross-Validation ───────────────────────────────────────────────── */}
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-100">
-          <h2 className="text-3xl font-bold text-[#252525]">🔍 DataP.ai Financial Intelligent Agent — Cross-Validation</h2>
+          <h2 className="text-3xl font-bold text-[#252525]">🔍 Cross-Validation</h2>
           <p className="text-sm text-gray-400 mt-1">Signal verified against filings · press releases · public sources</p>
         </div>
         <div className="px-8 py-8 space-y-5">
           {hasValidation ? (
             <>
+              {!signalIsFromLatest && latestSignal && (
+                <p className="text-xs text-amber-600 font-medium">
+                  📅 Validation from {new Date(latestSignal.fetched_at).toLocaleDateString()}
+                </p>
+              )}
               <div className="flex items-center gap-4 flex-wrap">
-                <ValidationBadge status={latest?.validation_status ?? null} />
-                {latest?.agent_signal_type && (
+                <ValidationBadge status={signalSource?.validation_status ?? null} />
+                {signalSource?.agent_signal_type && signalSource.agent_signal_type !== "NO_SIGNAL" && (
                   <span className="text-base text-gray-500">
-                    Signal: <strong>{agentSignalLabel(latest.agent_signal_type)}</strong>
+                    Signal: <strong>{agentSignalLabel(signalSource.agent_signal_type)}</strong>
                   </span>
                 )}
               </div>
-              {latest?.validation_summary && (
+              {signalSource?.validation_summary && (
                 <p className="text-base text-gray-700 leading-relaxed bg-gray-50 rounded-xl p-6 border border-gray-100">
-                  {latest.validation_summary}
+                  {signalSource.validation_summary}
                 </p>
               )}
             </>
           ) : (
-            <p className="text-base text-gray-400 bg-gray-50 rounded-xl p-6 border border-gray-100">
+            <p className="text-base bg-gray-50 rounded-xl p-6 border border-gray-100"
+              style={{ color: latestIsNoSignal ? "#16a34a" : "#9ca3af" }}>
               {!latest
                 ? "No scan data yet. Run a scan to populate."
-                : !process.env.AGENT_BACKEND_BASE_URL
-                ? "Cross-validation requires the AG2 agent backend. Set AGENT_BACKEND_BASE_URL to enable."
+                : latestIsNoSignal
+                ? "✓ No signal detected in latest scan — cross-validation not required. All clear."
+                : !signalSource
+                ? "No agent signal detected across scan history — no cross-validation to show."
                 : "Cross-validation unavailable — no signal detected or backend unreachable."}
             </p>
           )}
@@ -474,7 +527,7 @@ export default async function TickerPage({
       <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
         <div className="px-8 py-6 border-b border-gray-100 flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h2 className="text-3xl font-bold text-[#252525]">🔎 DataP.ai Financial Intelligent Agent — Investigation</h2>
+            <h2 className="text-3xl font-bold text-[#252525]">🔎 Investigation</h2>
             <p className="text-sm text-gray-400 mt-1">Probes press releases · exchange filings · IR pages for corroborating evidence</p>
           </div>
           {hasInvestigation && (latest?.corroborating_count ?? 0) > 0 && (
@@ -487,8 +540,13 @@ export default async function TickerPage({
         <div className="px-8 py-8 space-y-5">
           {hasInvestigation ? (
             <>
+              {!signalIsFromLatest && latestSignal && (
+                <p className="text-xs text-amber-600 font-medium">
+                  📅 Investigation from {new Date(latestSignal.fetched_at).toLocaleDateString()}
+                </p>
+              )}
               <p className="text-base text-gray-700 leading-relaxed bg-purple-50 rounded-xl p-6 border border-purple-100">
-                {latest!.investigation_summary}
+                {signalSource!.investigation_summary}
               </p>
               {investigationSources.length > 0 && (
                 <div>
@@ -504,12 +562,13 @@ export default async function TickerPage({
               )}
             </>
           ) : (
-            <p className="text-base text-gray-400 bg-gray-50 rounded-xl p-6 border border-gray-100">
+            <p className="text-base bg-gray-50 rounded-xl p-6 border border-gray-100"
+              style={{ color: latestIsNoSignal ? "#16a34a" : "#9ca3af" }}>
               {!latest
                 ? "No scan data yet. Run a scan to populate."
-                : !process.env.AGENT_BACKEND_BASE_URL
-                ? "Investigation requires the AG2 agent backend. Set AGENT_BACKEND_BASE_URL to enable."
-                : "No investigation data — signal may have been suppressed by quality filter, or no backend signal detected."}
+                : latestIsNoSignal
+                ? "✓ No signal to investigate — latest scan returned all clear."
+                : "No investigation data across scan history yet."}
             </p>
           )}
         </div>
@@ -559,6 +618,18 @@ export default async function TickerPage({
           })()}
         </div>
       </div>
+
+      {/* ── AI Technical Intelligence ──────────────────────────────────────── */}
+      <TechAnalyticsPanel
+        symbol={sym}
+        exchange={exchangeLabel}
+        snapshotText={(latestSnap?.cleaned_text ?? latestSnap?.text ?? "").slice(0, 4000)}
+        latestHeadline={
+          signalSource?.agent_what_changed
+            ? signalSource.agent_what_changed.slice(0, 200)
+            : `${ticker.name} — recent IR page update`
+        }
+      />
 
       {/* ── Change History ─────────────────────────────────────────────────── */}
       {analyses.length > 0 && (

@@ -28,26 +28,28 @@ export const UNIVERSE: TickerInfo[] = [
   { symbol: "TMDX",  name: "TransMedics Group",       url: "https://ir.transmedics.com/news-releases" },
 ];
 
-/** ASX-listed Australian companies monitored for website change intelligence. */
+/** ASX-listed Australian companies monitored for website change intelligence.
+ *  URLs point to each company's investor relations news/announcements page —
+ *  same approach as US stocks (TinyFish browser fetch, real document text). */
 export const ASX_UNIVERSE: TickerInfo[] = [
-  { symbol: "BHP",  name: "BHP Group",               url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/BHP/announcements?count=20", exchange: "ASX" },
-  { symbol: "CBA",  name: "Commonwealth Bank",        url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/CBA/announcements?count=20", exchange: "ASX" },
-  { symbol: "CSL",  name: "CSL Limited",              url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/CSL/announcements?count=20", exchange: "ASX" },
-  { symbol: "NAB",  name: "Natl Australia Bank",      url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/NAB/announcements?count=20", exchange: "ASX" },
-  { symbol: "ANZ",  name: "ANZ Group",                url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/ANZ/announcements?count=20", exchange: "ASX" },
-  { symbol: "WBC",  name: "Westpac Banking",          url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/WBC/announcements?count=20", exchange: "ASX" },
-  { symbol: "WES",  name: "Wesfarmers",               url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/WES/announcements?count=20", exchange: "ASX" },
-  { symbol: "MQG",  name: "Macquarie Group",          url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/MQG/announcements?count=20", exchange: "ASX" },
-  { symbol: "TLS",  name: "Telstra",                  url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/TLS/announcements?count=20", exchange: "ASX" },
-  { symbol: "WOW",  name: "Woolworths Group",         url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/WOW/announcements?count=20", exchange: "ASX" },
-  { symbol: "RIO",  name: "Rio Tinto",                url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/RIO/announcements?count=20", exchange: "ASX" },
-  { symbol: "FMG",  name: "Fortescue",                url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/FMG/announcements?count=20", exchange: "ASX" },
-  { symbol: "TWE",  name: "Treasury Wine Estates",    url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/TWE/announcements?count=20", exchange: "ASX" },
-  { symbol: "GMG",  name: "Goodman Group",            url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/GMG/announcements?count=20", exchange: "ASX" },
-  { symbol: "STO",  name: "Santos",                   url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/STO/announcements?count=20", exchange: "ASX" },
-  { symbol: "ORG",  name: "Origin Energy",            url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/ORG/announcements?count=20", exchange: "ASX" },
-  { symbol: "WDS",  name: "Woodside Energy",          url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/WDS/announcements?count=20", exchange: "ASX" },
-  { symbol: "NCM",  name: "Newmont (ASX)",            url: "https://asx.api.markitdigital.com/asx-research/1.0/companies/NCM/announcements?count=20", exchange: "ASX" },
+  { symbol: "BHP",  name: "BHP Group",               url: "https://www.bhp.com/investors/news-and-media/news-releases", exchange: "ASX" },
+  { symbol: "CBA",  name: "Commonwealth Bank",        url: "https://www.commbank.com.au/about-us/shareholders/shareholder-centre/asx-announcements.html", exchange: "ASX" },
+  { symbol: "CSL",  name: "CSL Limited",              url: "https://www.csl.com/investors/investor-news", exchange: "ASX" },
+  { symbol: "NAB",  name: "Natl Australia Bank",      url: "https://investor.nab.com.au/news-releases", exchange: "ASX" },
+  { symbol: "ANZ",  name: "ANZ Group",                url: "https://www.anz.com/about-us/media-centre/news-and-stories/shareholder-news", exchange: "ASX" },
+  { symbol: "WBC",  name: "Westpac Banking",          url: "https://www.westpac.com.au/about-westpac/investors/asx-announcements", exchange: "ASX" },
+  { symbol: "WES",  name: "Wesfarmers",               url: "https://www.wesfarmers.com.au/investors/asx-announcements", exchange: "ASX" },
+  { symbol: "MQG",  name: "Macquarie Group",          url: "https://www.macquarie.com/au/en/about/investors/news.html", exchange: "ASX" },
+  { symbol: "TLS",  name: "Telstra",                  url: "https://ir.telstra.com/news-releases", exchange: "ASX" },
+  { symbol: "WOW",  name: "Woolworths Group",         url: "https://www.woolworthsgroup.com.au/investors/asx-announcements-and-reports", exchange: "ASX" },
+  { symbol: "RIO",  name: "Rio Tinto",                url: "https://www.riotinto.com/en/investors/news-and-reports", exchange: "ASX" },
+  { symbol: "FMG",  name: "Fortescue",                url: "https://investor.fmgl.com.au/news-releases", exchange: "ASX" },
+  { symbol: "TWE",  name: "Treasury Wine Estates",    url: "https://ir.tweglobal.com/news-releases", exchange: "ASX" },
+  { symbol: "GMG",  name: "Goodman Group",            url: "https://www.goodman.com/investors/asx-announcements", exchange: "ASX" },
+  { symbol: "STO",  name: "Santos",                   url: "https://www.santosltd.com/investors/asx-announcements", exchange: "ASX" },
+  { symbol: "ORG",  name: "Origin Energy",            url: "https://www.originenergy.com.au/about/investors-and-media/asx-announcements", exchange: "ASX" },
+  { symbol: "WDS",  name: "Woodside Energy",          url: "https://www.woodside.com/investors/asx-announcements", exchange: "ASX" },
+  { symbol: "QAN",  name: "Qantas Airways",           url: "https://investor.qantas.com/news-releases", exchange: "ASX" },
 ];
 
 /** All monitored tickers across all markets. */

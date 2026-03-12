@@ -27,6 +27,7 @@ interface Props {
   contentOnly: Analysis[];
   allSignals: Analysis[];
   universe: Record<string, string>;
+  watchlistOnly?: boolean;
 }
 
 function scoreColor(score: number): string {
@@ -147,7 +148,7 @@ function validationBadge(status: string | null) {
   );
 }
 
-export default function AlertsClient({ contentOnly, allSignals, universe }: Props) {
+export default function AlertsClient({ contentOnly, allSignals, universe, watchlistOnly }: Props) {
   const [showAll, setShowAll] = useState(false);
   const analyses = showAll ? allSignals : contentOnly;
   const changed = analyses.filter((a) => a.alert_score !== 0).length;
@@ -156,43 +157,51 @@ export default function AlertsClient({ contentOnly, allSignals, universe }: Prop
   const withInvestigation = analyses.filter((a) => (a.corroborating_count ?? 0) > 0).length;
 
   return (
-    <div className="max-w-6xl mx-auto px-8 py-12 space-y-8">
+    <div>
 
-      {/* ── Header ──────────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between flex-wrap gap-4">
-        <div>
-          <h1 className="text-4xl font-bold text-[#252525]">Change Alerts</h1>
-          <p className="text-lg text-gray-500 mt-2">
-            Detected page wording changes — sorted by alert score.
-          </p>
-        </div>
-        <div className="flex items-center gap-3 flex-wrap mt-1">
-          {changed > 0 && (
-            <span
-              className="text-base px-5 py-2 rounded-full font-bold"
-              style={{ background: "#fd8412", color: "#ffffff", textShadow: "0 1px 2px rgba(0,0,0,0.25)" }}
-            >
-              {changed} with changes
-            </span>
-          )}
-          {highConf > 0 && (
-            <span className="text-base px-5 py-2 rounded-full bg-green-50 text-green-700 font-semibold">
-              {highConf} high-confidence
-            </span>
-          )}
-          {withAgentSignal > 0 && (
-            <span className="text-base px-5 py-2 rounded-full bg-amber-50 text-amber-700 font-semibold">
-              {withAgentSignal} AG2 signal{withAgentSignal !== 1 ? "s" : ""}
-            </span>
-          )}
-          {withInvestigation > 0 && (
-            <span className="text-base px-5 py-2 rounded-full font-semibold"
-              style={{ background: "#f3e8ff", color: "#6b21a8" }}>
-              🔎 {withInvestigation} investigated
-            </span>
-          )}
+      {/* ── Green hero bar ── */}
+      <div
+        className="w-full"
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "28px", paddingBottom: "28px" }}
+      >
+        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            {watchlistOnly && (
+              <Link href="/watchlist" className="text-white/70 hover:text-white text-sm font-medium">
+                ← My Watchlist
+              </Link>
+            )}
+            <h1 className="text-2xl font-bold text-white">
+              {watchlistOnly ? "⭐ My Watchlist Alerts" : "Change Alerts"}
+            </h1>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            {changed > 0 && (
+              <span className="text-sm font-bold px-4 py-1.5 rounded-full"
+                style={{ background: "#fd8412", color: "#fff" }}>
+                {changed} with changes
+              </span>
+            )}
+            {highConf > 0 && (
+              <span className="text-sm font-semibold px-4 py-1.5 rounded-full bg-white/20 text-white">
+                {highConf} high-confidence
+              </span>
+            )}
+            {withAgentSignal > 0 && (
+              <span className="text-sm font-semibold px-4 py-1.5 rounded-full bg-white/20 text-white">
+                {withAgentSignal} AG2 signal{withAgentSignal !== 1 ? "s" : ""}
+              </span>
+            )}
+            {withInvestigation > 0 && (
+              <span className="text-sm font-semibold px-4 py-1.5 rounded-full bg-white/20 text-white">
+                🔎 {withInvestigation} investigated
+              </span>
+            )}
+          </div>
         </div>
       </div>
+
+      <div className="max-w-6xl mx-auto px-8 py-8 space-y-6">
 
       {/* ── Signal filter toggle ─────────────────────────────────────────────── */}
       <div className="flex items-center gap-3">
@@ -244,16 +253,20 @@ export default function AlertsClient({ contentOnly, allSignals, universe }: Prop
 
       {analyses.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-2xl p-16 text-center shadow-sm">
-          <div className="text-5xl mb-4">📡</div>
-          <div className="text-2xl font-bold text-gray-400 mb-3">No analyses yet</div>
+          <div className="text-5xl mb-4">{watchlistOnly ? "⭐" : "📡"}</div>
+          <div className="text-2xl font-bold text-gray-400 mb-3">
+            {watchlistOnly ? "No alerts for your watchlist yet" : "No analyses yet"}
+          </div>
           <p className="text-base text-gray-400 mb-8">
-            Run a scan from the home page to detect company page changes.
+            {watchlistOnly
+              ? "Run a scan from your watchlist page to detect changes on your stocks."
+              : "Run a scan from the home page to detect company page changes."}
           </p>
           <Link
-            href="/"
+            href={watchlistOnly ? "/watchlist" : "/"}
             className="inline-block bg-brand text-white px-8 py-3 rounded-xl text-base font-semibold hover:opacity-90"
           >
-            Go Home →
+            {watchlistOnly ? "← Back to Watchlist" : "Go Home →"}
           </Link>
         </div>
       ) : (
@@ -350,6 +363,7 @@ export default function AlertsClient({ contentOnly, allSignals, universe }: Prop
           </table>
         </div>
       )}
+      </div>
     </div>
   );
 }

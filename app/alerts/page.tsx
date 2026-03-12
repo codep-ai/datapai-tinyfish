@@ -1,29 +1,41 @@
-import Link from "next/link";
-import { getLatestAnalysesBySignalType } from "@/lib/db";
-import { UNIVERSE } from "@/lib/universe";
+import { getLatestAnalysesBySignalType, getWatchlist } from "@/lib/db";
+import { UNIVERSE_ALL } from "@/lib/universe";
+import { getAuthUser } from "@/lib/auth";
 import AlertsClient from "./AlertsClient";
 
 export const dynamic = "force-dynamic";
 
-export default function AlertsPage({
+export default async function AlertsPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string>>;
 }) {
-  // Default to CONTENT_CHANGE only; pass "all" to see everything
-  // This is resolved server-side via the URL param
-  // We pass both datasets to the client component
+  const params = await searchParams;
+  const watchlistOnly = params.watchlist === "true";
+
   const contentOnly = getLatestAnalysesBySignalType("CONTENT_CHANGE", 100);
   const allSignals = getLatestAnalysesBySignalType(null, 100);
-  const universe = Object.fromEntries(UNIVERSE.map((t) => [t.symbol, t.name]));
+  const universe = Object.fromEntries(UNIVERSE_ALL.map((t) => [t.symbol, t.name]));
 
-  void searchParams; // unused but part of page signature
+  // Filter to user's watchlist symbols if ?watchlist=true
+  let filteredContent = contentOnly;
+  let filteredAll = allSignals;
+  if (watchlistOnly) {
+    const user = await getAuthUser();
+    if (user) {
+      const items = getWatchlist(user.userId);
+      const symbols = new Set(items.map((i) => i.symbol));
+      filteredContent = contentOnly.filter((a) => symbols.has(a.ticker));
+      filteredAll = allSignals.filter((a) => symbols.has(a.ticker));
+    }
+  }
 
   return (
     <AlertsClient
-      contentOnly={contentOnly}
-      allSignals={allSignals}
+      contentOnly={filteredContent}
+      allSignals={filteredAll}
       universe={universe}
+      watchlistOnly={watchlistOnly}
     />
   );
 }

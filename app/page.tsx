@@ -4,6 +4,7 @@ import { UNIVERSE } from "@/lib/universe";
 import { getAlertSummaryMap, getRecentRuns } from "@/lib/db";
 import LiveScanProgress from "./components/LiveScanProgress";
 import TickerSearch from "./components/TickerSearch";
+import WatchlistButton from "./components/WatchlistButton";
 
 export const dynamic = "force-dynamic";
 
@@ -17,45 +18,34 @@ export default function Home() {
       {/* ── Full-width hero ── */}
       <div
         className="w-full flex flex-col justify-center"
-        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "36px", paddingBottom: "36px" }}
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "28px", paddingBottom: "28px" }}
       >
-        <div className="max-w-6xl mx-auto px-6 space-y-4">
+        <div className="max-w-6xl mx-auto px-6 space-y-3">
 
-          {/* Headline — Feature 11 */}
-          <h1 className="text-6xl font-bold text-white drop-shadow-sm leading-tight">
-            Detect Meaningful Website Changes<br />
-            <span className="text-white/85">Before Markets React</span>
+          <h1 className="text-2xl font-bold text-white">
+            US Stocks · Website Change Intelligence
           </h1>
 
-          {/* Subtext — Feature 11 */}
-          <p className="text-white/80 text-2xl">
-            TinyFish scans company websites.<br />
-            DataP.ai converts wording changes into financial signals.
+          <p className="text-white/80 text-sm font-medium">
+            Spot language shifts on company websites before they move stock prices —{" "}
+            <span className="text-white font-bold">9,000+ US &amp; ASX stocks</span>{" "}
+            covered · powered by AI agents
           </p>
 
-          {/* Try your own ticker */}
-          <div className="pt-1">
-            <p className="text-white/60 text-sm mb-2 font-medium uppercase tracking-wide">Try any ticker — US or ASX</p>
-            <TickerSearch />
-          </div>
+          <TickerSearch />
 
-          {/* Live scan widget — Feature 12 */}
-          <div className="pt-1 flex justify-start">
-            <LiveScanProgress />
-          </div>
-
-          {/* View alerts CTA */}
-          {alertCount > 0 && (
-            <div className="flex justify-start pt-1">
+          <div className="flex gap-3 items-center flex-wrap">
+            {alertCount > 0 && (
               <Link
                 href="/alerts"
-                className="px-7 py-3 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
-                style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff", textShadow: "0 1px 2px rgba(0,0,0,0.2)" }}
+                className="px-6 py-2.5 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
+                style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff" }}
               >
                 ⚡ View {alertCount} Alert{alertCount !== 1 ? "s" : ""} →
               </Link>
-            </div>
-          )}
+            )}
+            <LiveScanProgress heroButton />
+          </div>
         </div>
       </div>
 
@@ -90,7 +80,7 @@ export default function Home() {
             <div className="flex items-center gap-4 text-sm text-gray-400">
               {alertCount > 0 && (
                 <span className="flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: "#fd8412" }} />
+                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: "#4ade80" }} />
                   = change detected
                 </span>
               )}
@@ -106,48 +96,53 @@ export default function Home() {
               const confidence = analysis?.confidence ?? 0;
 
               return (
-                <Link
+                <div
                   key={t.symbol}
-                  href={`/ticker/${t.symbol}`}
-                  className="relative rounded-xl px-5 py-4 transition-all duration-200 group shadow-sm hover:-translate-y-0.5"
+                  className="relative rounded-xl px-4 py-4 transition-all duration-200 group shadow-sm hover:-translate-y-0.5"
                   style={hasAlert
-                    ? { background: "#fffbea", border: "1.5px solid #fd8412" }
+                    ? { background: "#f0fff4", border: "1.5px solid #4ade80" }
                     : { background: "#ffffff", border: "1px solid #e5e7eb" }
                   }
                 >
                   {hasAlert && (
                     <span
                       className="absolute -top-2.5 -right-2.5 text-xs font-bold px-2 py-0.5 rounded-full shadow"
-                      style={{ background: "#fd8412", color: "#252525" }}
+                      style={{ background: "#2e8b57", color: "#fff" }}
                     >
                       {analysis.alert_score > 0 ? "+" : ""}{analysis.alert_score.toFixed(1)}
                     </span>
                   )}
-                  <div className={`font-bold text-base ${hasAlert ? "text-[#252525]" : "text-brand"} group-hover:opacity-80`}>
-                    {t.symbol}
+                  {/* Watchlist star — top-right of card */}
+                  <div className="absolute top-1.5 right-1.5 z-10">
+                    <WatchlistButton compact symbol={t.symbol} exchange="US" name={t.name} />
                   </div>
-                  <div className="text-gray-400 text-sm mt-0.5 truncate">{t.name}</div>
-                  {hasAlert && (
-                    <div className="mt-2 space-y-0.5">
-                      <div
-                        className="text-xs font-medium"
-                        style={{ color: "#b45309" }}
-                        title={analysis.changed_pct != null && analysis.changed_pct > 90
-                          ? "Large baseline diff — page content significantly changed vs. initial snapshot"
-                          : undefined}
-                      >
-                        {analysis.changed_pct != null
-                          ? analysis.changed_pct > 90
-                            ? "Significant change"
-                            : `${analysis.changed_pct.toFixed(1)}% changed`
-                          : "—"}
-                      </div>
-                      <div className="text-xs text-gray-400">
-                        conf {Math.round(confidence * 100)}%
-                      </div>
+                  <Link href={`/ticker/${t.symbol}`} className="block pr-6">
+                    <div className="font-bold text-base text-brand group-hover:opacity-80">
+                      {t.symbol}
                     </div>
-                  )}
-                </Link>
+                    <div className="text-gray-400 text-xs mt-0.5 truncate">{t.name}</div>
+                    {hasAlert && (
+                      <div className="mt-2 space-y-0.5">
+                        <div
+                          className="text-xs font-medium"
+                          style={{ color: "#166534" }}
+                          title={analysis.changed_pct != null && analysis.changed_pct > 90
+                            ? "Large baseline diff — page content significantly changed vs. initial snapshot"
+                            : undefined}
+                        >
+                          {analysis.changed_pct != null
+                            ? analysis.changed_pct > 90
+                              ? "Significant change"
+                              : `${analysis.changed_pct.toFixed(1)}% changed`
+                            : "—"}
+                        </div>
+                        <div className="text-xs text-gray-400">
+                          conf {Math.round(confidence * 100)}%
+                        </div>
+                      </div>
+                    )}
+                  </Link>
+                </div>
               );
             })}
           </div>

@@ -7,7 +7,7 @@
 import { wordCount } from "./clean";
 
 export interface QualityFlags {
-  too_short: boolean;      // < 300 words → unreliable diff
+  too_short: boolean;      // disabled — always false (word-count gate removed)
   looks_dynamic: boolean;  // mostly short list lines → template churn
   date_noise: boolean;     // > 30% of lines are pure dates
 }
@@ -27,8 +27,9 @@ export function checkQuality(cleanedText: string): QualityResult {
     .map((l) => l.trim())
     .filter((l) => l.length > 0);
 
-  // Flag: too short
-  const too_short = wc < 300;
+  // too_short disabled — the word-count gate was blocking 70% of real scans.
+  // Confidence + diff % are sufficient quality signals without a word count hard floor.
+  const too_short = false;
 
   // Flag: date noise — > 30% lines look like pure dates
   const dateLines = lines.filter((l) => DATE_ONLY.test(l));
@@ -42,9 +43,9 @@ export function checkQuality(cleanedText: string): QualityResult {
   const looks_dynamic =
     lines.length > 10 && shortLines.length / lines.length > 0.5;
 
-  // Confidence: start at 1.0, discount each flag
+  // Confidence: start at 1.0, discount remaining flags
+  // (too_short is disabled; looks_dynamic and date_noise still penalise noisy pages)
   let confidence = 1.0;
-  if (too_short) confidence -= 0.5;
   if (looks_dynamic) confidence -= 0.25;
   if (date_noise) confidence -= 0.25;
   confidence = Math.max(0, Math.round(confidence * 100) / 100);

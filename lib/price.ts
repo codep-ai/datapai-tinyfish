@@ -80,7 +80,7 @@ const BASE_PRICES_ASX: Record<string, number> = {
   BHP: 45,  CBA: 155, CSL: 280, WBC: 32,  ANZ: 30,
   NAB: 38,  RIO: 115, WES: 70,  FMG: 22,  MQG: 215,
   TWE: 12,  GMG: 35,  STO: 8,   ORG: 11,  WDS: 28,
-  NCM: 23,  TLS: 4,   WOW: 35,
+  TLS: 4,   WOW: 35,  QAN: 8,
 };
 
 export function getMockPrices(ticker: string, days = 30, exchange?: string): PricePoint[] {
