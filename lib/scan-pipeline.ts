@@ -19,7 +19,6 @@ import {
   insertDiff,
   insertAnalysis,
   insertScanEvent,
-  getDb,
 } from "./db";
 import type { TickerInfo } from "./universe";
 
@@ -51,15 +50,15 @@ export function classifySignal(
 
 // ─── Step logger ─────────────────────────────────────────────────────────────
 
-export function logStep(
+export async function logStep(
   runId: string,
   ticker: string,
   step: string,
   status: "start" | "done" | "error",
   message?: string
-) {
+): Promise<void> {
   try {
-    insertScanEvent({
+    await insertScanEvent({
       id: crypto.randomUUID(),
       run_id: runId,
       ticker,
@@ -100,23 +99,23 @@ export async function scanTicker(
 ): Promise<ScanTickerResult> {
   try {
     // ── Step 1: Fetch ───────────────────────────────────────────────────────
-    logStep(runId, t.symbol, "Fetching page", "start");
+    await logStep(runId, t.symbol, "Fetching page", "start");
     const { text, title, finalUrl, tinyfishRunRef, structured_source } = await fetchPageText(t.url);
-    logStep(runId, t.symbol, "Fetching page", "done");
+    await logStep(runId, t.symbol, "Fetching page", "done");
     const now = new Date().toISOString();
 
     // ── Step 2: Extract / clean ─────────────────────────────────────────────
-    logStep(runId, t.symbol, "Extracting content", "start");
+    await logStep(runId, t.symbol, "Extracting content", "start");
     const cleaned = cleanText(text);
-    logStep(runId, t.symbol, "Extracting content", "done");
+    await logStep(runId, t.symbol, "Extracting content", "done");
 
     // ── Step 3: Quality check ───────────────────────────────────────────────
-    logStep(runId, t.symbol, "Cleaning text", "start");
+    await logStep(runId, t.symbol, "Cleaning text", "start");
     const quality = checkQuality(cleaned);
     const snapId = crypto.randomUUID();
-    logStep(runId, t.symbol, "Cleaning text", "done");
+    await logStep(runId, t.symbol, "Cleaning text", "done");
 
-    insertSnapshot({
+    await insertSnapshot({
       id: snapId,
       run_id: runId,
       ticker: t.symbol,
@@ -132,26 +131,18 @@ export async function scanTicker(
       quality_flags_json: JSON.stringify(quality.flags),
     });
 
-    if (tinyfishRunRef) {
-      try {
-        getDb()
-          .prepare("UPDATE runs SET tinyfish_run_ref=? WHERE id=? AND tinyfish_run_ref IS NULL")
-          .run(tinyfishRunRef, runId);
-      } catch {}
-    }
-
-    const prev = getPreviousSnapshot(t.symbol, snapId);
+    const prev = await getPreviousSnapshot(t.symbol, snapId);
     if (!prev) {
       // First snapshot — no diff possible yet, but scan was successful
-      logStep(runId, t.symbol, "Processing", "done", "First snapshot saved — no prior baseline to diff");
+      await logStep(runId, t.symbol, "Processing", "done", "First snapshot saved — no prior baseline to diff");
       return { changed: false, alerted: false, failed: false };
     }
 
     // ── Step 4: Diff ────────────────────────────────────────────────────────
-    logStep(runId, t.symbol, "Computing diff", "start");
+    await logStep(runId, t.symbol, "Computing diff", "start");
     const diff = diffTexts(prev.cleaned_text, cleaned);
     const diffId = crypto.randomUUID();
-    insertDiff({
+    await insertDiff({
       id: diffId,
       snapshot_new_id: snapId,
       snapshot_old_id: prev.id,
@@ -161,10 +152,10 @@ export async function scanTicker(
       removed_lines: diff.removed_lines,
       snippet: diff.snippet,
     });
-    logStep(runId, t.symbol, "Computing diff", "done", `${diff.changed_pct.toFixed(1)}% changed`);
+    await logStep(runId, t.symbol, "Computing diff", "done", `${diff.changed_pct.toFixed(1)}% changed`);
 
     if (diff.changed_pct < 1 && diff.added_lines === 0) {
-      logStep(runId, t.symbol, "Processing", "done", "No meaningful change detected");
+      await logStep(runId, t.symbol, "Processing", "done", "No meaningful change detected");
       return { changed: false, alerted: false, failed: false };
     }
 
@@ -194,7 +185,7 @@ export async function scanTicker(
     const qualityOkForAgent = structured_source ? quality.confidence >= 0.2 : passesQualityGate(quality);
 
     if (AGENT_ENABLED && qualityOkForAgent) {
-      logStep(runId, t.symbol, "Running full pipeline", "start");
+      await logStep(runId, t.symbol, "Running full pipeline", "start");
       const pipelineResult = await runFullPipeline(
         t.symbol,
         t.name,
@@ -222,14 +213,14 @@ export async function scanTicker(
           ? JSON.stringify(pipelineResult.investigation_sources)
           : null;
         corroboratingCount = pipelineResult.corroborating_count ?? 0;
-        logStep(runId, t.symbol, "Running full pipeline", "done", agentSignalType ?? "no signal");
+        await logStep(runId, t.symbol, "Running full pipeline", "done", agentSignalType ?? "no signal");
       } else {
-        logStep(runId, t.symbol, "Running full pipeline", "error", "backend unavailable");
+        await logStep(runId, t.symbol, "Running full pipeline", "error", "backend unavailable");
       }
     }
 
     // ── Step 7: Paid-LLM fallback ───────────────────────────────────────────
-    logStep(runId, t.symbol, "Running AI analysis", "start");
+    await logStep(runId, t.symbol, "Running AI analysis", "start");
     let llmSummaryPaid: string | null = null;
     if ((structured_source || passesQualityGate(quality)) && scores.evidence_quotes.length > 0) {
       llmSummaryPaid = await generatePaidSummary(t.symbol, diff.snippet, scores.evidence_quotes);
@@ -242,10 +233,10 @@ export async function scanTicker(
           scores.categories
         )
       : null;
-    logStep(runId, t.symbol, "Running AI analysis", "done");
+    await logStep(runId, t.symbol, "Running AI analysis", "done");
 
     const analysisId = crypto.randomUUID();
-    insertAnalysis({
+    await insertAnalysis({
       id: analysisId,
       snapshot_new_id: snapId,
       diff_id: diffId,
@@ -280,7 +271,7 @@ export async function scanTicker(
     return { changed: true, alerted: true, failed: false };
   } catch (err) {
     const msg = String(err).slice(0, 120);
-    logStep(runId, t.symbol, "Processing", "error", msg);
+    await logStep(runId, t.symbol, "Processing", "error", msg);
     return { changed: false, alerted: false, failed: true, errorMessage: msg };
   }
 }

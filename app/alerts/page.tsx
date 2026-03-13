@@ -13,8 +13,8 @@ export default async function AlertsPage({
   const params = await searchParams;
   const watchlistOnly = params.watchlist === "true";
 
-  const contentOnly = getLatestAnalysesBySignalType("CONTENT_CHANGE", 100);
-  const allSignals = getLatestAnalysesBySignalType(null, 100);
+  const contentOnly = await getLatestAnalysesBySignalType("CONTENT_CHANGE", 100);
+  const allSignals = await getLatestAnalysesBySignalType(null, 100);
   const universe = Object.fromEntries(UNIVERSE_ALL.map((t) => [t.symbol, t.name]));
 
   // Filter to user's watchlist symbols if ?watchlist=true
@@ -23,7 +23,7 @@ export default async function AlertsPage({
   if (watchlistOnly) {
     const user = await getAuthUser();
     if (user) {
-      const items = getWatchlist(user.userId);
+      const items = await getWatchlist(user.userId);
       const symbols = new Set(items.map((i) => i.symbol));
       filteredContent = contentOnly.filter((a) => symbols.has(a.ticker));
       filteredAll = allSignals.filter((a) => symbols.has(a.ticker));

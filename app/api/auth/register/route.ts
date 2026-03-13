@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Check duplicate
-  const existing = getUserByEmail(email);
+  const existing = await getUserByEmail(email);
   if (existing) {
     return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
   }
@@ -38,11 +38,11 @@ export async function POST(req: NextRequest) {
   // Create user
   const userId = crypto.randomUUID();
   const passwordHash = hashPassword(password);
-  createUser(userId, email, passwordHash);
+  await createUser(userId, email, passwordHash);
 
   // Create session
   const token = generateSessionToken();
-  createSession(token, userId, sessionExpiresAt());
+  await createSession(token, userId, sessionExpiresAt());
 
   // Set cookie
   const cookieStore = await cookies();

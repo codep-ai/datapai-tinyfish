@@ -43,15 +43,15 @@ export default async function IntelPage({
   const lang = await getLang();
 
   const ticker = UNIVERSE_ALL.find((tk) => tk.symbol === sym);
-  const dirEntry = ticker ? null : lookupStock(sym);
+  const dirEntry = ticker ? null : await lookupStock(sym);
   const exchangeLabel = (ticker?.exchange ?? dirEntry?.exchange ?? "NASDAQ") as string;
   const companyName = ticker?.name ?? dirEntry?.name ?? sym;
 
-  const snapshots = getTickerSnapshots(sym, 1);
+  const snapshots = await getTickerSnapshots(sym, 1);
   const latestSnap = snapshots[0] ?? null;
-  const signalSource = getLatestAnalysisWithAgentContent(sym);
+  const signalSource = await getLatestAnalysisWithAgentContent(sym);
   // Pass cached TA signal (price, RSI, trend) to chat so AI uses current data not training data
-  const cachedTaSignal = getCachedTaSignal(sym, 48);  // up to 48h old is acceptable
+  const cachedTaSignal = await getCachedTaSignal(sym, 48);  // up to 48h old is acceptable
 
   return (
     <div>

@@ -20,9 +20,9 @@ export async function GET(req: Request) {
 
   // ── Prefix search (autocomplete) ──────────────────────────────────────────
   if (query) {
-    const total = countStockDirectory();
+    const total = await countStockDirectory();
     if (total > 0) {
-      const results = searchStocks(query, exchange || undefined);
+      const results = await searchStocks(query, exchange || undefined);
       return NextResponse.json({ results, source: "db" });
     }
     // Fallback: search UNIVERSE_ALL
@@ -37,9 +37,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Provide ?symbol=XXX or ?q=prefix" }, { status: 400 });
   }
 
-  const total = countStockDirectory();
+  const total = await countStockDirectory();
   if (total > 0) {
-    const result = lookupStock(symbol);
+    const result = await lookupStock(symbol);
     if (result) return NextResponse.json({ ...result, source: "db" });
   }
 

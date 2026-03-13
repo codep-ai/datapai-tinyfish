@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   // Look up user — use the same error message for not-found and wrong-password
   // to avoid leaking account existence.
-  const user = getUserByEmail(email);
+  const user = await getUserByEmail(email);
   const passwordOk = user ? verifyPassword(password, user.password_hash) : false;
 
   if (!user || !passwordOk) {
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
 
   // Create session
   const token = generateSessionToken();
-  createSession(token, user.id, sessionExpiresAt());
+  await createSession(token, user.id, sessionExpiresAt());
 
   // Set cookie
   const cookieStore = await cookies();

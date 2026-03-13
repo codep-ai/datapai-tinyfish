@@ -18,9 +18,9 @@ export async function GET(
 
   const sym = symbol.toUpperCase();
   const [snapshots, analyses, diffs, prices] = await Promise.all([
-    Promise.resolve(getTickerSnapshots(sym, 5)),
-    Promise.resolve(getTickerAnalyses(sym, 5)),
-    Promise.resolve(getTickerDiffs(sym, 5)),
+    getTickerSnapshots(sym, 5),
+    getTickerAnalyses(sym, 5),
+    getTickerDiffs(sym, 5),
     fetchPrices(sym, 30, ticker?.exchange),
   ]);
 

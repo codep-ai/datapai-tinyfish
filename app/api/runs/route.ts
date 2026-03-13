@@ -4,6 +4,6 @@ import { getRecentRuns } from "@/lib/db";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const runs = getRecentRuns(20);
+  const runs = await getRecentRuns(20);
   return NextResponse.json({ runs });
 }

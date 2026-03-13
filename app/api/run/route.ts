@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
 import type { TickerInfo } from "@/lib/universe";
 import { scanTicker, AGENT_ENABLED, resolveTickerUrl } from "@/lib/scan-pipeline";
-import { insertRun, startRun, finishRun, failRun, getDb, getWatchlist } from "@/lib/db";
+import { insertRun, startRun, finishRun, failRun, getWatchlist } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
 export const maxDuration = 300;
@@ -29,7 +29,7 @@ export const maxDuration = 300;
 
 async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
   try {
-    startRun(runId);
+    await startRun(runId);
 
     const CONCURRENCY = 3;
     const queue = [...universe];
@@ -44,11 +44,6 @@ async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
         if (result.changed) changed++;
         if (result.alerted) alerted++;
         if (result.failed) failed++;
-        try {
-          getDb()
-            .prepare("UPDATE runs SET completed_count=?, scanned_count=? WHERE id=?")
-            .run(scanned, scanned, runId);
-        } catch {}
       }
     }
 
@@ -58,14 +53,14 @@ async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
     );
     await Promise.all(workers);
 
-    finishRun(runId, new Date().toISOString(), {
+    await finishRun(runId, new Date().toISOString(), {
       scanned,
       changed,
       alerts: alerted,
       failed,
     });
   } catch (err) {
-    failRun(runId, new Date().toISOString(), String(err).slice(0, 200));
+    await failRun(runId, new Date().toISOString(), String(err).slice(0, 200));
   }
 }
 
@@ -86,7 +81,7 @@ export async function POST(req: NextRequest) {
         { status: 401 }
       );
     }
-    const watchlistItems = getWatchlist(user.userId);
+    const watchlistItems = await getWatchlist(user.userId);
     universe = watchlistItems.map((item) => {
       const known = UNIVERSE_ALL.find((t) => t.symbol === item.symbol);
       if (known) return known;
@@ -107,7 +102,7 @@ export async function POST(req: NextRequest) {
 
   const runId = crypto.randomUUID();
   const startedAt = new Date().toISOString();
-  insertRun(runId, startedAt, universe.length);
+  await insertRun(runId, startedAt, universe.length);
 
   runScanAsync(runId, universe).catch((err) => {
     console.error("[run] background scan error:", err);

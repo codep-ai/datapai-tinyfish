@@ -18,6 +18,6 @@ export async function DELETE(
   }
 
   const { symbol } = await params;
-  removeFromWatchlist(user.userId, symbol.toUpperCase());
+  await removeFromWatchlist(user.userId, symbol.toUpperCase());
   return NextResponse.json({ success: true });
 }

@@ -41,7 +41,7 @@ export async function POST(
   // ── 1. Cache lookup ───────────────────────────────────────────────────────
   if (!skipCache && useCache) {
     try {
-      const cached = getCachedTaSignal(symbol, CACHE_HOURS);
+      const cached = await getCachedTaSignal(symbol, CACHE_HOURS);
       if (cached) {
         return NextResponse.json({
           ok:   true,
@@ -113,7 +113,7 @@ export async function POST(
       const now     = new Date();
       const expires = new Date(now.getTime() + CACHE_HOURS * 3_600_000);
       try {
-        upsertTaSignal({
+        await upsertTaSignal({
           ticker:          symbol,
           exchange,
           signal_md:       String(d.signal_markdown ?? ""),

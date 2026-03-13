@@ -36,8 +36,8 @@ export default async function TickerReportPage({
 
   // Support all monitored tickers (US + ASX) and any previously-scanned custom ticker
   const known = UNIVERSE_ALL.find((t) => t.symbol === sym);
-  const dirEntry = known ? null : lookupStock(sym);
-  const snapsForCheck = known ? null : getTickerSnapshots(sym, 1);
+  const dirEntry = known ? null : await lookupStock(sym);
+  const snapsForCheck = known ? null : await getTickerSnapshots(sym, 1);
 
   // 404 only if completely unknown with no scan history
   if (!known && !dirEntry && (!snapsForCheck || snapsForCheck.length === 0)) notFound();
@@ -50,19 +50,19 @@ export default async function TickerReportPage({
   };
 
   const [snapshots, analyses, diffs] = await Promise.all([
-    Promise.resolve(getTickerSnapshots(sym, 5)),
-    Promise.resolve(getTickerAnalyses(sym, 5)),
-    Promise.resolve(getTickerDiffs(sym, 5)),
+    getTickerSnapshots(sym, 5),
+    getTickerAnalyses(sym, 5),
+    getTickerDiffs(sym, 5),
   ]);
 
   const latest   = analyses[0] ?? null;
   const latestDiff = diffs[0] ?? null;
   const latestSnap = snapshots[0] ?? null;
   const prevSnap   = snapshots[1] ?? null;
-  const totalScans = getTickerScanCount(sym);
+  const totalScans = await getTickerScanCount(sym);
 
   // Best-signal fallback: surface last scan with a real agent signal
-  const latestSignal = getLatestAnalysisWithAgentContent(sym);
+  const latestSignal = await getLatestAnalysisWithAgentContent(sym);
   const signalIsFromLatest = latestSignal?.snapshot_new_id === latest?.snapshot_new_id;
   const signalSource = latestSignal ?? latest;
 

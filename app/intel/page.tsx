@@ -32,10 +32,12 @@ export default async function IntelLandingPage() {
   const lang = await getLang();
 
   // Pre-load any cached TA signals for the monitored universe
-  const signals = UNIVERSE_ALL.map((tk) => ({
-    ticker: tk,
-    signal: getCachedTaSignal(tk.symbol, 24), // show up to 24h old signals
-  }));
+  const signals = await Promise.all(
+    UNIVERSE_ALL.map(async (tk) => ({
+      ticker: tk,
+      signal: await getCachedTaSignal(tk.symbol, 24), // show up to 24h old signals
+    }))
+  );
 
   const withSignal    = signals.filter((s) => !!s.signal);
   const withoutSignal = signals.filter((s) => !s.signal);

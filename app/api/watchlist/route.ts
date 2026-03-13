@@ -19,8 +19,8 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized", authenticated: false }, { status: 401 });
   }
 
-  const items = getWatchlist(user.userId);
-  const alertMap = getAlertSummaryMap();
+  const items = await getWatchlist(user.userId);
+  const alertMap = await getAlertSummaryMap();
 
   const enriched = items.map((item) => ({
     ...item,
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   const resolvedExchange = exchange ?? known?.exchange ?? "US";
   const resolvedName = name ?? known?.name ?? null;
 
-  addToWatchlist(user.userId, sym, resolvedExchange, resolvedName);
+  await addToWatchlist(user.userId, sym, resolvedExchange, resolvedName);
 
   return NextResponse.json({
     success: true,

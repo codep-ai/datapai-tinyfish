@@ -133,7 +133,7 @@ export async function POST() {
   // ASX
   try {
     const asx = await fetchAsxStocks();
-    upsertStockDirectory(asx);
+    await upsertStockDirectory(asx);
     results.asxCount = asx.length;
   } catch (e) {
     results.errors.push(`ASX: ${String(e).slice(0, 100)}`);
@@ -142,7 +142,7 @@ export async function POST() {
   // NASDAQ
   try {
     const nasdaq = await fetchNasdaqScreenerStocks("NASDAQ");
-    upsertStockDirectory(nasdaq);
+    await upsertStockDirectory(nasdaq);
     results.nasdaqCount = nasdaq.length;
   } catch (e) {
     results.errors.push(`NASDAQ: ${String(e).slice(0, 100)}`);
@@ -151,7 +151,7 @@ export async function POST() {
   // NYSE
   try {
     const nyse = await fetchNasdaqScreenerStocks("NYSE");
-    upsertStockDirectory(nyse);
+    await upsertStockDirectory(nyse);
     results.nyseCount = nyse.length;
   } catch (e) {
     results.errors.push(`NYSE: ${String(e).slice(0, 100)}`);
@@ -160,22 +160,24 @@ export async function POST() {
   // AMEX
   try {
     const amex = await fetchNasdaqScreenerStocks("AMEX");
-    upsertStockDirectory(amex);
+    await upsertStockDirectory(amex);
     results.amexCount = amex.length;
   } catch (e) {
     results.errors.push(`AMEX: ${String(e).slice(0, 100)}`);
   }
 
-  results.total = countStockDirectory();
+  results.total = await countStockDirectory();
 
   return NextResponse.json(results);
 }
 
 export async function GET() {
-  const total = countStockDirectory();
-  const asx = countStockDirectory("ASX");
-  const nasdaq = countStockDirectory("NASDAQ");
-  const nyse = countStockDirectory("NYSE");
-  const amex = countStockDirectory("AMEX");
+  const [total, asx, nasdaq, nyse, amex] = await Promise.all([
+    countStockDirectory(),
+    countStockDirectory("ASX"),
+    countStockDirectory("NASDAQ"),
+    countStockDirectory("NYSE"),
+    countStockDirectory("AMEX"),
+  ]);
   return NextResponse.json({ total, asx, nasdaq, nyse, amex, seeded: total > 0 });
 }

@@ -44,7 +44,7 @@ export async function POST(
   // ── 1. Cache lookup ───────────────────────────────────────────────────────
   if (!skipCache && useCache) {
     try {
-      const cached = getCachedChartAnalysis(symbol, TIMEFRAME, CACHE_HOURS);
+      const cached = await getCachedChartAnalysis(symbol, TIMEFRAME, CACHE_HOURS);
       if (cached) {
         return NextResponse.json({
           ok:   true,
@@ -111,7 +111,7 @@ export async function POST(
       const now     = new Date();
       const expires = new Date(now.getTime() + CACHE_HOURS * 3_600_000);
       try {
-        upsertChartAnalysis({
+        await upsertChartAnalysis({
           ticker:         symbol,
           timeframe:      TIMEFRAME,
           chart_b64:      String(d.chart_b64 ?? ""),

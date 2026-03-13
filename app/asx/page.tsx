@@ -8,9 +8,9 @@ import WatchlistButton from "../components/WatchlistButton";
 
 export const dynamic = "force-dynamic";
 
-export default function AsxPage() {
-  const alertMap = getAlertSummaryMap();
-  const recentRuns = getRecentRuns(3);
+export default async function AsxPage() {
+  const alertMap = await getAlertSummaryMap();
+  const recentRuns = await getRecentRuns(3);
   const lastRun = recentRuns[0] ?? null;
   const asxAlertCount = ASX_UNIVERSE.filter((t) => !!alertMap[t.symbol]).length;
 

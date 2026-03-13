@@ -8,7 +8,7 @@ export async function GET(req: Request) {
   const minConfidence = parseFloat(searchParams.get("minConfidence") ?? "0");
   const ticker = searchParams.get("ticker")?.toUpperCase();
 
-  let analyses = getLatestAnalyses(100);
+  let analyses = await getLatestAnalyses(100);
 
   if (ticker) {
     analyses = analyses.filter((a) => a.ticker === ticker);

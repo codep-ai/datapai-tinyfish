@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { getRun, getDb, getScanEvents } from "@/lib/db";
+import { getRun, getPool, getScanEvents } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -42,24 +42,23 @@ export default async function RunDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const run = getRun(id);
+  const run = await getRun(id);
   if (!run) notFound();
 
-  const rows = getDb()
-    .prepare(
-      `SELECT s.ticker, s.url, s.fetched_at, s.word_count, s.quality_flags_json,
-              a.alert_score, a.confidence, a.categories_json, a.llm_summary_paid,
-              a.signal_type,
-              d.changed_pct, d.added_lines, d.removed_lines
-       FROM snapshots s
-       LEFT JOIN diffs d ON d.snapshot_new_id = s.id
-       LEFT JOIN analyses a ON a.snapshot_new_id = s.id
-       WHERE s.run_id = ?
-       ORDER BY COALESCE(a.alert_score, 0) DESC`
-    )
-    .all(id) as TickerRow[];
+  const { rows } = await getPool().query<TickerRow>(
+    `SELECT s.ticker, s.url, s.fetched_at, s.word_count, s.quality_flags_json,
+            a.alert_score, a.confidence, a.categories_json, a.llm_summary_paid,
+            a.signal_type,
+            d.changed_pct, d.added_lines, d.removed_lines
+     FROM datapai.snapshots s
+     LEFT JOIN datapai.diffs d ON d.snapshot_new_id = s.id
+     LEFT JOIN datapai.analyses a ON a.snapshot_new_id = s.id
+     WHERE s.run_id = $1
+     ORDER BY COALESCE(a.alert_score, 0) DESC`,
+    [id]
+  );
 
-  const scanEvents = getScanEvents(id);
+  const scanEvents = await getScanEvents(id);
   const hasLLM = rows.some((r) => r.llm_summary_paid);
 
   const duration =

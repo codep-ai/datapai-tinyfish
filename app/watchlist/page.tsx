@@ -19,8 +19,8 @@ export default async function WatchlistPage() {
     redirect("/login?redirect=/watchlist");
   }
 
-  const items = getWatchlist(user.userId);
-  const alertMap = getAlertSummaryMap();
+  const items = await getWatchlist(user.userId);
+  const alertMap = await getAlertSummaryMap();
 
   return (
     <div>

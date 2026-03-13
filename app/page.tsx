@@ -8,10 +8,10 @@ import WatchlistButton from "./components/WatchlistButton";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const alertMap = getAlertSummaryMap();
+export default async function Home() {
+  const alertMap = await getAlertSummaryMap();
   const alertCount = Object.keys(alertMap).length;
-  const recentRuns = getRecentRuns(3);
+  const recentRuns = await getRecentRuns(3);
   const lastRun = recentRuns[0] ?? null;
   return (
     <div>

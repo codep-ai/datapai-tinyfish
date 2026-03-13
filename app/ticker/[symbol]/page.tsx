@@ -80,7 +80,7 @@ export default async function TickerPage({
 
   // Resolve display info regardless of universe membership
   let ticker: typeof UNIVERSE_ALL[number] | undefined = UNIVERSE_ALL.find((t) => t.symbol === sym);
-  const dirEntry = ticker ? null : lookupStock(sym);
+  const dirEntry = ticker ? null : await lookupStock(sym);
   const exchangeLabel = (ticker?.exchange ?? dirEntry?.exchange ?? "NASDAQ") as string;
   const companyName = ticker?.name ?? dirEntry?.name ?? sym;
   const defaultUrl = ticker?.url ?? resolveTickerUrl(sym, exchangeLabel);
@@ -89,7 +89,7 @@ export default async function TickerPage({
   if (!ticker) {
     // If there are existing snapshots from a previous on-demand scan,
     // construct a virtual ticker and fall through to the full page render.
-    const existingSnaps = getTickerSnapshots(sym, 1);
+    const existingSnaps = await getTickerSnapshots(sym, 1);
     if (existingSnaps.length > 0) {
       ticker = {
         symbol: sym,
@@ -191,20 +191,20 @@ export default async function TickerPage({
   }
 
   const [snapshots, analyses, diffs, prices] = await Promise.all([
-    Promise.resolve(getTickerSnapshots(sym, 5)),
-    Promise.resolve(getTickerAnalyses(sym, 5)),
-    Promise.resolve(getTickerDiffs(sym, 5)),
+    getTickerSnapshots(sym, 5),
+    getTickerAnalyses(sym, 5),
+    getTickerDiffs(sym, 5),
     fetchPrices(sym, 30, exchangeLabel),
   ]);
 
   const latest = analyses[0] ?? null;
   const latestDiff = diffs[0] ?? null;
   const latestSnap = snapshots[0] ?? null;
-  const totalScans = getTickerScanCount(sym);
+  const totalScans = await getTickerScanCount(sym);
 
   // Best-signal fallback: if the most recent scan has no AI signal, surface the
   // last scan that DID detect something so the page never looks empty.
-  const latestSignal = getLatestAnalysisWithAgentContent(sym);
+  const latestSignal = await getLatestAnalysisWithAgentContent(sym);
   const signalIsFromLatest = latestSignal?.snapshot_new_id === latest?.snapshot_new_id;
   const signalSource = latestSignal ?? latest; // what we'll show for AI signal sections
   const latestIsNoSignal = latest?.agent_signal_type === "NO_SIGNAL";

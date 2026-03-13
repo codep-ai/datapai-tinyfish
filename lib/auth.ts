@@ -93,12 +93,12 @@ export async function getAuthUser(): Promise<AuthUser | null> {
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const session = getSession(token);
+  const session = await getSession(token);
   if (!session) return null;
 
   // Belt-and-suspenders expiry check (DB query already filters, but be safe)
   if (new Date(session.expires_at) < new Date()) {
-    deleteSession(token);
+    await deleteSession(token);
     return null;
   }
 

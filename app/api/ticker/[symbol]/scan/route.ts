@@ -16,7 +16,7 @@ import crypto from "crypto";
 import { NextResponse } from "next/server";
 import { UNIVERSE_ALL } from "@/lib/universe";
 import { scanTicker, resolveTickerUrl, AGENT_ENABLED } from "@/lib/scan-pipeline";
-import { insertRun, startRun, finishRun, failRun, lookupStock, getDb, getTickerSnapshots } from "@/lib/db";
+import { insertRun, startRun, finishRun, failRun, lookupStock, getTickerSnapshots } from "@/lib/db";
 
 // Internal base URL so AI cache pre-warming calls stay on localhost.
 const INTERNAL_BASE = `http://localhost:${process.env.PORT ?? "3085"}`;
@@ -36,7 +36,7 @@ async function prewarmAiCaches(symbol: string, exchange: string): Promise<void> 
 
   // ASX Trading Signal: needs the latest IR snapshot text as context
   if (exchange === "ASX") {
-    const snap = getTickerSnapshots(symbol, 1)[0];
+    const snap = (await getTickerSnapshots(symbol, 1))[0];
     const announcementText = (snap?.cleaned_text ?? snap?.text ?? "").slice(0, 4000);
     tasks.push(
       fetch(`${base}/asx-trading-signal`, {
@@ -75,18 +75,12 @@ async function runSingleTickerAsync(
   runId: string
 ) {
   try {
-    startRun(runId);
+    await startRun(runId);
 
     const ticker = { symbol, name, url, exchange: exchange as "NASDAQ" | "NYSE" | "ASX" };
     const result = await scanTicker(ticker, runId);
 
-    try {
-      getDb()
-        .prepare("UPDATE runs SET completed_count=1, scanned_count=1 WHERE id=?")
-        .run(runId);
-    } catch {}
-
-    finishRun(runId, new Date().toISOString(), {
+    await finishRun(runId, new Date().toISOString(), {
       scanned: 1,
       changed: result.changed ? 1 : 0,
       alerts: result.alerted ? 1 : 0,
@@ -100,7 +94,7 @@ async function runSingleTickerAsync(
     });
 
   } catch (err) {
-    failRun(runId, new Date().toISOString(), String(err).slice(0, 200));
+    await failRun(runId, new Date().toISOString(), String(err).slice(0, 200));
   }
 }
 
@@ -128,7 +122,7 @@ export async function POST(
 
   // Fall back to stock directory for name + exchange
   if (!known) {
-    const dir = lookupStock(symbol);
+    const dir = await lookupStock(symbol);
     if (dir) {
       name = dir.name;
       exchange = dir.exchange as typeof exchange;
@@ -146,7 +140,7 @@ export async function POST(
   // ── 2. Create run record ───────────────────────────────────────────────────
   const runId = crypto.randomUUID();
   const startedAt = new Date().toISOString();
-  insertRun(runId, startedAt, 1);
+  await insertRun(runId, startedAt, 1);
 
   // ── 3. Fire-and-forget ─────────────────────────────────────────────────────
   runSingleTickerAsync(symbol, name, resolvedUrl, exchange, runId).catch((err) => {
