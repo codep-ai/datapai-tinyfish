@@ -82,7 +82,7 @@ export default function StockChatPanel({
     setShowSuggested(false);
 
     try {
-      const res = await fetch(`/api/ticker/${symbol}/chat`, {
+      const res = await fetch(`/api/ticker/${symbol}/chat/stream`, {
         method:  "POST",
         headers: { "Content-Type": "application/json" },
         body:    JSON.stringify({
@@ -95,19 +95,67 @@ export default function StockChatPanel({
         signal: AbortSignal.timeout(60_000),
       });
 
-      const json = await res.json();
+      if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
 
-      if (!json.ok) throw new Error(json.error ?? `HTTP ${res.status}`);
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let   buffer  = "";
+      let   gotFirstChunk = false;
+      let   finalModel    = "";
 
-      if (json.session_id && !sessionId) setSessionId(json.session_id);
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
 
-      setMessages((prev) =>
-        prev.map((m, i) =>
-          i === prev.length - 1
-            ? { role: "assistant", content: json.reply, model: json.model, pending: false }
-            : m
-        )
-      );
+        buffer += decoder.decode(value, { stream: true });
+        const lines  = buffer.split("\n");
+        buffer = lines.pop() ?? "";   // keep incomplete last line
+
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          let event: Record<string, string>;
+          try { event = JSON.parse(line.slice(6)); } catch { continue; }
+
+          if (event.type === "session" && event.session_id && !sessionId) {
+            setSessionId(event.session_id);
+
+          } else if (event.type === "chunk" && event.text) {
+            if (!gotFirstChunk) {
+              // Replace the typing-dots pending message with first real content
+              setMessages((prev) =>
+                prev.map((m, i) =>
+                  i === prev.length - 1
+                    ? { role: "assistant", content: event.text, pending: false }
+                    : m
+                )
+              );
+              gotFirstChunk = true;
+            } else {
+              // Append subsequent chunks
+              setMessages((prev) =>
+                prev.map((m, i) =>
+                  i === prev.length - 1
+                    ? { ...m, content: m.content + event.text }
+                    : m
+                )
+              );
+            }
+
+          } else if (event.type === "done") {
+            finalModel = event.model ?? "";
+            if (finalModel) {
+              setMessages((prev) =>
+                prev.map((m, i) =>
+                  i === prev.length - 1 ? { ...m, model: finalModel } : m
+                )
+              );
+            }
+
+          } else if (event.type === "error") {
+            throw new Error(event.message ?? "Stream error");
+          }
+        }
+      }
     } catch (err) {
       setMessages((prev) => prev.slice(0, -1)); // remove pending
       setError(String(err));
@@ -154,8 +202,8 @@ export default function StockChatPanel({
           <span className="hidden sm:flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-green-50 text-green-700 border border-green-200 font-medium">
             🐟 TinyFish scan
           </span>
-          <span className="hidden sm:flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 border border-purple-200 font-medium">
-            Gemini + GPT
+          <span className="hidden sm:flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200 font-medium">
+            ✨ Gemini
           </span>
           {messages.length > 0 && (
             <button

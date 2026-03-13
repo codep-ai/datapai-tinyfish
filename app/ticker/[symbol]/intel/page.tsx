@@ -9,7 +9,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { UNIVERSE_ALL } from "@/lib/universe";
-import { getTickerSnapshots, getLatestAnalysisWithAgentContent, lookupStock } from "@/lib/db";
+import { getTickerSnapshots, getLatestAnalysisWithAgentContent, lookupStock, getCachedTaSignal } from "@/lib/db";
 import { resolveTickerUrl } from "@/lib/scan-pipeline";
 import { getLang } from "@/lib/getLang";
 import { t } from "@/lib/translations";
@@ -50,6 +50,8 @@ export default async function IntelPage({
   const snapshots = getTickerSnapshots(sym, 1);
   const latestSnap = snapshots[0] ?? null;
   const signalSource = getLatestAnalysisWithAgentContent(sym);
+  // Pass cached TA signal (price, RSI, trend) to chat so AI uses current data not training data
+  const cachedTaSignal = getCachedTaSignal(sym, 48);  // up to 48h old is acceptable
 
   return (
     <div>
@@ -155,6 +157,7 @@ export default async function IntelPage({
               symbol={sym}
               exchange={exchangeLabel}
               lang={lang}
+              taSignalMd={cachedTaSignal?.signal_md ?? undefined}
               snapshotText={(latestSnap?.cleaned_text ?? latestSnap?.text ?? "").slice(0, 3000)}
             />
           </div>
