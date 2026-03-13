@@ -317,32 +317,29 @@ export default function TechAnalyticsPanel({
     <div className="space-y-6">
 
       {/* ── Button row ──────────────────────────────────────────────────────── */}
-      <div
-        className="rounded-2xl p-6"
-        style={{ background: "linear-gradient(135deg, #1a1a2e, #16213e)", border: "1px solid rgba(255,255,255,0.1)" }}
-      >
+      <div className="rounded-2xl p-6 bg-white border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div>
-            <h2 className="text-white font-bold text-xl">⚡ AI Technical Intelligence</h2>
+            <h2 className="text-[#252525] font-bold text-xl">⚡ AI analysis</h2>
             {/* Data provenance — makes TinyFish → AI pipeline explicit */}
             <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                style={{ background: "rgba(46,139,87,0.35)", color: "#86efac" }}>
+                style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #4ade8040" }}>
                 🌊 TinyFish IR scan
               </span>
-              <span className="text-white/30 text-xs">+</span>
+              <span className="text-gray-400 text-xs">+</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                style={{ background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" }}>
+                style={{ background: "#f3f4f6", color: "#6b7280" }}>
                 Yahoo Finance OHLCV
               </span>
-              <span className="text-white/30 text-xs">→</span>
+              <span className="text-gray-400 text-xs">→</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                style={{ background: "rgba(99,102,241,0.3)", color: "#a5b4fc" }}>
-                Gemini + GPT‑4o
+                style={{ background: "#ede9fe", color: "#4f46e5" }}>
+                Gemini + GPT‑5.1
               </span>
-              <span className="text-white/30 text-xs">→</span>
+              <span className="text-gray-400 text-xs">→</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
-                style={{ background: "rgba(253,132,18,0.3)", color: "#fdba74" }}>
+                style={{ background: "#fff7ed", color: "#c2410c" }}>
                 Actionable Signal
               </span>
             </div>
@@ -373,9 +370,9 @@ export default function TechAnalyticsPanel({
             disabled={taPhase === "loading"}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60"
             style={{
-              background: taPhase === "done" ? "rgba(255,255,255,0.12)" : "#2e8b57",
-              color: "#fff",
-              border: taPhase === "done" ? "1.5px solid rgba(255,255,255,0.3)" : "none",
+              background: taPhase === "done" ? "#f0fdf4" : "#2e8b57",
+              color: taPhase === "done" ? "#166534" : "#fff",
+              border: taPhase === "done" ? "1.5px solid #4ade80" : "none",
             }}
           >
             {taPhase === "loading" ? (
@@ -393,9 +390,9 @@ export default function TechAnalyticsPanel({
             disabled={chartPhase === "loading"}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60"
             style={{
-              background: chartPhase === "done" ? "rgba(99,102,241,0.25)" : "#6366f1",
-              color: "#fff",
-              border: "none",
+              background: chartPhase === "done" ? "#ede9fe" : "#6366f1",
+              color: chartPhase === "done" ? "#4f46e5" : "#fff",
+              border: chartPhase === "done" ? "1.5px solid #a5b4fc" : "none",
             }}
           >
             {chartPhase === "loading" ? (
@@ -415,9 +412,9 @@ export default function TechAnalyticsPanel({
                 disabled={asxPhase === "loading"}
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60"
                 style={{
-                  background: asxPhase === "done" ? "rgba(253,132,18,0.2)" : "#fd8412",
-                  color: "#fff",
-                  border: asxPhase === "done" ? "1.5px solid rgba(253,132,18,0.5)" : "none",
+                  background: asxPhase === "done" ? "#fff7ed" : "#fd8412",
+                  color: asxPhase === "done" ? "#c2410c" : "#fff",
+                  border: asxPhase === "done" ? "1.5px solid #fb923c" : "none",
                 }}
               >
                 {asxPhase === "loading" ? (
@@ -430,7 +427,7 @@ export default function TechAnalyticsPanel({
               </button>
               {/* Show IR snapshot context so TinyFish's role is visible */}
               {snapshotText && snapshotText.length > 50 && (
-                <span className="text-xs text-white/30 pl-1">
+                <span className="text-xs text-gray-400 pl-1">
                   🌊 Using {Math.min(snapshotText.length, 4000).toLocaleString()} chars from TinyFish IR scan
                 </span>
               )}
@@ -442,19 +439,19 @@ export default function TechAnalyticsPanel({
         {taPhase === "loading" && (
           <div className="mt-4">
             <Spinner label="Fetching live OHLCV data → computing indicators → generating Gemini signal → GPT review…" />
-            <p className="text-white/30 text-xs mt-1">Typically 20–45 seconds</p>
+            <p className="text-gray-400 text-xs mt-1">Typically 20–45 seconds</p>
           </div>
         )}
         {chartPhase === "loading" && (
           <div className="mt-4">
             <Spinner label="Fetching OHLCV → rendering 3-panel chart → Gemini Vision analysis…" />
-            <p className="text-white/30 text-xs mt-1">Typically 15–30 seconds</p>
+            <p className="text-gray-400 text-xs mt-1">Typically 15–30 seconds</p>
           </div>
         )}
         {asxPhase === "loading" && (
           <div className="mt-4">
             <Spinner label="Fetching ASX price data → combining with IR content → Gemini signal + GPT compliance review…" />
-            <p className="text-white/30 text-xs mt-1">Typically 30–60 seconds</p>
+            <p className="text-gray-400 text-xs mt-1">Typically 30–60 seconds</p>
           </div>
         )}
 

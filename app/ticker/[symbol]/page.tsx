@@ -278,7 +278,7 @@ export default async function TickerPage({
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
             >
-              ⚡ AI Intel →
+              ⚡ AI analysis →
             </Link>
             <Link
               href={`/ticker/${sym}/report`}

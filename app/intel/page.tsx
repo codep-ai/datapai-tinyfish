@@ -1,5 +1,5 @@
 /**
- * /intel  —  AI Intelligence landing page
+ * /intel  —  AI analysis landing page
  * Search for any stock → /ticker/[symbol]/intel
  * Lists monitored universe with cached AI signal badges.
  */
@@ -41,21 +41,17 @@ export default function IntelLandingPage() {
       {/* Hero */}
       <div
         className="w-full flex flex-col justify-center"
-        style={{
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%)",
-          paddingTop: "36px",
-          paddingBottom: "36px",
-        }}
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "36px", paddingBottom: "36px" }}
       >
         <div className="max-w-6xl mx-auto px-6 space-y-4">
           <div className="flex items-center gap-3 flex-wrap">
             <span
               className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest"
-              style={{ background: "rgba(99,102,241,0.3)", color: "#a5b4fc" }}
+              style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
             >
-              ⚡ AI Intelligence
+              ⚡ AI analysis
             </span>
-            <span className="text-white/40 text-xs">
+            <span className="text-white/70 text-xs">
               🌊 TinyFish IR scan · Yahoo Finance · Gemini · GPT‑5.1
             </span>
           </div>
@@ -64,12 +60,12 @@ export default function IntelLandingPage() {
             Real-time AI signals for any stock
           </h1>
 
-          <p className="text-white/70 text-sm max-w-xl">
+          <p className="text-white/80 text-sm max-w-xl">
             Multi-timeframe technical analysis · Gemini Vision chart patterns ·
             ASX Trading Signal combining IR language shifts with live price data.
           </p>
 
-          <TickerSearch placeholder="Search stock → AI Intel…" intelMode />
+          <TickerSearch placeholder="Search stock → AI analysis…" intelMode />
         </div>
       </div>
 
@@ -153,7 +149,7 @@ export default function IntelLandingPage() {
         {/* What is this */}
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           <h3 className="font-bold text-xl text-[#252525] mb-4">
-            What is AI Intelligence?
+            What is AI analysis?
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm text-gray-500">
             <div>
