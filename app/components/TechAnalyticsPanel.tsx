@@ -21,6 +21,7 @@
 
 import { useState } from "react";
 import SimpleMarkdown from "./SimpleMarkdown";
+import { t as tFn, type Lang } from "@/lib/translations";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +49,8 @@ interface Props {
   snapshotText?: string;
   /** Latest scan headline/summary (used as headline for ASX signal) */
   latestHeadline?: string;
+  /** UI language passed from parent server component */
+  lang?: Lang;
 }
 
 // ─── Signal badge colours ─────────────────────────────────────────────────────
@@ -104,10 +107,13 @@ function Pill({ label, value }: { label: string; value: string | null }) {
 function ChartModal({
   chart,
   onClose,
+  lang = "en",
 }: {
   chart: ChartResult;
   onClose: () => void;
+  lang?: Lang;
 }) {
+  const T = (key: Parameters<typeof tFn>[1]) => tFn(lang, key);
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4"
@@ -121,7 +127,7 @@ function ChartModal({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
           <div>
-            <span className="text-white font-bold text-lg">📊 AI Chart Vision Analysis</span>
+            <span className="text-white font-bold text-lg">{T("panel_modal_title")}</span>
             <span className="ml-3 text-white/40 text-sm">Gemini Vision · {chart.indicators?.timeframe ?? "1d"}</span>
           </div>
           <button
@@ -165,7 +171,7 @@ function ChartModal({
             onClick={onClose}
             className="px-5 py-2 rounded-lg text-sm font-semibold border border-white/20 text-white/70 hover:text-white transition-colors"
           >
-            Close
+            {T("panel_modal_close")}
           </button>
         </div>
       </div>
@@ -180,9 +186,11 @@ export default function TechAnalyticsPanel({
   exchange,
   snapshotText,
   latestHeadline,
+  lang = "en",
 }: Props) {
   const isASX = exchange === "ASX";
   const cp = isASX ? "A$" : "$";
+  const T = (key: Parameters<typeof tFn>[1]) => tFn(lang, key);
 
   // ── TA Signal state ──────────────────────────────────────────────────────
   const [taPhase, setTaPhase] = useState<"idle" | "loading" | "done" | "error">("idle");
@@ -320,27 +328,27 @@ export default function TechAnalyticsPanel({
       <div className="rounded-2xl p-6 bg-white border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div>
-            <h2 className="text-[#252525] font-bold text-xl">⚡ AI analysis</h2>
+            <h2 className="text-[#252525] font-bold text-xl">{T("panel_heading")}</h2>
             {/* Data provenance — makes TinyFish → AI pipeline explicit */}
             <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
                 style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #4ade8040" }}>
-                🌊 TinyFish IR scan
+                {T("panel_tf")}
               </span>
               <span className="text-gray-400 text-xs">+</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
                 style={{ background: "#f3f4f6", color: "#6b7280" }}>
-                Yahoo Finance OHLCV
+                {T("panel_yf")}
               </span>
               <span className="text-gray-400 text-xs">→</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
                 style={{ background: "#ede9fe", color: "#4f46e5" }}>
-                Gemini + GPT‑5.1
+                {T("panel_ai")}
               </span>
               <span className="text-gray-400 text-xs">→</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
                 style={{ background: "#fff7ed", color: "#c2410c" }}>
-                Actionable Signal
+                {T("panel_sig")}
               </span>
             </div>
           </div>
@@ -376,11 +384,11 @@ export default function TechAnalyticsPanel({
             }}
           >
             {taPhase === "loading" ? (
-              <><span className="animate-spin">⟳</span> Generating…</>
+              <><span className="animate-spin">⟳</span> {T("panel_btn_ta_loading")}</>
             ) : taPhase === "done" ? (
-              "📈 TA Signal ✓"
+              T("panel_btn_ta_done")
             ) : (
-              "📈 Technical Signal"
+              T("panel_btn_ta")
             )}
           </button>
 
@@ -396,11 +404,11 @@ export default function TechAnalyticsPanel({
             }}
           >
             {chartPhase === "loading" ? (
-              <><span className="animate-spin">⟳</span> Rendering…</>
+              <><span className="animate-spin">⟳</span> {T("panel_btn_chart_loading")}</>
             ) : chartPhase === "done" ? (
-              "📊 Chart Vision ✓"
+              T("panel_btn_chart_done")
             ) : (
-              "📊 Chart Vision"
+              T("panel_btn_chart")
             )}
           </button>
 
@@ -418,17 +426,17 @@ export default function TechAnalyticsPanel({
                 }}
               >
                 {asxPhase === "loading" ? (
-                  <><span className="animate-spin">⟳</span> Analysing…</>
+                  <><span className="animate-spin">⟳</span> {T("panel_btn_asx_loading")}</>
                 ) : asxPhase === "done" ? (
-                  "🎯 ASX Signal ✓"
+                  T("panel_btn_asx_done")
                 ) : (
-                  "🎯 ASX Trading Signal"
+                  T("panel_btn_asx")
                 )}
               </button>
               {/* Show IR snapshot context so TinyFish's role is visible */}
               {snapshotText && snapshotText.length > 50 && (
                 <span className="text-xs text-gray-400 pl-1">
-                  🌊 Using {Math.min(snapshotText.length, 4000).toLocaleString()} chars from TinyFish IR scan
+                  🌊 {lang === "zh" ? `使用 ${Math.min(snapshotText.length, 4000).toLocaleString()} 个${T("panel_tf_context")}` : `Using ${Math.min(snapshotText.length, 4000).toLocaleString()} ${T("panel_tf_context")}`}
                 </span>
               )}
             </div>
@@ -439,19 +447,19 @@ export default function TechAnalyticsPanel({
         {taPhase === "loading" && (
           <div className="mt-4">
             <Spinner label="Fetching live OHLCV data → computing indicators → generating Gemini signal → GPT review…" />
-            <p className="text-gray-400 text-xs mt-1">Typically 20–45 seconds</p>
+            <p className="text-gray-400 text-xs mt-1">{T("panel_ta_time")}</p>
           </div>
         )}
         {chartPhase === "loading" && (
           <div className="mt-4">
             <Spinner label="Fetching OHLCV → rendering 3-panel chart → Gemini Vision analysis…" />
-            <p className="text-gray-400 text-xs mt-1">Typically 15–30 seconds</p>
+            <p className="text-gray-400 text-xs mt-1">{T("panel_chart_time")}</p>
           </div>
         )}
         {asxPhase === "loading" && (
           <div className="mt-4">
             <Spinner label="Fetching ASX price data → combining with IR content → Gemini signal + GPT compliance review…" />
-            <p className="text-gray-400 text-xs mt-1">Typically 30–60 seconds</p>
+            <p className="text-gray-400 text-xs mt-1">{T("panel_asx_time")}</p>
           </div>
         )}
 
@@ -475,7 +483,7 @@ export default function TechAnalyticsPanel({
             onClick={() => setTaExpanded(!taExpanded)}
           >
             <div className="flex items-center gap-4 flex-wrap">
-              <h2 className="text-2xl font-bold text-[#252525]">📈 Technical Signal</h2>
+              <h2 className="text-2xl font-bold text-[#252525]">{T("panel_ta_title")}</h2>
               {signalBadge(taResult.signal_markdown)}
               {taResult.current_price && (
                 <span className="text-gray-500 text-sm font-medium">
@@ -488,7 +496,7 @@ export default function TechAnalyticsPanel({
                 </span>
               )}
             </div>
-            <span className="text-gray-400 text-sm">{taExpanded ? "▲ collapse" : "▼ expand"}</span>
+            <span className="text-gray-400 text-sm">{taExpanded ? T("panel_collapse") : T("panel_expand")}</span>
           </button>
           {taExpanded && (
             <div className="px-8 py-6">
@@ -502,7 +510,7 @@ export default function TechAnalyticsPanel({
                 <span>→ RSI · MACD · Bollinger · EMA</span>
                 <span>→ Gemini primary</span>
                 <span>→ GPT‑4o compliance review</span>
-                <span className="ml-auto italic">NOT financial advice</span>
+                <span className="ml-auto italic">{T("panel_not_advice")}</span>
               </div>
             </div>
           )}
@@ -517,7 +525,7 @@ export default function TechAnalyticsPanel({
             onClick={() => setAsxExpanded(!asxExpanded)}
           >
             <div className="flex items-center gap-4 flex-wrap">
-              <h2 className="text-2xl font-bold text-[#252525]">🎯 ASX Trading Signal</h2>
+              <h2 className="text-2xl font-bold text-[#252525]">{T("panel_asx_title")}</h2>
               {signalBadge(asxResult.signal_markdown)}
               {asxResult.current_price && (
                 <span className="text-gray-500 text-sm font-medium">
@@ -525,12 +533,12 @@ export default function TechAnalyticsPanel({
                 </span>
               )}
             </div>
-            <span className="text-gray-400 text-sm">{asxExpanded ? "▲ collapse" : "▼ expand"}</span>
+            <span className="text-gray-400 text-sm">{asxExpanded ? T("panel_collapse") : T("panel_expand")}</span>
           </button>
           {asxExpanded && (
             <div className="px-8 py-6">
               <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-100 text-xs text-amber-700">
-                ⚠ Signal based on latest IR page content + live ASX price data. Google Search grounding enabled.
+                {T("panel_asx_notice")}
               </div>
               <div className="text-sm text-gray-700 leading-relaxed">
                 <SimpleMarkdown>{asxResult.signal_markdown}</SimpleMarkdown>
@@ -542,7 +550,7 @@ export default function TechAnalyticsPanel({
                 <span>→ Yahoo Finance ASX price (multi-timeframe)</span>
                 <span>→ Gemini (Google Search grounded)</span>
                 <span>→ GPT‑4o review</span>
-                <span className="ml-auto italic">NOT financial advice</span>
+                <span className="ml-auto italic">{T("panel_not_advice")}</span>
               </div>
             </div>
           )}
@@ -551,7 +559,7 @@ export default function TechAnalyticsPanel({
 
       {/* ── Chart Vision modal ───────────────────────────────────────────────── */}
       {showModal && chartResult && (
-        <ChartModal chart={chartResult} onClose={() => setShowModal(false)} />
+        <ChartModal chart={chartResult} onClose={() => setShowModal(false)} lang={lang} />
       )}
     </div>
   );

@@ -11,6 +11,8 @@ import Link from "next/link";
 import { UNIVERSE_ALL } from "@/lib/universe";
 import { getTickerSnapshots, getLatestAnalysisWithAgentContent, lookupStock } from "@/lib/db";
 import { resolveTickerUrl } from "@/lib/scan-pipeline";
+import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/translations";
 import TechAnalyticsPanel from "../../../components/TechAnalyticsPanel";
 import WatchlistButton from "../../../components/WatchlistButton";
 
@@ -37,8 +39,9 @@ export default async function IntelPage({
 }) {
   const { symbol } = await params;
   const sym = symbol.toUpperCase();
+  const lang = await getLang();
 
-  const ticker = UNIVERSE_ALL.find((t) => t.symbol === sym);
+  const ticker = UNIVERSE_ALL.find((tk) => tk.symbol === sym);
   const dirEntry = ticker ? null : lookupStock(sym);
   const exchangeLabel = (ticker?.exchange ?? dirEntry?.exchange ?? "NASDAQ") as string;
   const companyName = ticker?.name ?? dirEntry?.name ?? sym;
@@ -59,7 +62,7 @@ export default async function IntelPage({
           {/* Breadcrumb */}
           <div className="flex items-center gap-2 text-sm">
             <Link href="/intel" className="text-white/70 hover:text-white transition-colors font-medium">
-              AI analysis
+              {t(lang, "stock_breadcrumb")}
             </Link>
             <span className="text-white/40">›</span>
             <Link
@@ -69,7 +72,7 @@ export default async function IntelPage({
               {sym}
             </Link>
             <span className="text-white/40">›</span>
-            <span className="text-white/90">AI analysis</span>
+            <span className="text-white/90">{t(lang, "stock_breadcrumb")}</span>
           </div>
 
           {/* Ticker + company name */}
@@ -88,22 +91,22 @@ export default async function IntelPage({
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
               style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}>
-              🌊 TinyFish IR scan
+              {t(lang, "stock_pipeline_tf")}
             </span>
             <span className="text-white/50 text-sm">+</span>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
               style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)" }}>
-              Yahoo Finance OHLCV
+              {t(lang, "stock_pipeline_yf")}
             </span>
             <span className="text-white/50 text-sm">→</span>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
               style={{ background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)" }}>
-              Gemini + GPT‑5.1
+              {t(lang, "stock_pipeline_ai")}
             </span>
             <span className="text-white/50 text-sm">→</span>
             <span className="text-xs font-semibold px-2.5 py-1 rounded-full"
               style={{ background: "rgba(255,255,255,0.25)", color: "#fff", fontWeight: 700 }}>
-              Actionable Signal
+              {t(lang, "stock_pipeline_sig")}
             </span>
           </div>
 
@@ -115,7 +118,7 @@ export default async function IntelPage({
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               style={{ color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.1)" }}
             >
-              ← IR Signal page
+              {t(lang, "stock_cta_ir")}
             </Link>
             <Link
               href={`/ticker/${sym}/report`}
@@ -124,7 +127,7 @@ export default async function IntelPage({
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:brightness-110"
               style={{ background: "#fd8412", color: "#fff" }}
             >
-              📋 Full Report
+              {t(lang, "stock_cta_report")}
             </Link>
           </div>
         </div>
@@ -142,24 +145,25 @@ export default async function IntelPage({
                 ? signalSource.agent_what_changed.slice(0, 200)
                 : `${companyName} — recent IR page update`
             }
+            lang={lang}
           />
         </div>
 
         {/* Bottom nav between stocks */}
         <div className="max-w-5xl mx-auto px-8 pb-16">
           <div className="border-t border-gray-200 pt-8">
-            <p className="text-gray-400 text-sm mb-4">Other stocks in the monitored universe</p>
+            <p className="text-gray-400 text-sm mb-4">{t(lang, "stock_other")}</p>
             <div className="flex flex-wrap gap-2">
-              {UNIVERSE_ALL.filter((t) => t.symbol !== sym).slice(0, 18).map((t) => (
+              {UNIVERSE_ALL.filter((tk) => tk.symbol !== sym).slice(0, 18).map((tk) => (
                 <Link
-                  key={t.symbol}
-                  href={`/ticker/${t.symbol}/intel`}
+                  key={tk.symbol}
+                  href={`/ticker/${tk.symbol}/intel`}
                   className="px-3 py-1 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5"
-                  style={t.exchange === "ASX"
+                  style={tk.exchange === "ASX"
                     ? { background: "rgba(59,130,246,0.1)", color: "#2563eb", border: "1px solid rgba(59,130,246,0.25)" }
                     : { background: "rgba(46,139,87,0.1)", color: "#166534", border: "1px solid rgba(46,139,87,0.25)" }}
                 >
-                  {t.symbol}
+                  {tk.symbol}
                 </Link>
               ))}
             </div>

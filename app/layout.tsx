@@ -3,7 +3,10 @@ import { Poppins, Rajdhani } from "next/font/google";
 import Image from "next/image";
 import "./globals.css";
 import { getAuthUser } from "@/lib/auth";
+import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/translations";
 import LogoutButton from "./components/LogoutButton";
+import LangToggle from "./components/LangToggle";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,10 +30,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const user = await getAuthUser();
+  const [user, lang] = await Promise.all([getAuthUser(), getLang()]);
 
   return (
-    <html lang="en" className={`${poppins.variable} ${rajdhani.variable}`}>
+    <html lang={lang === "zh" ? "zh-CN" : "en"} className={`${poppins.variable} ${rajdhani.variable}`}>
       <body className="min-h-screen bg-[#fcfcfd] text-[#252525] antialiased">
 
         {/* Navbar — clean white, datap.ai style */}
@@ -52,25 +55,25 @@ export default async function RootLayout({
             {/* Centre: page nav */}
             <nav className="flex items-center gap-0.5 flex-1 justify-center">
               <a href="/" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>US Stocks</a>
+                style={{ fontSize: "0.92rem" }}>{t(lang, "nav_usStocks")}</a>
               <a href="/alerts" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>Alerts</a>
+                style={{ fontSize: "0.92rem" }}>{t(lang, "nav_alerts")}</a>
               <a href="/asx" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>ASX</a>
+                style={{ fontSize: "0.92rem" }}>{t(lang, "nav_asx")}</a>
               <a href="/watchlist" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>Watchlist</a>
+                style={{ fontSize: "0.92rem" }}>{t(lang, "nav_watchlist")}</a>
               <a href="/intel" className="text-gray-500 hover:text-[#6366f1] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>AI analysis</a>
+                style={{ fontSize: "0.92rem" }}>{t(lang, "nav_aiAnalysis")}</a>
               <a href="/pricing" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>Pricing</a>
+                style={{ fontSize: "0.92rem" }}>{t(lang, "nav_pricing")}</a>
             </nav>
 
-            {/* Right: sponsor logos + auth */}
+            {/* Right: sponsor logos + lang toggle + auth */}
             <div className="flex-shrink-0 flex items-center gap-3">
 
               {/* Powered-by sponsor logos */}
               <div className="hidden md:flex items-center gap-2 border-r border-gray-100 pr-4 mr-1">
-                <span className="text-gray-400 text-xs font-medium">Powered by</span>
+                <span className="text-gray-400 text-xs font-medium">{t(lang, "nav_poweredBy")}</span>
                 <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer" title="TinyFish"
                   className="flex items-center transition-opacity hover:opacity-70">
                   <Image src="/logos/tinyfish.svg" width={60} height={14} alt="TinyFish" style={{ height: "14px", width: "auto" }} />
@@ -81,6 +84,10 @@ export default async function RootLayout({
                   <Image src="/logos/ag2.png" width={28} height={14} alt="ag2" style={{ height: "14px", width: "auto" }} />
                 </a>
               </div>
+
+              {/* Language toggle */}
+              <LangToggle current={lang} />
+
               {user ? (
                 <>
                   <span className="text-sm text-gray-400 max-w-[160px] truncate hidden sm:block" title={user.email}>
@@ -94,7 +101,7 @@ export default async function RootLayout({
                   className="inline-flex items-center font-semibold rounded-lg px-5 py-2 transition-all hover:bg-[#2e8b57] hover:text-white"
                   style={{ fontSize: "0.9rem", color: "#2e8b57", border: "1.5px solid #2e8b57" }}
                 >
-                  Log in
+                  {t(lang, "nav_login")}
                 </a>
               )}
             </div>
@@ -120,17 +127,16 @@ export default async function RootLayout({
               </span>
             </div>
             <p className="text-gray-500 text-xs text-center">
-              A{" "}
-              <a href="https://www.datap.ai" target="_blank" rel="noopener noreferrer" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">DataP.ai</a>
-              {" "}project · powered by{" "}
+              {t(lang, "footer_project")} ·{" "}
+              {t(lang, "footer_poweredBy")}{" "}
               <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">TinyFish</a>
-              {" "}real-browser technology &amp;{" "}
+              {" "}{t(lang, "footer_realBrowser")} &amp;{" "}
               <a href="https://www.ag2.ai" target="_blank" rel="noopener noreferrer" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">ag2</a>
-              {" "}AI agent framework
+              {" "}{t(lang, "footer_aiFramework")}
             </p>
             <div className="flex items-center gap-4 text-xs text-gray-600">
-              <span>Website Change Intelligence</span>
-              <a href="/pricing" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">Pricing</a>
+              <span>{t(lang, "footer_websiteIntel")}</span>
+              <a href="/pricing" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">{t(lang, "nav_pricing")}</a>
               <a href="https://platform.datap.ai/bi" target="_blank" rel="noopener noreferrer" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">platform.datap.ai</a>
             </div>
           </div>

@@ -7,6 +7,8 @@
 import Link from "next/link";
 import { UNIVERSE_ALL } from "@/lib/universe";
 import { getCachedTaSignal } from "@/lib/db";
+import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/translations";
 import TickerSearch from "../components/TickerSearch";
 
 export const dynamic = "force-dynamic";
@@ -26,14 +28,16 @@ function signalColor(md: string): { bg: string; text: string; label: string } {
   return { bg: "#f3f4f6", text: "#6b7280", label: "No signal" };
 }
 
-export default function IntelLandingPage() {
+export default async function IntelLandingPage() {
+  const lang = await getLang();
+
   // Pre-load any cached TA signals for the monitored universe
-  const signals = UNIVERSE_ALL.map((t) => ({
-    ticker: t,
-    signal: getCachedTaSignal(t.symbol, 24), // show up to 24h old signals
+  const signals = UNIVERSE_ALL.map((tk) => ({
+    ticker: tk,
+    signal: getCachedTaSignal(tk.symbol, 24), // show up to 24h old signals
   }));
 
-  const withSignal = signals.filter((s) => !!s.signal);
+  const withSignal    = signals.filter((s) => !!s.signal);
   const withoutSignal = signals.filter((s) => !s.signal);
 
   return (
@@ -49,7 +53,7 @@ export default function IntelLandingPage() {
               className="text-xs font-bold px-3 py-1 rounded-full uppercase tracking-widest"
               style={{ background: "rgba(255,255,255,0.2)", color: "#fff" }}
             >
-              ⚡ AI analysis
+              {t(lang, "intel_badge")}
             </span>
             <span className="text-white/70 text-xs">
               🌊 TinyFish IR scan · Yahoo Finance · Gemini · GPT‑5.1
@@ -57,15 +61,14 @@ export default function IntelLandingPage() {
           </div>
 
           <h1 className="text-3xl md:text-4xl font-bold text-white">
-            Real-time AI signals for any stock
+            {t(lang, "intel_hero_title")}
           </h1>
 
           <p className="text-white/80 text-sm max-w-xl">
-            Multi-timeframe technical analysis · Gemini Vision chart patterns ·
-            ASX Trading Signal combining IR language shifts with live price data.
+            {t(lang, "intel_hero_desc")}
           </p>
 
-          <TickerSearch placeholder="Search stock → AI analysis…" intelMode />
+          <TickerSearch placeholder={t(lang, "intel_search")} intelMode />
         </div>
       </div>
 
@@ -76,9 +79,9 @@ export default function IntelLandingPage() {
         {withSignal.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-[#252525] mb-5">
-              ⚡ Stocks with recent AI signal
+              {t(lang, "intel_withSignal")}
               <span className="text-base font-normal text-gray-400 ml-2">
-                (last 24 hours)
+                {t(lang, "intel_period")}
               </span>
             </h2>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
@@ -127,7 +130,7 @@ export default function IntelLandingPage() {
         {/* All monitored stocks — click to generate */}
         <div>
           <h2 className="text-2xl font-bold text-[#252525] mb-5">
-            {withSignal.length > 0 ? "All monitored stocks" : "Monitored universe — click to generate AI signal"}
+            {withSignal.length > 0 ? t(lang, "intel_allStocks") : t(lang, "intel_clickGenerate")}
           </h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
             {withoutSignal.map(({ ticker }) => (
@@ -140,7 +143,7 @@ export default function IntelLandingPage() {
                   {ticker.symbol}
                 </div>
                 <div className="text-gray-400 text-xs mt-0.5 truncate">{ticker.name}</div>
-                <div className="text-gray-300 text-xs mt-1.5">{ticker.exchange} · no signal yet</div>
+                <div className="text-gray-300 text-xs mt-1.5">{ticker.exchange} · {t(lang, "intel_noSignal")}</div>
               </Link>
             ))}
           </div>
@@ -149,24 +152,20 @@ export default function IntelLandingPage() {
         {/* What is this */}
         <div className="bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
           <h3 className="font-bold text-xl text-[#252525] mb-4">
-            What is AI analysis?
+            {t(lang, "intel_whatIs")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-sm text-gray-500">
             <div>
-              <div className="font-bold text-[#2e8b57] mb-2">📈 Technical Signal</div>
-              Multi-timeframe OHLCV data (5m / 30m / 1h / 1d) → RSI, MACD, Bollinger, EMA →
-              Gemini primary analysis → GPT‑5.1 compliance review → structured BUY/HOLD/SELL signal.
+              <div className="font-bold text-[#2e8b57] mb-2">{t(lang, "intel_ta_heading")}</div>
+              {t(lang, "intel_ta_desc")}
             </div>
             <div>
-              <div className="font-bold text-[#6366f1] mb-2">📊 Chart Vision</div>
-              Renders a 3-panel dark chart (Price+BBands / RSI / MACD) and sends it to Gemini Vision
-              for real-time pattern recognition — head-and-shoulders, breakouts, divergences.
+              <div className="font-bold text-[#6366f1] mb-2">{t(lang, "intel_chart_heading")}</div>
+              {t(lang, "intel_chart_desc")}
             </div>
             <div>
-              <div className="font-bold text-[#fd8412] mb-2">🎯 ASX Trading Signal</div>
-              Unique to DataP.ai: combines TinyFish IR page language intelligence with live
-              multi-timeframe ASX price data → STRONG BUY to STRONG SELL with entry, target
-              and stop-loss per timeframe.
+              <div className="font-bold text-[#fd8412] mb-2">{t(lang, "intel_asx_heading")}</div>
+              {t(lang, "intel_asx_desc")}
             </div>
           </div>
         </div>
