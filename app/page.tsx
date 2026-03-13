@@ -29,7 +29,12 @@ export default function Home() {
           <p className="text-white/80 text-sm font-medium">
             Spot language shifts on company websites before they move stock prices —{" "}
             <span className="text-white font-bold">9,000+ US &amp; ASX stocks</span>{" "}
-            covered · powered by AI agents
+            covered · powered by{" "}
+            <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer"
+              className="text-white font-bold underline underline-offset-2 hover:text-white/80 transition-colors">
+              TinyFish
+            </a>{" "}
+            real-browser technology &amp; AI agents
           </p>
 
           <TickerSearch />
@@ -65,7 +70,15 @@ export default function Home() {
             <span className="text-gray-300">·</span>
             <span style={{ color: "#f97316" }}><strong>{lastRun.changed_count}</strong> changed</span>
             {lastRun.failed_count > 0 && (
-              <><span className="text-gray-300">·</span><span style={{ color: "#ef4444" }}><strong>{lastRun.failed_count}</strong> failed</span></>
+              <>
+                <span className="text-gray-300">·</span>
+                <span
+                  style={{ color: "#ef4444", cursor: "help" }}
+                  title={`${lastRun.failed_count} IR pages were unreachable this scan — typically login-gated, paywalled, or temporarily down. These are retried automatically next run and do not affect signal quality for the stocks that completed successfully.`}
+                >
+                  <strong>{lastRun.failed_count}</strong> failed ⓘ
+                </span>
+              </>
             )}
             <Link href={`/run/${lastRun.id}`} className="ml-auto text-gray-400 hover:text-gray-700 underline underline-offset-2 text-xs">
               View run detail →
@@ -152,8 +165,17 @@ export default function Home() {
         <div>
           <h2 className="text-3xl font-bold text-[#252525] mb-6">How It Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Step 1 — TinyFish (special card with logo) */}
+            <div className="bg-white border-2 border-[#2e8b57] rounded-2xl p-6 shadow-sm">
+              <div className="text-brand font-bold text-3xl mb-3">1</div>
+              <div className="flex items-center gap-2 mb-2">
+                <Image src="/logos/tinyfish.svg" width={72} height={16} alt="TinyFish" style={{ height: "16px", width: "auto" }} />
+                <span className="text-[#252525] font-bold text-lg">Fetches</span>
+              </div>
+              <div className="text-gray-500 text-base">Real browser rendering of JavaScript-heavy investor pages — no scraping shortcuts</div>
+            </div>
+            {/* Steps 2–4 */}
             {[
-              { step: "1", label: "TinyFish Fetches", desc: "Real browser rendering of JavaScript-heavy investor pages — no scraping shortcuts" },
               { step: "2", label: "DataP.ai Cleans", desc: "Removes nav/footer noise, hashes content, stores versioned snapshots in SQLite" },
               { step: "3", label: "Diff & Score", desc: "Text diff detects wording shifts. Word-list scores measure commitment/hedging/risk" },
               { step: "4", label: "AI Signal", desc: "GPT/Gemini summary with direct quotes, confidence score, and price chart context" },
