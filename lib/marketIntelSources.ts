@@ -203,6 +203,68 @@ End with BIS STABILITY OUTLOOK: 3 bullets on key systemic/banking sector risks.
 `.trim(),
   },
 
+  // ── TIER 1: Additional real-time news sources ────────────────────────────
+
+  {
+    id:    "cnbc_markets",
+    name:  "CNBC Markets",
+    url:   "https://www.cnbc.com/markets/",
+    tier:  1,
+    cacheTtlMs: 0,
+    enabled:    true,
+    maxChars:   4000,
+    sectionLabel: "📺 REAL-TIME NEWS — CNBC Markets",
+    goal: `
+Extract the top 15-20 most important market news stories and alerts from CNBC Markets.
+For each item: (1) headline, (2) timestamp, (3) 1-2 sentence summary.
+Prioritise: US equity market moves (S&P 500, Nasdaq, Dow), Fed/FOMC news, earnings movers,
+sector rotation stories, commodities (oil, gold), Treasury yields, major economic data releases,
+pre-market and after-hours movers, analyst calls and price target changes.
+End with CNBC MARKET SUMMARY: 3-4 bullet points on the dominant market themes right now.
+`.trim(),
+  },
+
+  {
+    id:    "marketwatch",
+    name:  "MarketWatch",
+    url:   "https://www.marketwatch.com/latest-news",
+    tier:  1,
+    cacheTtlMs: 0,
+    enabled:    true,
+    maxChars:   4000,
+    sectionLabel: "📈 REAL-TIME NEWS — MarketWatch (WSJ)",
+    goal: `
+Extract the 15-20 most recent financial news headlines from MarketWatch.
+For each: (1) headline, (2) timestamp, (3) 1-2 sentence factual summary.
+Focus on: US equity indices, individual stock movers, earnings surprises,
+economic indicator releases (jobs, inflation, GDP, housing), Fed commentary,
+corporate events (M&A, IPOs, bankruptcies, buybacks), credit markets.
+End with MARKETWATCH PULSE: 3-4 bullets on the key market narratives driving price action today.
+`.trim(),
+  },
+
+  // ── TIER 2: Central bank policy (primary sources) ────────────────────────
+
+  {
+    id:    "fed_reserve",
+    name:  "Federal Reserve (FOMC)",
+    url:   "https://www.federalreserve.gov/newsevents/pressreleases.htm",
+    tier:  2,
+    cacheTtlMs: 6 * 3600 * 1000,   // 6 hours
+    enabled:    true,
+    maxChars:   3000,
+    sectionLabel: "🏦 US MONETARY POLICY — Federal Reserve (FOMC)",
+    goal: `
+Extract the latest 10 press releases and statements from the Federal Reserve newsroom.
+For each: (1) title, (2) date, (3) key policy content in 1-2 sentences.
+Prioritise: FOMC rate decisions and meeting minutes, balance sheet (QT/QE) announcements,
+Fed Chair statements and testimony, bank stress test results, financial stability reports,
+discount rate changes, emergency lending facility announcements, supervisory guidance.
+End with FED POLICY STANCE: current federal funds rate target + 3 bullets on the Fed's
+current policy trajectory, inflation outlook, and next FOMC meeting expectations.
+`.trim(),
+  },
+
   // ── OPTIONAL / EXPERIMENTAL (set enabled: false by default) ──────────────
 
   {
@@ -244,7 +306,7 @@ Focus on macro economics, monetary policy analysis, global trade, financial mark
     url:   "https://www.brookings.edu/topic/economy/",
     tier:  2,
     cacheTtlMs: 12 * 3600 * 1000,
-    enabled:    false,   // Good for policy depth but slow-moving; enable for election/policy cycles
+    enabled:    true,    // Policy depth — especially valuable during rate cycles and election years
     maxChars:   2000,
     sectionLabel: "🏛️ POLICY RESEARCH — Brookings Institution",
     goal: `
