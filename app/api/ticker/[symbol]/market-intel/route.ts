@@ -120,6 +120,25 @@ function getSectorUrl(sector: string | null): string {
   return map[sector ?? ""] ?? "https://finance.yahoo.com/markets/";
 }
 
+// ── Per-crawl timeout wrapper (returns "" on timeout so synthesis still runs) ──
+
+const CRAWL_TIMEOUT_MS = 60_000; // 60s per crawl
+
+async function crawlSafe(url: string, goal: string): Promise<string> {
+  try {
+    const page = await Promise.race([
+      fetchPageText(url, goal),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error(`TinyFish timeout after ${CRAWL_TIMEOUT_MS / 1000}s: ${url}`)), CRAWL_TIMEOUT_MS)
+      ),
+    ]);
+    return page.text;
+  } catch (err) {
+    console.warn(`[market-intel] crawl failed for ${url}:`, err);
+    return "";
+  }
+}
+
 // ── Route handler ──────────────────────────────────────────────────────────────
 
 export async function GET(
@@ -148,21 +167,16 @@ export async function GET(
     );
   }
 
-  // ── Parallel TinyFish crawls ──────────────────────────────────────────────
+  // ── Parallel TinyFish crawls (each capped at 60s; failures return "") ─────
   const macroUrl  = "https://finance.yahoo.com/markets/";
   const tickerUrl = `https://finance.yahoo.com/quote/${sym}/news/`;
   const sectorUrl = getSectorUrl(sector);
 
-  const [macroPage, tickerPage, sectorPage] = await Promise.allSettled([
-    fetchPageText(macroUrl,  MACRO_GOAL),
-    fetchPageText(tickerUrl, TICKER_NEWS_GOAL),
-    sector ? fetchPageText(sectorUrl, SECTOR_GOAL) : Promise.resolve(null),
+  const [marketNewsText, tickerNewsText, sectorNewsText] = await Promise.all([
+    crawlSafe(macroUrl,                        MACRO_GOAL),
+    crawlSafe(tickerUrl,                       TICKER_NEWS_GOAL),
+    sector ? crawlSafe(sectorUrl, SECTOR_GOAL) : Promise.resolve(""),
   ]);
-
-  const marketNewsText = macroPage.status  === "fulfilled" ? macroPage.value?.text  ?? "" : "";
-  const tickerNewsText = tickerPage.status === "fulfilled" ? tickerPage.value?.text ?? "" : "";
-  const sectorNewsText =
-    sectorPage.status === "fulfilled" && sectorPage.value ? sectorPage.value.text : "";
 
   // ── Python synthesis — senior investment bank analyst LLM ─────────────────
   let synthRes: Response;
