@@ -149,18 +149,16 @@ export default async function IntelPage({
                 : `${companyName} — recent IR page update`
             }
             lang={lang}
+            chatSlot={
+              <StockChatPanel
+                symbol={sym}
+                exchange={exchangeLabel}
+                lang={lang}
+                taSignalMd={cachedTaSignal?.signal_md ?? undefined}
+                snapshotText={(latestSnap?.cleaned_text ?? latestSnap?.text ?? "").slice(0, 3000)}
+              />
+            }
           />
-
-          {/* ── AI Research Co-pilot chat panel ──────────────────────────── */}
-          <div className="mt-6">
-            <StockChatPanel
-              symbol={sym}
-              exchange={exchangeLabel}
-              lang={lang}
-              taSignalMd={cachedTaSignal?.signal_md ?? undefined}
-              snapshotText={(latestSnap?.cleaned_text ?? latestSnap?.text ?? "").slice(0, 3000)}
-            />
-          </div>
         </div>
 
         {/* Bottom nav between stocks */}
