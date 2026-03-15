@@ -473,9 +473,8 @@ export default function TechAnalyticsPanel({
       <div className="rounded-2xl p-6 bg-white border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div>
-            <h2 className="text-[#252525] font-bold text-xl">{T("panel_heading")}</h2>
             {/* Data provenance — makes TinyFish → AI pipeline explicit */}
-            <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
                 style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #4ade8040" }}>
                 {T("panel_tf")}

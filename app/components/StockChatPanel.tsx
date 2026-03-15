@@ -223,10 +223,6 @@ export default function StockChatPanel({
         {isEmpty && (
           <div className="space-y-4">
             <div className="text-center py-4">
-              <div className="flex justify-center mb-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logos/datapai.png" alt="DataP.ai" className="h-10 object-contain" />
-              </div>
               <p className="text-gray-500 text-sm">
                 {lang === "zh"
                   ? `询问关于 ${symbol} 的任何问题 — 我了解TinyFish扫描历史、技术信号和IR（投资者关系）语言变化。`
@@ -304,7 +300,7 @@ export default function StockChatPanel({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            rows={1}
+            rows={3}
             disabled={loading}
             placeholder={
               lang === "zh"

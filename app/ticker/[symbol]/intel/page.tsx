@@ -146,6 +146,15 @@ export default async function IntelPage({
       <div className="min-h-screen bg-[#fcfcfd]">
         <div className="max-w-5xl mx-auto px-8 py-10">
 
+            {/* ── AI Research Co-pilot (top of section) */}
+          <StockChatPanel
+            symbol={sym}
+            exchange={exchangeLabel}
+            lang={lang}
+            taSignalMd={cachedTaSignal?.signal_md ?? undefined}
+            snapshotText={(latestSnap?.cleaned_text ?? latestSnap?.text ?? "").slice(0, 3000)}
+          />
+
           {/* ── All 3 AI features: TA Signal · Chart Vision · Fundamental Analysis */}
           <TechAnalyticsPanel
             symbol={sym}
@@ -158,15 +167,6 @@ export default async function IntelPage({
                 : `${companyName} — recent IR page update`
             }
             lang={lang}
-            chatSlot={
-              <StockChatPanel
-                symbol={sym}
-                exchange={exchangeLabel}
-                lang={lang}
-                taSignalMd={cachedTaSignal?.signal_md ?? undefined}
-                snapshotText={(latestSnap?.cleaned_text ?? latestSnap?.text ?? "").slice(0, 3000)}
-              />
-            }
           />
 
         </div>
