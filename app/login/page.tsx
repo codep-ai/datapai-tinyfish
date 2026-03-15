@@ -104,6 +104,11 @@ function LoginForm() {
               Create one
             </Link>
           </div>
+          <div className="text-center text-sm">
+            <Link href="/forgot-password" className="text-gray-400 hover:underline text-xs">
+              Forgot your password?
+            </Link>
+          </div>
         </form>
       </div>
     </div>

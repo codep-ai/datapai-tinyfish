@@ -31,7 +31,7 @@ async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
   try {
     await startRun(runId);
 
-    const CONCURRENCY = 3;
+    const CONCURRENCY = 2; // TinyFish account limit: 2 concurrent requests
     const queue = [...universe];
     let scanned = 0, changed = 0, alerted = 0, failed = 0;
 

@@ -183,6 +183,12 @@ export interface User {
   email: string;
   password_hash: string;
   created_at: string;
+  // Added by migration 005
+  stripe_customer_id?: string | null;
+  plan?: string;
+  plan_status?: string;
+  plan_expires_at?: string | null;
+  trial_ends_at?: string | null;
 }
 
 export interface SessionRow {
@@ -579,6 +585,65 @@ export async function getSession(token: string): Promise<SessionRow | null> {
 
 export async function deleteSession(token: string): Promise<void> {
   await exec(`DELETE FROM datapai.sessions WHERE token=$1`, [token]);
+}
+
+export async function updateUserPassword(userId: string, passwordHash: string): Promise<void> {
+  await exec(`UPDATE datapai.users SET password_hash=$1 WHERE id=$2`, [passwordHash, userId]);
+}
+
+export async function updateUserStripeCustomer(userId: string, stripeCustomerId: string): Promise<void> {
+  await exec(`UPDATE datapai.users SET stripe_customer_id=$1 WHERE id=$2`, [stripeCustomerId, userId]);
+}
+
+export async function updateUserPlan(
+  userId: string,
+  plan: string,
+  planStatus: string,
+  planExpiresAt: string | null
+): Promise<void> {
+  await exec(
+    `UPDATE datapai.users SET plan=$1, plan_status=$2, plan_expires_at=$3 WHERE id=$4`,
+    [plan, planStatus, planExpiresAt, userId]
+  );
+}
+
+export async function getUserByStripeCustomerId(stripeCustomerId: string): Promise<User | null> {
+  const rows = await q<User>(
+    `SELECT * FROM datapai.users WHERE stripe_customer_id=$1`, [stripeCustomerId]
+  );
+  return rows[0] ?? null;
+}
+
+// ─── Password reset tokens ────────────────────────────────────────────────
+
+export async function createPasswordResetToken(userId: string, tokenHash: string): Promise<void> {
+  // Invalidate any existing unused tokens for this user first
+  await exec(
+    `UPDATE datapai.password_reset_tokens SET used=TRUE WHERE user_id=$1 AND used=FALSE`,
+    [userId]
+  );
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+  await exec(
+    `INSERT INTO datapai.password_reset_tokens (user_id, token_hash, expires_at)
+     VALUES ($1, $2, $3)`,
+    [userId, tokenHash, expiresAt]
+  );
+}
+
+export async function getPasswordResetToken(tokenHash: string): Promise<{ user_id: string; expires_at: string; used: boolean } | null> {
+  const rows = await q<{ user_id: string; expires_at: string; used: boolean }>(
+    `SELECT user_id, expires_at, used FROM datapai.password_reset_tokens
+     WHERE token_hash=$1`,
+    [tokenHash]
+  );
+  return rows[0] ?? null;
+}
+
+export async function markPasswordResetTokenUsed(tokenHash: string): Promise<void> {
+  await exec(
+    `UPDATE datapai.password_reset_tokens SET used=TRUE WHERE token_hash=$1`,
+    [tokenHash]
+  );
 }
 
 // ─── Watchlist ────────────────────────────────────────────────────────────

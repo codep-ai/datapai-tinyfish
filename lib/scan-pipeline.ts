@@ -95,8 +95,10 @@ export interface ScanTickerResult {
 
 export async function scanTicker(
   t: TickerInfo,
-  runId: string
+  runId: string,
+  options: { force?: boolean } = {}
 ): Promise<ScanTickerResult> {
+  const forceAgents = options.force ?? false;
   try {
     // ── Step 1: Fetch ───────────────────────────────────────────────────────
     await logStep(runId, t.symbol, "Fetching page", "start");
@@ -154,7 +156,7 @@ export async function scanTicker(
     });
     await logStep(runId, t.symbol, "Computing diff", "done", `${diff.changed_pct.toFixed(1)}% changed`);
 
-    if (diff.changed_pct < 1 && diff.added_lines === 0) {
+    if (!forceAgents && diff.changed_pct < 1 && diff.added_lines === 0) {
       await logStep(runId, t.symbol, "Processing", "done", "No meaningful change detected");
       return { changed: false, alerted: false, failed: false };
     }

@@ -78,7 +78,7 @@ async function runSingleTickerAsync(
     await startRun(runId);
 
     const ticker = { symbol, name, url, exchange: exchange as "NASDAQ" | "NYSE" | "ASX" };
-    const result = await scanTicker(ticker, runId);
+    const result = await scanTicker(ticker, runId, { force: true });
 
     await finishRun(runId, new Date().toISOString(), {
       scanned: 1,

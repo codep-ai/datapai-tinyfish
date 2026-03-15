@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs } from "@/lib/db";
 import { fetchPrices } from "@/lib/price";
-import { UNIVERSE } from "@/lib/universe";
+import { UNIVERSE_ALL } from "@/lib/universe";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +10,7 @@ export async function GET(
   { params }: { params: Promise<{ symbol: string }> }
 ) {
   const { symbol } = await params;
-  const ticker = UNIVERSE.find((t) => t.symbol === symbol.toUpperCase());
+  const ticker = UNIVERSE_ALL.find((t) => t.symbol === symbol.toUpperCase());
 
   if (!ticker) {
     return NextResponse.json({ error: "Ticker not found" }, { status: 404 });

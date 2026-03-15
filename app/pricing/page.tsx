@@ -1,8 +1,8 @@
 /**
  * /pricing  —  TinyFish × DataP.ai pricing page
  *
- * Three tiers: Signal Watch (free), Signal Pro ($49/mo), Signal Command ($499/mo)
- * Annual billing option saves ~32%.
+ * Four tiers: Signal Watch (free), Individual ($49), Professional ($299),
+ *             Business ($999), Enterprise (contact)
  */
 
 import type { Metadata } from "next";
@@ -11,7 +11,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Pricing — TinyFish × DataP.ai Stock Intelligence",
   description:
-    "Signal Watch (free) · Signal Pro · Signal Command. AI-powered stock language intelligence for self-directed investors and institutions.",
+    "Signal Watch (free) · Individual ($49) · Professional ($299) · Business ($999). AI-powered stock language intelligence for self-directed investors, advisors and institutions.",
 };
 
 // ─── Feature matrix ──────────────────────────────────────────────────────────
@@ -42,19 +42,19 @@ const TIERS: Tier[] = [
       { text: "30-day scan history", note: null },
       { text: "Confidence scores", note: null },
       { text: "Watchlist", note: null },
-      { text: "—  Daily scan", note: null, disabled: true },
-      { text: "—  AI Technical Signal", note: null, disabled: true },
-      { text: "—  Chart Vision (Gemini)", note: null, disabled: true },
-      { text: "—  ASX Trading Signal", note: null, disabled: true },
-      { text: "—  API access", note: null, disabled: true },
+      { text: "Daily scan", note: null, disabled: true },
+      { text: "AI Technical Signal", note: null, disabled: true },
+      { text: "Chart Vision (Gemini)", note: null, disabled: true },
+      { text: "ASX Trading Signal", note: null, disabled: true },
+      { text: "API access", note: null, disabled: true },
     ],
   },
   {
-    id: "pro",
-    name: "Signal Pro",
+    id: "individual",
+    name: "Individual",
     tagline: "For the serious self-directed investor.",
     price: { monthly: 49, annual: 399 },
-    cta: { label: "Start 14-day free trial", href: "/register?plan=pro", style: "solid" as const },
+    cta: { label: "Start 14-day free trial", href: "/register?plan=individual", style: "solid" as const },
     badge: "Most popular",
     features: [
       { text: "50 stocks monitored", note: "US & ASX" },
@@ -67,28 +67,49 @@ const TIERS: Tier[] = [
       { text: "📊 Chart Vision", note: "Gemini Vision 3-panel" },
       { text: "🎯 ASX Trading Signal", note: "IR context + live price" },
       { text: "6-hour signal cache", note: "instant repeat loads" },
-      { text: "—  API access", note: null, disabled: true },
+      { text: "API access", note: null, disabled: true },
     ],
   },
   {
-    id: "command",
-    name: "Signal Command",
+    id: "professional",
+    name: "Professional",
+    tagline: "For active traders, advisors & small teams.",
+    price: { monthly: 299, annual: 2499 },
+    cta: { label: "Start 14-day free trial", href: "/register?plan=professional", style: "solid" as const },
+    badge: null,
+    features: [
+      { text: "200 stocks monitored", note: "US & ASX" },
+      { text: "Multiple daily scans", note: "configurable schedule" },
+      { text: "Full AI signal pipeline", note: "all 6 agents" },
+      { text: "Unlimited scan history", note: null },
+      { text: "All Individual AI features", note: null },
+      { text: "Priority signal processing", note: null },
+      { text: "📡 REST API access", note: "JSON · OpenAPI spec" },
+      { text: "Webhook alerts", note: "real-time push" },
+      { text: "Historical data export", note: "CSV / JSON" },
+      { text: "3 team seats", note: "additional seats available" },
+      { text: "White-label option", note: null, disabled: true },
+    ],
+  },
+  {
+    id: "business",
+    name: "Business",
     tagline: "For funds, desks and research teams.",
-    price: { monthly: 499, annual: 4999 },
-    cta: { label: "Contact us", href: "mailto:donny@datap.ai?subject=Signal Command enquiry", style: "dark" as const },
+    price: { monthly: 999, annual: 8999 },
+    cta: { label: "Contact us", href: "mailto:donny@datap.ai?subject=Business plan enquiry", style: "dark" as const },
     badge: "Institutional",
     features: [
       { text: "Unlimited stocks", note: "9,000+ US · 2,000+ ASX" },
-      { text: "Multiple daily scans", note: "configurable schedule" },
+      { text: "Unlimited scans", note: "configurable schedule" },
       { text: "Full AI signal pipeline", note: "all 6 agents" },
-      { text: "Unlimited history", note: null },
-      { text: "All Pro AI features", note: null },
-      { text: "REST API + webhooks", note: "JSON · OpenAPI spec" },
+      { text: "All Professional features", note: null },
       { text: "Custom alert rules", note: "sector · score threshold" },
-      { text: "Team seats (5 users)", note: "additional seats available" },
-      { text: "Historical data export", note: "CSV / JSON" },
+      { text: "10 team seats", note: "additional seats on request" },
       { text: "Dedicated support", note: "guaranteed response SLA" },
-      { text: "White-label option", note: "on request" },
+      { text: "🏷️ White-label option", note: "on request" },
+      { text: "Custom integrations", note: "Bloomberg · Slack · webhooks" },
+      { text: "Invoiced billing", note: "annual contract available" },
+      { text: "IR monitoring for your own listings", note: "watch competitors too" },
     ],
   },
 ];
@@ -160,16 +181,16 @@ export default function PricingPage() {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-6 py-16 space-y-20">
+      <div className="max-w-7xl mx-auto px-6 py-16 space-y-20">
 
         {/* ── Pricing cards ───────────────────────────────────────────────── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 items-start">
           {TIERS.map((tier) => (
             <div
               key={tier.id}
               className="relative bg-white rounded-2xl shadow-sm overflow-hidden flex flex-col"
               style={{
-                border: tier.id === "pro"
+                border: tier.id === "individual"
                   ? "2px solid #2e8b57"
                   : "1px solid #e5e7eb",
               }}
@@ -179,7 +200,7 @@ export default function PricingPage() {
                 <div
                   className="text-center text-xs font-bold uppercase tracking-widest py-1.5"
                   style={
-                    tier.id === "pro"
+                    tier.id === "individual"
                       ? { background: "#2e8b57", color: "#fff" }
                       : { background: "#1a1a2e", color: "#a5b4fc" }
                   }
@@ -457,18 +478,18 @@ export default function PricingPage() {
               Start free →
             </Link>
             <Link
-              href="/register?plan=pro"
+              href="/register?plan=individual"
               className="font-bold py-3 px-8 rounded-xl text-base transition-all hover:-translate-y-0.5"
               style={{ background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}
             >
-              Try Pro free for 14 days
+              Try Individual free for 14 days
             </Link>
             <a
-              href="mailto:donny@datap.ai?subject=Signal Command enquiry"
+              href="mailto:donny@datap.ai?subject=Business plan enquiry"
               className="font-medium py-3 px-6 rounded-xl text-sm transition-colors"
               style={{ color: "rgba(255,255,255,0.4)" }}
             >
-              Institutional enquiry →
+              Business / Enterprise enquiry →
             </a>
           </div>
           <p className="text-white/25 text-xs mt-8">
