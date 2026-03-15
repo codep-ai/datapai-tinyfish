@@ -305,7 +305,7 @@ export default function OnboardingPage() {
             {step > 1 ? (
               <button type="button" onClick={() => setStep(s => s - 1)}
                 className="flex items-center gap-1.5 px-5 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all">
-                ← Previous
+                ← Back
               </button>
             ) : (
               <button type="button" onClick={handleSkip}
