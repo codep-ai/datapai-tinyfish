@@ -14,7 +14,7 @@ export const tr = {
   // ── Navigation ───────────────────────────────────────────────────────────
   nav_usStocks:   { en: "US Stocks",  zh: "美股" },
   nav_alerts:     { en: "Alerts",     zh: "预警" },
-  nav_asx:        { en: "AU Stock",   zh: "澳股" },
+  nav_asx:        { en: "AU Stocks",  zh: "澳股" },
   nav_watchlist:  { en: "Watchlist",  zh: "自选股" },
   nav_aiAnalysis: { en: "AI analysis",zh: "AI分析" },
   nav_pricing:    { en: "Pricing",    zh: "定价" },
