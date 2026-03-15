@@ -6,6 +6,7 @@
  * regulatory disclosures. This is factual information only — not financial
  * advice, not a recommendation to use any particular broker.  Fees change
  * frequently; always verify directly with the broker before opening an account.
+ * User ratings sourced from Trustpilot (trustpilot.com).
  */
 
 import { getLang } from "@/lib/getLang";
@@ -17,6 +18,7 @@ import {
   type Broker,
   type Market,
 } from "@/lib/brokers";
+import { getLatestRatings, type TrustpilotRating } from "@/lib/trustpilot-scanner";
 
 // ── Small presentational helpers ─────────────────────────────────────────────
 
@@ -43,6 +45,55 @@ function Td({ children, className = "" }: { children: React.ReactNode; className
   );
 }
 
+/** Filled/empty star row for a score 0–5 */
+function Stars({ score }: { score: number }) {
+  const full = Math.floor(score);
+  const half = score - full >= 0.25 && score - full < 0.75;
+  const empty = 5 - full - (half ? 1 : 0);
+  const color = score >= 4.0 ? "#00b67a" : score >= 3.0 ? "#fd8412" : "#e74c3c";
+  return (
+    <span style={{ color, fontSize: "0.75rem", letterSpacing: "1px" }}>
+      {"★".repeat(full)}
+      {half ? "½" : ""}
+      {"☆".repeat(empty)}
+    </span>
+  );
+}
+
+/** TrustScore cell — score + star visual + review count + Trustpilot link */
+function RatingCell({ rating, url }: { rating: TrustpilotRating | null; url: string | null }) {
+  if (!rating) {
+    return <span className="text-gray-300 text-xs">—</span>;
+  }
+  const color = rating.score >= 4.0 ? "#00b67a" : rating.score >= 3.0 ? "#fd8412" : "#e74c3c";
+  const reviews = rating.reviewCount >= 1000
+    ? `${(rating.reviewCount / 1000).toFixed(1)}k`
+    : String(rating.reviewCount);
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center gap-1.5">
+        <span className="text-sm font-bold" style={{ color }}>
+          {rating.score.toFixed(1)}
+        </span>
+        <Stars score={rating.score} />
+      </div>
+      {rating.reviewCount > 0 && (
+        <div className="text-[10px] text-gray-400">{reviews} reviews</div>
+      )}
+      {url && (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer nofollow"
+          className="text-[10px] text-gray-400 hover:underline block"
+        >
+          Trustpilot ↗
+        </a>
+      )}
+    </div>
+  );
+}
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default async function BrokersPage({
@@ -50,7 +101,11 @@ export default async function BrokersPage({
 }: {
   searchParams: Promise<{ market?: string }>;
 }) {
-  const [lang, params] = await Promise.all([getLang(), searchParams]);
+  const [lang, params, ratings] = await Promise.all([
+    getLang(),
+    searchParams,
+    getLatestRatings(),
+  ]);
   const market: Market = (params.market?.toUpperCase() === "AU" ? "AU" : "US") as Market;
 
   const brokers: Broker[] = market === "AU" ? AU_BROKERS : US_BROKERS;
@@ -141,7 +196,7 @@ export default async function BrokersPage({
           </h2>
 
           <div className="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
-            <table className="w-full min-w-[900px] border-collapse bg-white">
+            <table className="w-full min-w-[1000px] border-collapse bg-white">
               <thead>
                 <tr style={{ background: "linear-gradient(90deg, seagreen, darkseagreen)" }}>
                   <Th className="rounded-tl-xl">{t(lang, "broker_th_broker")}</Th>
@@ -159,7 +214,8 @@ export default async function BrokersPage({
                   {!isAU && <Th>{t(lang, "broker_th_ira")}</Th>}
                   {!isAU && <Th>{t(lang, "broker_th_solo401k")}</Th>}
                   <Th>{t(lang, "broker_th_fractional")}</Th>
-                  <Th className="rounded-tr-xl">{t(lang, "broker_th_mobile")}</Th>
+                  <Th>{t(lang, "broker_th_mobile")}</Th>
+                  <Th className="rounded-tr-xl">{t(lang, "broker_th_rating")}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -217,6 +273,9 @@ export default async function BrokersPage({
                     {!isAU && <Td><Check val={b.hasSolo401k} /></Td>}
                     <Td><Check val={b.hasFractionalShares} /></Td>
                     <Td><Check val={b.hasMobileApp} /></Td>
+                    <Td>
+                      <RatingCell rating={ratings[b.id] ?? null} url={b.trustpilotUrl} />
+                    </Td>
                   </tr>
                 ))}
               </tbody>
@@ -244,6 +303,9 @@ export default async function BrokersPage({
             {isAU && <>{t(lang, "broker_disclaimer_au")}{" "}</>}
             {t(lang, "broker_disclaimer_data")} <strong>{DATA_REVIEWED_DATE}</strong>.{" "}
             {t(lang, "broker_disclaimer_norel")}
+          </p>
+          <p className="text-xs text-gray-400">
+            {t(lang, "broker_disclaimer_tp")}
           </p>
         </div>
 

@@ -137,6 +137,7 @@ export const tr = {
   broker_th_solo401k:      { en: "Solo 401(k)",                         zh: "个人401(k)" },
   broker_th_fractional:    { en: "Fractional",                          zh: "碎股" },
   broker_th_mobile:        { en: "Mobile",                              zh: "手机APP" },
+  broker_th_rating:        { en: "User Rating",                         zh: "用户评分" },
 
   // broker row actions
   broker_visit_site:       { en: "Visit site ↗",                        zh: "访问官网 ↗" },
@@ -159,6 +160,7 @@ export const tr = {
   },
   broker_disclaimer_data:  { en: "Data last reviewed:", zh: "数据最后审核时间：" },
   broker_disclaimer_norel: { en: "DataP.ai has no commercial relationship with any broker listed on this page.", zh: "DataP.ai与本页面所列任何券商均无商业合作关系。" },
+  broker_disclaimer_tp:    { en: "User ratings sourced from Trustpilot (trustpilot.com). Ratings reflect public reviews and may not represent all customer experiences.", zh: "用户评分来源于Trustpilot（trustpilot.com），评分基于公开评论，不一定代表所有客户体验。" },
 } as const;
 
 export function t(lang: Lang, key: keyof typeof tr): string {

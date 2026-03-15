@@ -38,6 +38,13 @@ export interface Broker {
    * Must point to the broker's official fee schedule or pricing page (not the homepage).
    */
   feePageUrl: string;
+  /**
+   * Trustpilot review page URL — used to scrape TrustScore and review count.
+   * AU brokers: au.trustpilot.com/review/<domain>
+   * US brokers: www.trustpilot.com/review/<domain>
+   * null = no Trustpilot listing found.
+   */
+  trustpilotUrl: string | null;
 
   // ── Fees ────────────────────────────────────────────────────────────────────
   /** Human-readable commission string, e.g. "$0" or "$9.50 flat" */
@@ -97,6 +104,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://www.fidelity.com",
     signupUrl: "https://www.fidelity.com/open-account/overview",
     feePageUrl: "https://www.fidelity.com/trading/commissions-margin-rates",
+    trustpilotUrl: "https://www.trustpilot.com/review/www.fidelity.com",
     commissionStocks: "$0",
     commissionETFs: "$0",
     commissionOptions: "$0.65/contract",
@@ -116,6 +124,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://www.schwab.com",
     signupUrl: "https://www.schwab.com/open-an-account",
     feePageUrl: "https://www.schwab.com/pricing",
+    trustpilotUrl: "https://www.trustpilot.com/review/www.schwab.com",
     commissionStocks: "$0",
     commissionETFs: "$0",
     commissionOptions: "$0.65/contract",
@@ -135,6 +144,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://www.interactivebrokers.com",
     signupUrl: "https://www.interactivebrokers.com/en/trading/open-account.php",
     feePageUrl: "https://www.interactivebrokers.com/en/trading/commissions.php",
+    trustpilotUrl: "https://www.trustpilot.com/review/www.interactivebrokers.com",
     commissionStocks: "$0 (IBKR Lite) / $0.005/share (Pro, $1 min)",
     commissionETFs: "$0 (IBKR Lite)",
     commissionOptions: "$0.65/contract (Lite) / $0.15–$0.65 (Pro)",
@@ -154,6 +164,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://www.etrade.com",
     signupUrl: "https://us.etrade.com/open-account",
     feePageUrl: "https://us.etrade.com/what-we-offer/pricing-and-rates",
+    trustpilotUrl: "https://www.trustpilot.com/review/us.etrade.com",
     commissionStocks: "$0",
     commissionETFs: "$0",
     commissionOptions: "$0.65/contract ($0.50 for 30+ trades/quarter)",
@@ -173,6 +184,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://robinhood.com",
     signupUrl: "https://robinhood.com/us/en/open-account",
     feePageUrl: "https://robinhood.com/us/en/support/articles/our-fees/",
+    trustpilotUrl: "https://www.trustpilot.com/review/robinhood.com",
     commissionStocks: "$0",
     commissionETFs: "$0",
     commissionOptions: "$0",
@@ -192,6 +204,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://www.webull.com",
     signupUrl: "https://www.webull.com/activity",
     feePageUrl: "https://www.webull.com/fee",
+    trustpilotUrl: "https://www.trustpilot.com/review/www.webull.com",
     commissionStocks: "$0",
     commissionETFs: "$0",
     commissionOptions: "$0",
@@ -211,6 +224,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://www.merrilledge.com",
     signupUrl: "https://www.merrilledge.com/open-account",
     feePageUrl: "https://www.merrilledge.com/pricing",
+    trustpilotUrl: "https://www.trustpilot.com/review/www.merrilledge.com",
     commissionStocks: "$0",
     commissionETFs: "$0",
     commissionOptions: "$0.65/contract",
@@ -230,6 +244,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://investor.vanguard.com",
     signupUrl: "https://investor.vanguard.com/investor-resources-education/open-account",
     feePageUrl: "https://investor.vanguard.com/investor-resources-education/brokerage-fees",
+    trustpilotUrl: "https://www.trustpilot.com/review/www.vanguard.com",
     commissionStocks: "$0",
     commissionETFs: "$0",
     commissionOptions: "$1/contract",
@@ -249,6 +264,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://www.tradestation.com",
     signupUrl: "https://www.tradestation.com/open-account",
     feePageUrl: "https://www.tradestation.com/pricing/",
+    trustpilotUrl: "https://www.trustpilot.com/review/www.tradestation.com",
     commissionStocks: "$0 (TS Select / TS GO)",
     commissionETFs: "$0",
     commissionOptions: "$0.60/contract",
@@ -268,6 +284,7 @@ export const US_BROKERS: Broker[] = [
     url: "https://tastytrade.com",
     signupUrl: "https://tastytrade.com/open-account",
     feePageUrl: "https://tastytrade.com/commissions-and-fees/",
+    trustpilotUrl: "https://www.trustpilot.com/review/tastytrade.com",
     commissionStocks: "$0",
     commissionETFs: "$0",
     commissionOptions: "$1/contract (open), $0 (close), max $10/leg",
@@ -294,6 +311,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.commsec.com.au",
     signupUrl: "https://www2.commsec.com.au/public/cmc/commsec/static/apply-for-trading-account.html",
     feePageUrl: "https://www.commsec.com.au/support/rates-and-fees.html",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.commsec.com.au",
     commissionStocks: "$5 (≤$1k) / $10 (≤$3k) / $19.95 (≤$10k) / 0.12% over",
     commissionETFs: "Same as stocks",
     commissionOptions: null,
@@ -313,6 +331,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.selfwealth.com.au",
     signupUrl: "https://app.selfwealth.com.au/register",
     feePageUrl: "https://www.selfwealth.com.au/pricing/",
+    trustpilotUrl: "https://au.trustpilot.com/review/selfwealth.com.au",
     commissionStocks: "$9.50 flat (ASX) / USD $9.50 (US)",
     commissionETFs: "$9.50 flat",
     commissionOptions: null,
@@ -332,6 +351,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.stake.com.au",
     signupUrl: "https://app.stake.com.au/signup",
     feePageUrl: "https://www.stake.com.au/pricing",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.stake.com.au",
     commissionStocks: "AUD $3 (ASX) / USD $0 (US on Stake Black)",
     commissionETFs: "Same as stocks",
     commissionOptions: null,
@@ -351,6 +371,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.interactivebrokers.com.au",
     signupUrl: "https://www.interactivebrokers.com.au/en/trading/open-account.php",
     feePageUrl: "https://www.interactivebrokers.com.au/en/trading/commission-rates.php",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.interactivebrokers.com.au",
     commissionStocks: "AUD $1 min / 0.08% (ASX). USD $1 min (US)",
     commissionETFs: "Same as stocks",
     commissionOptions: "AUD $0.70/contract (ASX options)",
@@ -370,6 +391,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.nabtrade.com.au",
     signupUrl: "https://www.nabtrade.com.au/investor/open-account",
     feePageUrl: "https://www.nabtrade.com.au/investor/pricing",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.nabtrade.com.au",
     commissionStocks: "$14.95 (≤$5k) / $19.95 (≤$20k) / 0.11% over",
     commissionETFs: "Same as stocks",
     commissionOptions: null,
@@ -389,6 +411,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.superhero.com.au",
     signupUrl: "https://www.superhero.com.au/signup",
     feePageUrl: "https://www.superhero.com.au/pricing",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.superhero.com.au",
     commissionStocks: "AUD $2 flat (ASX)",
     commissionETFs: "$0 (ASX ETFs)",
     commissionOptions: null,
@@ -408,6 +431,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.cmcmarkets.com/en-au/stockbroking",
     signupUrl: "https://www.cmcmarkets.com/en-au/open-account",
     feePageUrl: "https://www.cmcmarkets.com/en-au/stockbroking/pricing",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.cmcmarkets.com",
     commissionStocks: "$11 or 0.10% (higher of) / $0 first 10 trades/month (Frequent Trader)",
     commissionETFs: "Same as stocks",
     commissionOptions: null,
@@ -427,6 +451,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.belldirect.com.au",
     signupUrl: "https://www.belldirect.com.au/open-an-account",
     feePageUrl: "https://www.belldirect.com.au/pricing/",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.belldirect.com.au",
     commissionStocks: "$15 or 0.10% (higher of)",
     commissionETFs: "Same as stocks",
     commissionOptions: null,
@@ -446,6 +471,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.westpac.com.au/personal-banking/investments/share-trading",
     signupUrl: "https://www.westpac.com.au/personal-banking/investments/share-trading/open-an-account",
     feePageUrl: "https://www.westpac.com.au/personal-banking/investments/share-trading/",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.westpac.com.au",
     commissionStocks: "from $4.95* / 0.10% (≥$10k)",
     commissionETFs: "Same as stocks",
     commissionOptions: null,
@@ -465,6 +491,7 @@ export const AU_BROKERS: Broker[] = [
     url: "https://www.anz.com.au/personal/investing/share-trading",
     signupUrl: "https://www.anz.com.au/personal/investing/share-trading/open-account",
     feePageUrl: "https://www.anz.com.au/personal/investing/share-trading/fees/",
+    trustpilotUrl: "https://au.trustpilot.com/review/www.anz.com.au",
     commissionStocks: "$19.95 (≤$10k) / 0.10% over",
     commissionETFs: "Same as stocks",
     commissionOptions: null,
