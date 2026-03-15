@@ -80,40 +80,86 @@ export default async function TickerReportPage({
   const latestIsNoSignal = latest?.agent_signal_type === "NO_SIGNAL";
 
   return (
-    <div className="max-w-4xl mx-auto px-8 py-12 space-y-10">
+    <div>
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <Link
-            href={`/ticker/${sym}`}
-            className="text-base text-gray-400 hover:text-brand mb-3 inline-block"
-          >
-            ← Back to {sym}
-          </Link>
-          <div className="flex items-center gap-4 flex-wrap">
-            <h1 className="text-4xl font-bold text-[#252525]">{sym}</h1>
-            <span className="text-xl text-gray-400 font-light">{ticker.name}</span>
-            <span className="text-base text-gray-400 font-medium px-4 py-1.5 rounded-full bg-gray-100">
-              AI Report
+      {/* ── Green hero ──────────────────────────────────────────────────────── */}
+      <div
+        className="w-full"
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "32px", paddingBottom: "36px" }}
+      >
+        <div className="max-w-4xl mx-auto px-8 space-y-4">
+
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm">
+            <Link href="/intel" className="text-white/70 hover:text-white transition-colors font-medium">
+              Stocks
+            </Link>
+            <span className="text-white/40">›</span>
+            <Link href={`/ticker/${sym}`} className="text-white/70 hover:text-white transition-colors font-medium">
+              {sym}
+            </Link>
+            <span className="text-white/40">›</span>
+            <span className="text-white/90">IR Signal Report</span>
+          </div>
+
+          {/* Ticker + company name */}
+          <div className="flex items-end gap-4 flex-wrap">
+            <h1 className="text-5xl font-bold text-white drop-shadow-sm">{sym}</h1>
+            <span className="text-xl text-white/80 font-light pb-1">{ticker.name}</span>
+            <span
+              className="text-xs font-bold px-3 py-1 rounded-full mb-1"
+              style={{ background: "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }}
+            >
+              {ticker.exchange}
+            </span>
+            <span
+              className="text-xs font-bold px-3 py-1 rounded-full mb-1"
+              style={{ background: "rgba(255,255,255,0.15)", color: "#fff" }}
+            >
+              IR Signal Report
             </span>
           </div>
-          <div className="text-sm text-gray-400 mt-2 space-y-1">
+
+          {/* Metadata row */}
+          <div className="flex items-center gap-3 flex-wrap text-sm">
             {latestSnap && (
-              <div>Last scanned: {new Date(latestSnap.fetched_at).toLocaleString()}</div>
+              <span className="text-white/70">
+                Last scanned: {new Date(latestSnap.fetched_at).toLocaleString()}
+              </span>
             )}
-            <div>📦 {totalScans} scans stored permanently · all results retained in database</div>
+            <span className="text-white/50">·</span>
+            <span className="text-white/70">📦 {totalScans} scans stored</span>
             {!signalIsFromLatest && latestSignal && (
-              <div className="text-amber-600 font-medium">
-                ⚡ Showing AI signal from {new Date(latestSignal.fetched_at).toLocaleDateString()} — latest scan returned no new signal
-              </div>
+              <span className="text-amber-200 font-medium">
+                ⚡ Signal from {new Date(latestSignal.fetched_at).toLocaleDateString()} — latest scan had no new signal
+              </span>
             )}
             {latestIsNoSignal && signalIsFromLatest && (
-              <div className="text-green-600 font-medium">✓ Latest scan confirmed: no new financial signal</div>
+              <span className="text-green-200 font-medium">✓ Latest scan: no new financial signal</span>
             )}
+          </div>
+
+          {/* CTAs */}
+          <div className="flex items-center gap-3 flex-wrap pt-1">
+            <Link
+              href={`/ticker/${sym}`}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              style={{ color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.1)" }}
+            >
+              ← Back to {sym}
+            </Link>
+            <Link
+              href={`/ticker/${sym}/intel`}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:brightness-110"
+              style={{ background: "#fd8412", color: "#fff" }}
+            >
+              AI Analysis →
+            </Link>
           </div>
         </div>
       </div>
+
+      <div className="max-w-4xl mx-auto px-8 py-12 space-y-10">
 
       {/* ── No data ────────────────────────────────────────────────────────── */}
       {!latest && (
@@ -386,6 +432,7 @@ export default async function TickerReportPage({
           ← Back to {sym} overview
         </Link>
       </div>
+    </div>
     </div>
   );
 }

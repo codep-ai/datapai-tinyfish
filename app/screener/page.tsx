@@ -315,7 +315,7 @@ export default function ScreenerPage() {
       {/* ── Hero ─────────────────────────────────────────────────────────────── */}
       <div
         className="w-full"
-        style={{ background: "linear-gradient(45deg, #1a6e3e, #2e8b57)", paddingTop: "32px", paddingBottom: "36px" }}
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "32px", paddingBottom: "36px" }}
       >
         <div className="max-w-6xl mx-auto px-8 space-y-4">
           <div className="flex items-end gap-4 flex-wrap">
@@ -323,21 +323,129 @@ export default function ScreenerPage() {
               className="text-4xl font-bold text-white drop-shadow-sm"
               style={{ fontFamily: "var(--font-rajdhani)" }}
             >
-              📊 Fundamental Stock Screener
+              Fundamental Stock Screener
             </h1>
             <span className="text-white/70 font-light pb-1">
               AI-scored · nightly updated
             </span>
           </div>
 
-          {/* Value proposition */}
-          <p className="text-white/80 text-sm max-w-3xl">
-            Find stocks that are <strong className="text-white">fundamentally attractive right now</strong> —
-            screened by AI across valuation (is it cheap?), business quality (is management doing a good job?),
-            growth momentum (revenue &amp; cashflow trajectory), and macro environment (tailwinds or headwinds?).
-            <br className="hidden sm:block" />
-            Use this to shortlist candidates, then open the full AI analysis for buy/sell/hold depth.
-          </p>
+          {/* Filters */}
+          <div className="flex items-end gap-4 flex-wrap">
+
+            {/* Exchange */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+                Exchange
+              </label>
+              <div className="flex gap-2">
+                {["US", "ASX"].map((ex) => (
+                  <button
+                    key={ex}
+                    onClick={() => setExchange(ex)}
+                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:brightness-110"
+                    style={
+                      exchange === ex
+                        ? { background: "#fd8412", color: "#fff" }
+                        : { background: "rgba(255,255,255,0.2)", color: "#fff" }
+                    }
+                  >
+                    {ex === "US" ? "🇺🇸 US" : "🇦🇺 ASX"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Signal */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+                AI Signal
+              </label>
+              <select
+                value={signal}
+                onChange={(e) => setSignal(e.target.value)}
+                className="text-sm border-0 rounded-lg px-3 py-2 focus:outline-none bg-white/90 text-gray-700"
+              >
+                {SIGNAL_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sector */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+                Sector
+              </label>
+              <select
+                value={sector}
+                onChange={(e) => setSector(e.target.value)}
+                className="text-sm border-0 rounded-lg px-3 py-2 focus:outline-none bg-white/90 text-gray-700 min-w-[160px]"
+              >
+                <option value="">All sectors</option>
+                {SECTOR_OPTIONS.filter(Boolean).map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Min score */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+                Min Score
+              </label>
+              <select
+                value={minScore}
+                onChange={(e) => setMinScore(e.target.value)}
+                className="text-sm border-0 rounded-lg px-3 py-2 focus:outline-none bg-white/90 text-gray-700 min-w-[200px]"
+              >
+                {MIN_SCORE_PRESETS.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Max tech risk */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+                AI Disruption Risk
+              </label>
+              <select
+                value={maxRisk}
+                onChange={(e) => setMaxRisk(e.target.value)}
+                className="text-sm border-0 rounded-lg px-3 py-2 focus:outline-none bg-white/90 text-gray-700"
+              >
+                <option value="">Any risk level</option>
+                <option value="LOW">≤ LOW (safest)</option>
+                <option value="MEDIUM">≤ MEDIUM</option>
+                <option value="HIGH">Include HIGH</option>
+              </select>
+            </div>
+
+            {/* Limit */}
+            <div className="flex flex-col gap-1">
+              <label className="text-xs font-semibold text-white/70 uppercase tracking-wide">
+                Show
+              </label>
+              <select
+                value={limit}
+                onChange={(e) => setLimit(Number(e.target.value))}
+                className="text-sm border-0 rounded-lg px-3 py-2 focus:outline-none bg-white/90 text-gray-700"
+              >
+                {[20, 50, 100].map((n) => <option key={n} value={n}>{n} results</option>)}
+              </select>
+            </div>
+
+            {/* Run button */}
+            <button
+              onClick={runScreener}
+              disabled={loading}
+              className="px-6 py-2.5 rounded-xl text-sm font-bold transition-all hover:brightness-110 disabled:opacity-60 shadow-md"
+              style={{ background: "#fd8412", color: "#fff" }}
+            >
+              {loading ? "⟳ Scanning…" : "🔍 Screen stocks"}
+            </button>
+          </div>
 
           {/* Signal scale reference */}
           <div className="flex flex-wrap items-center gap-2 pt-1">
@@ -358,134 +466,16 @@ export default function ScreenerPage() {
         </div>
       </div>
 
-      {/* ── Filters ──────────────────────────────────────────────────────────── */}
-      <div className="bg-white border-b border-gray-100 shadow-sm">
-        <div className="max-w-6xl mx-auto px-8 py-5">
-          <div className="flex items-end gap-5 flex-wrap">
-
-            {/* Exchange */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Exchange
-              </label>
-              <div className="flex gap-2">
-                {["US", "ASX"].map((ex) => (
-                  <button
-                    key={ex}
-                    onClick={() => setExchange(ex)}
-                    className="px-4 py-2 rounded-lg text-sm font-semibold transition-all"
-                    style={
-                      exchange === ex
-                        ? { background: "#2e8b57", color: "#fff" }
-                        : { background: "#f4f4f5", color: "#52525b" }
-                    }
-                  >
-                    {ex === "US" ? "🇺🇸 US (NASDAQ/NYSE)" : "🇦🇺 ASX"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Signal */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                AI Signal
-              </label>
-              <select
-                value={signal}
-                onChange={(e) => setSignal(e.target.value)}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2e8b57]/40 bg-white"
-              >
-                {SIGNAL_OPTIONS.map((s) => (
-                  <option key={s.value} value={s.value}>{s.label}</option>
-                ))}
-              </select>
-              <span className="text-xs text-gray-400">AI-computed overall verdict</span>
-            </div>
-
-            {/* Sector */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Sector
-              </label>
-              <select
-                value={sector}
-                onChange={(e) => setSector(e.target.value)}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2e8b57]/40 bg-white min-w-[180px]"
-              >
-                <option value="">All sectors</option>
-                {SECTOR_OPTIONS.filter(Boolean).map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-              <span className="text-xs text-gray-400">Filter to one industry sector</span>
-            </div>
-
-            {/* Min score — preset dropdown */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Min Composite Score
-              </label>
-              <select
-                value={minScore}
-                onChange={(e) => setMinScore(e.target.value)}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2e8b57]/40 bg-white min-w-[220px]"
-              >
-                {MIN_SCORE_PRESETS.map((p) => (
-                  <option key={p.value} value={p.value}>{p.label}</option>
-                ))}
-              </select>
-              <span className="text-xs text-gray-400">Score range: −1.0 (bearish) → +1.0 (bullish)</span>
-            </div>
-
-            {/* Max tech risk */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                AI Disruption Risk
-              </label>
-              <select
-                value={maxRisk}
-                onChange={(e) => setMaxRisk(e.target.value)}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2e8b57]/40 bg-white"
-              >
-                <option value="">Any risk level</option>
-                <option value="LOW">≤ LOW (safest sectors)</option>
-                <option value="MEDIUM">≤ MEDIUM</option>
-                <option value="HIGH">Include HIGH risk</option>
-              </select>
-              <span className="text-xs text-gray-400">AI/automation threat to sector</span>
-            </div>
-
-            {/* Limit */}
-            <div className="flex flex-col gap-1">
-              <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                Show
-              </label>
-              <select
-                value={limit}
-                onChange={(e) => setLimit(Number(e.target.value))}
-                className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#2e8b57]/40 bg-white"
-              >
-                {[20, 50, 100].map((n) => <option key={n} value={n}>{n} results</option>)}
-              </select>
-              <span className="text-xs text-gray-400">Sorted by score ↓</span>
-            </div>
-
-            {/* Run button */}
-            <button
-              onClick={runScreener}
-              disabled={loading}
-              className="px-6 py-2 rounded-lg text-sm font-bold transition-all hover:brightness-110 disabled:opacity-60 mt-5"
-              style={{ background: "#fd8412", color: "#fff" }}
-            >
-              {loading ? "⟳ Scanning…" : "🔍 Screen stocks"}
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* ── Main content area ─────────────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-8 py-6 space-y-6">
+
+        {/* Value proposition */}
+        <p className="text-sm text-gray-500">
+          Find stocks that are <strong className="text-gray-700">fundamentally attractive right now</strong> —
+          screened by AI across valuation (is it cheap?), business quality (is management doing a good job?),
+          growth momentum (revenue &amp; cashflow trajectory), and macro environment (tailwinds or headwinds?).
+          Use this to shortlist candidates, then open the full AI analysis for buy/sell/hold depth.
+        </p>
 
         {/* Score legend (expandable) */}
         <ScoreLegend />
@@ -674,9 +664,8 @@ export default function ScreenerPage() {
           </div>
         )}
 
-        <p className="text-xs text-gray-400 text-center pb-4">
-          ⚠️ AI-computed fundamental scores are for research only — not financial advice. Scores are computed nightly
-          from yfinance data and Gemini grounding. Always do your own research before making investment decisions.
+        <p className="text-sm text-gray-500 pb-4 border-t border-gray-100 pt-4">
+          ⚠️ AI-computed fundamental scores are for research only — not financial advice. Scores are computed nightly from yfinance data and Gemini grounding. Always do your own research before making investment decisions.
         </p>
       </div>
     </div>

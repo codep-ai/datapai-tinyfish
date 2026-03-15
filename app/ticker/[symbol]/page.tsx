@@ -266,7 +266,7 @@ export default async function TickerPage({
             </p>
           )}
 
-          {/* CTAs — AI Intel + Report + Re-scan + Watchlist */}
+          {/* CTAs — Report + Re-scan + Watchlist */}
           <div className="pt-1 flex items-center gap-3 flex-wrap">
             <WatchlistButton
               symbol={sym}
@@ -274,22 +274,46 @@ export default async function TickerPage({
               name={ticker.name}
             />
             <Link
-              href={`/ticker/${sym}/intel`}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
-              style={{ background: "linear-gradient(135deg, #6366f1, #4f46e5)" }}
-            >
-              ⚡ AI analysis →
-            </Link>
-            <Link
               href={`/ticker/${sym}/report`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
-              📋 Full Report →
+              📋 IR Signal Report →
             </Link>
             <TickerScanButton symbol={sym} isMonitored={true} resolvedUrl={ticker.url} />
+          </div>
+          {/* Analysis type quick-access row */}
+          <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr", justifyItems: "start" }}>
+            <Link
+              href={`/ticker/${sym}/intel?run=ta`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "#fd8412" }}
+            >
+              📈 Technical Analysis (TA)
+            </Link>
+            <Link
+              href={`/ticker/${sym}/intel?run=fa`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "#fd8412" }}
+            >
+              📊 Fundamental Analysis (FA)
+            </Link>
+            <Link
+              href={`/ticker/${sym}/intel?run=ma`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "#fd8412" }}
+            >
+              🌐 Market Analysis (MA)
+            </Link>
+            <Link
+              href={`/ticker/${sym}/intel?run=ca`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "#fd8412" }}
+            >
+              💬 Chart Analysis (CA)
+            </Link>
           </div>
         </div>
       </div>

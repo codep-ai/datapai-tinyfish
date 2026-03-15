@@ -382,8 +382,8 @@ export default function FundamentalsPanel({ data }: { data: FundamentalSnapshot 
         </div>
       )}
 
-      <p className="text-xs text-gray-400 text-center pb-2">
-        ⚠️ Fundamental data computed nightly from yfinance + Gemini grounding. For research only — not financial advice.
+      <p className="text-sm text-gray-500 pb-2 border-t border-gray-100 pt-4 mt-2">
+        ⚠️ AI-computed fundamental scores are for research only — not financial advice. Scores are computed nightly from yfinance data and Gemini grounding. Always do your own research before making investment decisions.
       </p>
     </div>
   );

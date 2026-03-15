@@ -19,7 +19,7 @@
  * All calls are on-demand (button click) — no data is pre-fetched.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SimpleMarkdown from "./SimpleMarkdown";
 import { t as tFn, type Lang } from "@/lib/translations";
 
@@ -77,6 +77,8 @@ interface Props {
   lang?: Lang;
   /** Slot: AI Research Co-pilot chat panel — rendered immediately after TA Signal result */
   chatSlot?: React.ReactNode;
+  /** Auto-run a specific analysis on mount: "ta" | "fa" | "ma" | "ca" */
+  autoRun?: string | null;
 }
 
 // ─── Signal badge colours ─────────────────────────────────────────────────────
@@ -258,6 +260,7 @@ export default function TechAnalyticsPanel({
   latestHeadline,
   lang = "en",
   chatSlot,
+  autoRun,
 }: Props) {
   const isASX = exchange === "ASX";
   const cp = isASX ? "A$" : "$";
@@ -364,6 +367,16 @@ export default function TechAnalyticsPanel({
   const [miResult, setMiResult] = useState<MarketIntelResult | null>(null);
   const [miError, setMiError]   = useState<string>("");
   const [miExpanded, setMiExpanded] = useState(true);
+
+  // ── Auto-run when parent passes autoRun prop ─────────────────────────────
+  useEffect(() => {
+    if (!autoRun) return;
+    if (autoRun === "ta") runTaSignal();
+    else if (autoRun === "fa") runFaAnalysis();
+    else if (autoRun === "ma") runMarketIntel();
+    else if (autoRun === "ca") runChartAnalysis();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function runMarketIntel(force = false) {
     setMiPhase("loading");
@@ -473,9 +486,8 @@ export default function TechAnalyticsPanel({
       <div className="rounded-2xl p-6 bg-white border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between flex-wrap gap-3 mb-4">
           <div>
-            <h2 className="text-[#252525] font-bold text-xl">{T("panel_heading")}</h2>
             {/* Data provenance — makes TinyFish → AI pipeline explicit */}
-            <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-xs font-semibold px-2 py-0.5 rounded"
                 style={{ background: "#f0fdf4", color: "#166534", border: "1px solid #4ade8040" }}>
                 {T("panel_tf")}
@@ -591,9 +603,9 @@ export default function TechAnalyticsPanel({
             {miPhase === "loading" ? (
               <><span className="animate-spin">⟳</span> Crawling Markets…</>
             ) : miPhase === "done" ? (
-              "🌐 Market Intel ✓"
+              "🌐 MA ✓"
             ) : (
-              "🌐 Market Intel"
+              "🌐 Market Analysis (MA)"
             )}
           </button>
 
@@ -667,7 +679,7 @@ export default function TechAnalyticsPanel({
           <p className="mt-3 text-red-400 text-sm">⚠ TA Signal failed: {taError}</p>
         )}
         {chartPhase === "error" && (
-          <p className="mt-3 text-red-400 text-sm">⚠ Chart Vision failed: {chartError}</p>
+          <p className="mt-3 text-red-400 text-sm">⚠ Chart Analysis (CA) failed: {chartError}</p>
         )}
         {asxPhase === "error" && (
           <p className="mt-3 text-red-400 text-sm">⚠ ASX Signal failed: {asxError}</p>
@@ -685,7 +697,7 @@ export default function TechAnalyticsPanel({
         )}
         {miPhase === "error" && (
           <div className="mt-3">
-            <p className="text-red-400 text-sm">⚠ Market Intel failed: {miError}</p>
+            <p className="text-red-400 text-sm">⚠ Market Analysis (MA) failed: {miError}</p>
             <p className="text-xs text-gray-400 mt-1">
               TinyFish may be rate-limiting or the Python backend is offline. Try again in a moment.
             </p>
@@ -811,7 +823,7 @@ export default function TechAnalyticsPanel({
             onClick={() => setMiExpanded(!miExpanded)}
           >
             <div className="flex items-center gap-4 flex-wrap">
-              <h2 className="text-2xl font-bold text-[#252525]">🌐 Market Intelligence</h2>
+              <h2 className="text-2xl font-bold text-[#252525]">🌐 Market Analysis (MA)</h2>
               {stanceBadge(miResult.overall_stance)}
               {miResult.cached && (
                 <span className="text-xs text-gray-400 font-medium">cached</span>

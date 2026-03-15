@@ -14,7 +14,7 @@ export const tr = {
   // ── Navigation ───────────────────────────────────────────────────────────
   nav_usStocks:   { en: "US Stocks",  zh: "美股" },
   nav_alerts:     { en: "Alerts",     zh: "预警" },
-  nav_asx:        { en: "ASX",        zh: "澳交所" },
+  nav_asx:        { en: "AU Stock",   zh: "澳股" },
   nav_watchlist:  { en: "Watchlist",  zh: "自选股" },
   nav_aiAnalysis: { en: "AI analysis",zh: "AI分析" },
   nav_pricing:    { en: "Pricing",    zh: "定价" },
@@ -43,12 +43,12 @@ export const tr = {
   intel_clickGenerate:  { en: "Monitored universe — click to generate AI signal", zh: "监控范围 — 点击生成AI信号" },
   intel_noSignal:       { en: "no signal yet",               zh: "暂无信号" },
   intel_whatIs:         { en: "What is AI analysis?",        zh: "什么是AI分析？" },
-  intel_ta_heading:     { en: "📈 Technical Signal",         zh: "📈 技术信号" },
+  intel_ta_heading:     { en: "📈 Technical Analysis (TA)",   zh: "📈 技术分析(TA)" },
   intel_ta_desc:        {
     en: "Multi-timeframe OHLCV data (5m / 30m / 1h / 1d) → RSI, MACD, Bollinger, EMA → Gemini primary analysis → GPT‑5.1 compliance review → structured BUY/HOLD/SELL signal.",
     zh: "多时间框架OHLCV数据（5分/30分/1小时/1天）→ RSI、MACD、布林带、EMA → Gemini主分析 → GPT‑5.1合规审核 → 结构化买入/持有/卖出信号。",
   },
-  intel_chart_heading:  { en: "📊 Chart Vision",             zh: "📊 图表视觉" },
+  intel_chart_heading:  { en: "📊 Chart Analysis (CA)",       zh: "📊 图表分析(CA)" },
   intel_chart_desc:     {
     en: "Renders a 3-panel dark chart (Price+BBands / RSI / MACD) and sends it to Gemini Vision for real-time pattern recognition — head-and-shoulders, breakouts, divergences.",
     zh: "生成三栏图表（价格+布林带 / RSI / MACD），发送给Gemini Vision进行实时形态识别——头肩顶、突破、背离等。",
@@ -76,12 +76,12 @@ export const tr = {
   panel_ai:              { en: "Gemini + GPT‑5.1",        zh: "Gemini + GPT‑5.1" },
   panel_sig:             { en: "Actionable Signal",       zh: "可操作信号" },
 
-  panel_btn_ta:          { en: "📈 Technical Signal",     zh: "📈 技术信号" },
-  panel_btn_ta_done:     { en: "📈 TA Signal ✓",          zh: "📈 技术信号 ✓" },
-  panel_btn_ta_loading:  { en: "Generating…",             zh: "生成中…" },
-  panel_btn_chart:       { en: "📊 Chart Vision",         zh: "📊 图表视觉" },
-  panel_btn_chart_done:  { en: "📊 Chart Vision ✓",       zh: "📊 图表视觉 ✓" },
-  panel_btn_chart_loading:{ en: "Rendering…",             zh: "渲染中…" },
+  panel_btn_ta:          { en: "📈 Technical Analysis (TA)", zh: "📈 技术分析(TA)" },
+  panel_btn_ta_done:     { en: "📈 TA ✓",                   zh: "📈 TA ✓" },
+  panel_btn_ta_loading:  { en: "Generating…",               zh: "生成中…" },
+  panel_btn_chart:       { en: "📊 Chart Analysis (CA)",    zh: "📊 图表分析(CA)" },
+  panel_btn_chart_done:  { en: "📊 CA ✓",                   zh: "📊 CA ✓" },
+  panel_btn_chart_loading:{ en: "Rendering…",               zh: "渲染中…" },
   panel_btn_asx:         { en: "🎯 ASX Trading Signal",   zh: "🎯 ASX交易信号" },
   panel_btn_asx_done:    { en: "🎯 ASX Signal ✓",         zh: "🎯 ASX信号 ✓" },
   panel_btn_asx_loading: { en: "Analysing…",              zh: "分析中…" },
@@ -91,7 +91,7 @@ export const tr = {
   panel_asx_time:        { en: "Typically 30–60 seconds", zh: "通常需要30-60秒" },
   panel_tf_context:      { en: "chars from TinyFish IR scan", zh: "字符来自TinyFish IR扫描" },
 
-  panel_ta_title:        { en: "📈 Technical Signal",     zh: "📈 技术信号" },
+  panel_ta_title:        { en: "📈 Technical Analysis (TA)", zh: "📈 技术分析(TA)" },
   panel_asx_title:       { en: "🎯 ASX Trading Signal",   zh: "🎯 ASX交易信号" },
   panel_asx_notice:      {
     en: "⚠ Signal based on latest IR page content + live ASX price data. Google Search grounding enabled.",
@@ -101,7 +101,7 @@ export const tr = {
   panel_expand:          { en: "▼ expand",                zh: "▼ 展开" },
   panel_not_advice:      { en: "NOT financial advice",    zh: "非投资建议" },
 
-  panel_modal_title:     { en: "📊 AI Chart Vision Analysis", zh: "📊 AI图表视觉分析" },
+  panel_modal_title:     { en: "📊 Chart Analysis (CA)", zh: "📊 图表分析(CA)" },
   panel_modal_close:     { en: "Close",                   zh: "关闭" },
 } as const;
 

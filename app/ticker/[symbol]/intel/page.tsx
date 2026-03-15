@@ -37,10 +37,14 @@ export async function generateMetadata({
 
 export default async function IntelPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ symbol: string }>;
+  searchParams?: Promise<Record<string, string>>;
 }) {
   const { symbol } = await params;
+  const sp = await searchParams;
+  const autoRun = (sp?.run ?? null) as string | null;
   const sym = symbol.toUpperCase();
   const lang = await getLang();
 
@@ -119,7 +123,7 @@ export default async function IntelPage({
             </span>
           </div>
 
-          {/* CTAs */}
+          {/* CTAs row 1 */}
           <div className="flex items-center gap-3 flex-wrap pt-1">
             <WatchlistButton symbol={sym} exchange={exchangeLabel} name={companyName} />
             <Link
@@ -139,12 +143,52 @@ export default async function IntelPage({
               {t(lang, "stock_cta_report")}
             </Link>
           </div>
+          {/* Analysis type quick-access row */}
+          <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr", justifyItems: "start" }}>
+            <Link
+              href={`/ticker/${sym}/intel?run=ta`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "#fd8412" }}
+            >
+              📈 Technical Analysis (TA)
+            </Link>
+            <Link
+              href={`/ticker/${sym}/intel?run=fa`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "#fd8412" }}
+            >
+              📊 Fundamental Analysis (FA)
+            </Link>
+            <Link
+              href={`/ticker/${sym}/intel?run=ma`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "#fd8412" }}
+            >
+              🌐 Market Analysis (MA)
+            </Link>
+            <Link
+              href={`/ticker/${sym}/intel?run=ca`}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={{ background: "#fd8412" }}
+            >
+              💬 Chart Analysis (CA)
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* ── Main content ──────────────────────────────────────────────────────── */}
       <div className="min-h-screen bg-[#fcfcfd]">
         <div className="max-w-5xl mx-auto px-8 py-10">
+
+            {/* ── AI Research Co-pilot (top of section) */}
+          <StockChatPanel
+            symbol={sym}
+            exchange={exchangeLabel}
+            lang={lang}
+            taSignalMd={cachedTaSignal?.signal_md ?? undefined}
+            snapshotText={(latestSnap?.cleaned_text ?? latestSnap?.text ?? "").slice(0, 3000)}
+          />
 
           {/* ── All 3 AI features: TA Signal · Chart Vision · Fundamental Analysis */}
           <TechAnalyticsPanel
@@ -158,15 +202,7 @@ export default async function IntelPage({
                 : `${companyName} — recent IR page update`
             }
             lang={lang}
-            chatSlot={
-              <StockChatPanel
-                symbol={sym}
-                exchange={exchangeLabel}
-                lang={lang}
-                taSignalMd={cachedTaSignal?.signal_md ?? undefined}
-                snapshotText={(latestSnap?.cleaned_text ?? latestSnap?.text ?? "").slice(0, 3000)}
-              />
-            }
+            autoRun={autoRun}
           />
 
         </div>

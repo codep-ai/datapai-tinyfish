@@ -164,8 +164,9 @@ export default function AlertsClient({ contentOnly, allSignals, universe, watchl
         className="w-full"
         style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "28px", paddingBottom: "28px" }}
       >
-        <div className="max-w-6xl mx-auto px-6 flex items-center justify-between flex-wrap gap-3">
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="max-w-6xl mx-auto px-6 space-y-3">
+          {/* Row 1: title */}
+          <div className="flex items-center gap-4 flex-wrap">
             {watchlistOnly && (
               <Link href="/watchlist" className="text-white/70 hover:text-white text-sm font-medium">
                 ← My Watchlist
@@ -175,25 +176,55 @@ export default function AlertsClient({ contentOnly, allSignals, universe, watchl
               {watchlistOnly ? "⭐ My Watchlist Alerts" : "Change Alerts"}
             </h1>
           </div>
+          {/* Row 2: filter toggles (yellow/orange, clickable) */}
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => setShowAll(false)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={
+                !showAll
+                  ? { background: "#fd8412", color: "#fff" }
+                  : { background: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.85)" }
+              }
+            >
+              Content Only
+            </button>
+            <button
+              onClick={() => setShowAll(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
+              style={
+                showAll
+                  ? { background: "#fd8412", color: "#fff" }
+                  : { background: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.85)" }
+              }
+            >
+              All Signals
+            </button>
+            {!showAll && (
+              <span className="text-xs text-white/60">
+                archive &amp; layout filtered out
+              </span>
+            )}
+          </div>
+          {/* Row 3: stats (read-only info labels) */}
           <div className="flex items-center gap-2 flex-wrap">
             {changed > 0 && (
-              <span className="text-sm font-bold px-4 py-1.5 rounded-full"
-                style={{ background: "#fd8412", color: "#fff" }}>
+              <span className="text-sm text-white/80">
                 {changed} with changes
               </span>
             )}
             {highConf > 0 && (
-              <span className="text-sm font-semibold px-4 py-1.5 rounded-full bg-white/20 text-white">
-                {highConf} high-confidence
+              <span className="text-sm text-white/70">
+                · {highConf} high-confidence
               </span>
             )}
             {withAgentSignal > 0 && (
-              <span className="text-sm font-semibold px-4 py-1.5 rounded-full bg-white/20 text-white">
-                {withAgentSignal} AG2 signal{withAgentSignal !== 1 ? "s" : ""}
+              <span className="text-sm text-white/70">
+                · {withAgentSignal} AG2 signal{withAgentSignal !== 1 ? "s" : ""}
               </span>
             )}
             {withInvestigation > 0 && (
-              <span className="text-sm font-semibold px-4 py-1.5 rounded-full bg-white/20 text-white">
+              <span className="text-sm text-white/70">
                 🔎 {withInvestigation} investigated
               </span>
             )}
@@ -202,37 +233,6 @@ export default function AlertsClient({ contentOnly, allSignals, universe, watchl
       </div>
 
       <div className="max-w-6xl mx-auto px-8 py-8 space-y-6">
-
-      {/* ── Signal filter toggle ─────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => setShowAll(false)}
-          className="px-6 py-2.5 rounded-xl text-base font-semibold transition-all"
-          style={
-            !showAll
-              ? { background: "#2e8b57", color: "#fff" }
-              : { background: "#f3f4f6", color: "#6b7280" }
-          }
-        >
-          Content Only
-        </button>
-        <button
-          onClick={() => setShowAll(true)}
-          className="px-6 py-2.5 rounded-xl text-base font-semibold transition-all"
-          style={
-            showAll
-              ? { background: "#2e8b57", color: "#fff" }
-              : { background: "#f3f4f6", color: "#6b7280" }
-          }
-        >
-          All Signals
-        </button>
-        {!showAll && (
-          <span className="text-sm text-gray-400 ml-1">
-            Showing CONTENT_CHANGE only — archive &amp; layout changes filtered out
-          </span>
-        )}
-      </div>
 
       {/* ── Legend ──────────────────────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-5 text-sm text-gray-500 px-1">

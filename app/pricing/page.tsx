@@ -120,12 +120,12 @@ export default function PricingPage() {
         className="w-full"
         style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "48px", paddingBottom: "52px" }}
       >
-        <div className="max-w-5xl mx-auto px-6 text-center space-y-4">
+        <div className="max-w-5xl mx-auto px-6 space-y-4">
           <p className="text-white/60 text-sm font-medium uppercase tracking-widest">Pricing</p>
           <h1 className="text-4xl md:text-5xl font-bold text-white">
             Know what changed before the market does
           </h1>
-          <p className="text-white/75 text-lg max-w-2xl mx-auto">
+          <p className="text-white/75 text-lg max-w-2xl">
             AI agents scan 9,000+ company websites daily, detect language shifts in forward guidance
             and risk disclosures, and surface actionable signals — before they move stock prices.
           </p>
