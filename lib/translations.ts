@@ -18,6 +18,7 @@ export const tr = {
   nav_watchlist:  { en: "Watchlist",  zh: "自选股" },
   nav_aiAnalysis: { en: "AI analysis",zh: "AI分析" },
   nav_pricing:    { en: "Pricing",    zh: "定价" },
+  nav_brokers:    { en: "Brokers",    zh: "券商" },
   nav_poweredBy:  { en: "Powered by", zh: "技术支持" },
   nav_login:      { en: "Log in",     zh: "登录" },
 
