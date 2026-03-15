@@ -147,20 +147,20 @@ export default function OnboardingPage() {
 
   // Step values
   const [risk,       setRisk]       = useState("");
-  const [horizon,    setHorizon]    = useState("");
+  const [horizons,   setHorizons]   = useState<string[]>([]);   // multi-select (stored as "SHORT+LONG" etc.)
   const [strategies, setStrategies] = useState<string[]>([]);
   const [exchanges,  setExchanges]  = useState<string[]>(["US"]);
   const [size,       setSize]       = useState("RETAIL");
-  const [analysis,   setAnalysis]   = useState("");
+  const [analysis,   setAnalysis]   = useState<string[]>([]);   // multi-select (stored as "TA+FA" etc.)
   const [lang,       setLang]       = useState("en");
   const [style,      setStyle]      = useState("BALANCED");
 
   const canNext = (): boolean => {
     if (step === 1) return !!risk;
-    if (step === 2) return !!horizon;
+    if (step === 2) return horizons.length > 0;
     if (step === 3) return strategies.length > 0;
     if (step === 4) return exchanges.length > 0 && !!size;
-    if (step === 5) return !!analysis;
+    if (step === 5) return analysis.length > 0;
     return true; // steps 6,7 have defaults
   };
 
@@ -179,11 +179,11 @@ export default function OnboardingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           risk_tolerance:      risk || "MODERATE",
-          investment_horizon:  horizon || "MEDIUM",
+          investment_horizon:  horizons.join("+") || "MEDIUM",
           strategies,
           preferred_exchanges: exchanges,
           portfolio_size:      size,
-          analysis_preference: analysis || "MIX",
+          analysis_preference: analysis.join("+") || "MIX",
           preferred_lang:      lang,
           response_style:      style,
           onboarding_completed: true,
@@ -236,12 +236,12 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* Step 2 — Horizon */}
+          {/* Step 2 — Horizon (multi-select: can combine short + long, etc.) */}
           {step === 2 && (
             <>
               <StepHeader step={2} title="Investment horizon?"
-                sub="How long do you typically hold a position?" />
-              <RadioCards options={HORIZON_OPTIONS} value={horizon} onChange={setHorizon} />
+                sub="Select all that apply — you can mix short-term and long-term positions." />
+              <CheckCards options={HORIZON_OPTIONS} value={horizons} onChange={setHorizons} />
             </>
           )}
 
@@ -266,12 +266,12 @@ export default function OnboardingPage() {
             </>
           )}
 
-          {/* Step 5 — Analysis preference */}
+          {/* Step 5 — Analysis preference (multi-select: can combine TA + FA etc.) */}
           {step === 5 && (
             <>
               <StepHeader step={5} title="Analysis preference?"
-                sub="What type of analysis matters most in your decision making?" />
-              <RadioCards options={ANALYSIS_OPTIONS} value={analysis} onChange={setAnalysis} />
+                sub="Select all that apply — which frameworks do you use in your decision making?" />
+              <CheckCards options={ANALYSIS_OPTIONS} value={analysis} onChange={setAnalysis} />
             </>
           )}
 

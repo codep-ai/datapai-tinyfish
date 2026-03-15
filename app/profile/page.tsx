@@ -64,12 +64,12 @@ export default function ProfilePage() {
 
   // Editable state
   const [risk,       setRisk]       = useState("MODERATE");
-  const [horizon,    setHorizon]    = useState("MEDIUM");
+  const [horizons,   setHorizons]   = useState<string[]>(["MEDIUM"]);  // multi-select
   const [strategies, setStrategies] = useState<string[]>([]);
   const [exchanges,  setExchanges]  = useState<string[]>(["US"]);
   const [sectors,    setSectors]    = useState<string[]>([]);
   const [size,       setSize]       = useState("RETAIL");
-  const [analysis,   setAnalysis]   = useState("MIX");
+  const [analysis,   setAnalysis]   = useState<string[]>(["MIX"]);     // multi-select
   const [lang,       setLang]       = useState("en");
   const [style,      setStyle]      = useState("BALANCED");
   const [esg,        setEsg]        = useState(false);
@@ -84,12 +84,14 @@ export default function ProfilePage() {
       const p = json.profile;
       setProfile(p);
       setRisk(p.risk_tolerance);
-      setHorizon(p.investment_horizon);
+      // investment_horizon may be "SHORT+LONG" (multi) or "MEDIUM" (legacy single)
+      setHorizons(p.investment_horizon ? p.investment_horizon.split("+").filter(Boolean) : ["MEDIUM"]);
       setStrategies(p.strategies ?? []);
       setExchanges(p.preferred_exchanges ?? ["US"]);
       setSectors(p.preferred_sectors ?? []);
       setSize(p.portfolio_size);
-      setAnalysis(p.analysis_preference ?? "MIX");
+      // analysis_preference may be "TA+FA" (multi) or "MIX" (legacy single)
+      setAnalysis(p.analysis_preference ? p.analysis_preference.split("+").filter(Boolean) : ["MIX"]);
       setLang(p.preferred_lang ?? "en");
       setStyle(p.response_style);
       setEsg(p.esg_only);
@@ -113,12 +115,12 @@ export default function ProfilePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           risk_tolerance:      risk,
-          investment_horizon:  horizon,
+          investment_horizon:  horizons.join("+") || "MEDIUM",
           strategies,
           preferred_exchanges: exchanges,
           preferred_sectors:   sectors,
           portfolio_size:      size,
-          analysis_preference: analysis,
+          analysis_preference: analysis.join("+") || "MIX",
           preferred_lang:      lang,
           response_style:      style,
           esg_only:            esg,
@@ -174,11 +176,12 @@ export default function ProfilePage() {
           </div>
         </Section>
 
-        {/* 2. Horizon */}
-        <Section title="2. Investment horizon" subtitle="How long you typically hold — affects trade signal vs investment signal weighting">
+        {/* 2. Horizon — multi-select */}
+        <Section title="2. Investment horizon" subtitle="Select all that apply — mix short-term and long-term if you run both strategies">
           <div className="flex gap-2 flex-wrap">
             {HORIZON_OPTS.map(h => (
-              <Chip key={h} label={h[0]+h.slice(1).toLowerCase()} active={horizon === h} onClick={() => setHorizon(h)} />
+              <Chip key={h} label={h[0]+h.slice(1).toLowerCase()} active={horizons.includes(h)}
+                onClick={() => toggleArr(horizons, h, setHorizons)} />
             ))}
           </div>
         </Section>
@@ -210,13 +213,13 @@ export default function ProfilePage() {
           </div>
         </Section>
 
-        {/* 5. Analysis preference */}
-        <Section title="5. Analysis preference" subtitle="What type of analysis matters most in your decision-making">
+        {/* 5. Analysis preference — multi-select */}
+        <Section title="5. Analysis preference" subtitle="Select all that apply — mix frameworks if you use multiple approaches">
           <div className="grid grid-cols-2 gap-2">
             {ANALYSIS_OPTS.map(a => (
-              <button key={a} type="button" onClick={() => setAnalysis(a)}
+              <button key={a} type="button" onClick={() => toggleArr(analysis, a, setAnalysis)}
                 className="text-left rounded-xl border-2 px-3 py-2.5 transition-all"
-                style={{ borderColor: analysis === a ? "#2e8b57" : "#e5e7eb", background: analysis === a ? "#f0fdf4" : "white" }}>
+                style={{ borderColor: analysis.includes(a) ? "#2e8b57" : "#e5e7eb", background: analysis.includes(a) ? "#f0fdf4" : "white" }}>
                 <span className="font-semibold text-sm block">{ANALYSIS_META[a].emoji} {a === "MIX" ? "Mix TA + FA" : a === "OTHER" ? "Macro / Thematic" : a}</span>
                 <span className="text-xs text-gray-400">{ANALYSIS_META[a].desc}</span>
               </button>

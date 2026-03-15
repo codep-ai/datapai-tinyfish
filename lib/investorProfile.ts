@@ -202,7 +202,12 @@ export function buildProfileContext(profile: InvestorProfile): string {
   ];
 
   lines.push(`Risk tolerance:       ${RISK_LABEL[profile.risk_tolerance] ?? profile.risk_tolerance}`);
-  lines.push(`Investment horizon:   ${HORIZON_LABEL[profile.investment_horizon] ?? profile.investment_horizon}`);
+  // horizon may be a single value ("MEDIUM") or multi-select joined by "+" ("SHORT+LONG")
+  const horizonParts = (profile.investment_horizon ?? "MEDIUM")
+    .split("+")
+    .map(h => HORIZON_LABEL[h.trim()] ?? h)
+    .join(" + ");
+  lines.push(`Investment horizon:   ${horizonParts}`);
 
   if (profile.strategies?.length) {
     lines.push(`Strategy focus:       ${profile.strategies.join(" + ")}`);
@@ -234,12 +239,17 @@ export function buildProfileContext(profile: InvestorProfile): string {
     lines.push(`Risk warnings:        User has disabled repeated risk disclaimers`);
   }
   const analysisLabel: Record<string, string> = {
-    TA:    "Technical Analysis focus — emphasise price action, indicators, chart patterns",
-    FA:    "Fundamental Analysis focus — emphasise valuation, earnings, margins, balance sheet",
-    MIX:   "Mixed TA + FA — balance technical signals with fundamental context",
-    OTHER: "Custom approach — cover all dimensions equally",
+    TA:    "Technical Analysis (price action, indicators, chart patterns)",
+    FA:    "Fundamental Analysis (valuation, earnings, margins, balance sheet)",
+    MIX:   "Mixed TA + FA",
+    OTHER: "Macro / Thematic",
   };
-  lines.push(`Analysis preference:  ${analysisLabel[profile.analysis_preference] ?? profile.analysis_preference}`);
+  // analysis_preference may be multi-select joined by "+" e.g. "TA+FA"
+  const analysisParts = (profile.analysis_preference ?? "MIX")
+    .split("+")
+    .map(a => analysisLabel[a.trim()] ?? a)
+    .join(" + ");
+  lines.push(`Analysis preference:  ${analysisParts}`);
 
   if (profile.preferred_lang === "zh") {
     lines.push(`Language:             Respond in Simplified Chinese (简体中文) for all analysis`);
