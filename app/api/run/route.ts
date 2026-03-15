@@ -31,7 +31,7 @@ async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
   try {
     await startRun(runId);
 
-    const CONCURRENCY = 1; // Sequential to avoid flooding TinyFish queue
+    const CONCURRENCY = 3;
     const queue = [...universe];
     let scanned = 0, changed = 0, alerted = 0, failed = 0;
 
