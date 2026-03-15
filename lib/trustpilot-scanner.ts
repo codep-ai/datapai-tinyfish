@@ -36,22 +36,23 @@ export interface TrustpilotScanResult {
 // ── Extraction ────────────────────────────────────────────────────────────────
 
 function extractFromText(text: string): { score: number; reviewCount: number } | null {
-  // Pattern 1: "TrustScore 4.3" (Trustpilot's own label)
-  const scoreMatch =
-    text.match(/TrustScore[\s\S]{0,20}?(\d+\.\d+)/i) ||
-    text.match(/(\d+\.\d+)\s*out of\s*5/i) ||
-    // Pattern 2: score shown as standalone "4.3" near stars section
-    text.match(/rated\s+(\d+\.\d+)\s*stars?/i);
+  // Trustpilot pages contain "TrustScore 4.3" — match decimal immediately after label.
+  // Require score in 1.0–5.0 range to avoid false positives (version numbers, etc.)
+  const SCORE_RE = /TrustScore\s+([1-5]\.\d)/i;
+  const SCORE_RE2 = /([1-5]\.\d)\s*(?:out of\s*5|\/\s*5)/i;
 
-  // Pattern for review count: "2,961 reviews" or "2961 reviews"
-  const countMatch =
-    text.match(/(\d[\d,]+)\s+reviews?/i) ||
-    text.match(/based on\s+(\d[\d,]+)/i);
+  const scoreMatch = text.match(SCORE_RE) || text.match(SCORE_RE2);
+
+  // Review count: "2,961 reviews" / "2961 reviews" / "Total reviews: 2961"
+  // Must be ≥ 1 digit (not "0") to filter junk matches
+  const COUNT_RE = /(\d[\d,]{2,})\s+(?:total\s+)?reviews?/i;
+  const COUNT_RE2 = /(\d[\d,]+)\s+people\s+have/i;
+  const countMatch = text.match(COUNT_RE) || text.match(COUNT_RE2);
 
   if (!scoreMatch) return null;
 
   const score = parseFloat(scoreMatch[1]);
-  if (isNaN(score) || score < 0 || score > 5) return null;
+  if (isNaN(score) || score < 1.0 || score > 5.0) return null;
 
   const reviewCount = countMatch
     ? parseInt(countMatch[1].replace(/,/g, ""), 10)
