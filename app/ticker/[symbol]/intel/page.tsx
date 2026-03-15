@@ -37,10 +37,14 @@ export async function generateMetadata({
 
 export default async function IntelPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ symbol: string }>;
+  searchParams?: Promise<Record<string, string>>;
 }) {
   const { symbol } = await params;
+  const sp = await searchParams;
+  const autoRun = (sp?.run ?? null) as string | null;
   const sym = symbol.toUpperCase();
   const lang = await getLang();
 
@@ -198,6 +202,7 @@ export default async function IntelPage({
                 : `${companyName} — recent IR page update`
             }
             lang={lang}
+            autoRun={autoRun}
           />
 
         </div>

@@ -20,7 +20,6 @@
  */
 
 import { useState, useEffect } from "react";
-import { useSearchParams } from "next/navigation";
 import SimpleMarkdown from "./SimpleMarkdown";
 import { t as tFn, type Lang } from "@/lib/translations";
 
@@ -78,6 +77,8 @@ interface Props {
   lang?: Lang;
   /** Slot: AI Research Co-pilot chat panel — rendered immediately after TA Signal result */
   chatSlot?: React.ReactNode;
+  /** Auto-run a specific analysis on mount: "ta" | "fa" | "ma" | "ca" */
+  autoRun?: string | null;
 }
 
 // ─── Signal badge colours ─────────────────────────────────────────────────────
@@ -259,6 +260,7 @@ export default function TechAnalyticsPanel({
   latestHeadline,
   lang = "en",
   chatSlot,
+  autoRun,
 }: Props) {
   const isASX = exchange === "ASX";
   const cp = isASX ? "A$" : "$";
@@ -366,14 +368,13 @@ export default function TechAnalyticsPanel({
   const [miError, setMiError]   = useState<string>("");
   const [miExpanded, setMiExpanded] = useState(true);
 
-  // ── Auto-run from ?run=ta|fa|ma|ca query param ───────────────────────────
-  const searchParams = useSearchParams();
+  // ── Auto-run when parent passes autoRun prop ─────────────────────────────
   useEffect(() => {
-    const run = searchParams.get("run");
-    if (run === "ta") runTaSignal();
-    else if (run === "fa") runFaAnalysis();
-    else if (run === "ma") runMarketIntel();
-    else if (run === "ca") runChartAnalysis();
+    if (!autoRun) return;
+    if (autoRun === "ta") runTaSignal();
+    else if (autoRun === "fa") runFaAnalysis();
+    else if (autoRun === "ma") runMarketIntel();
+    else if (autoRun === "ca") runChartAnalysis();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
