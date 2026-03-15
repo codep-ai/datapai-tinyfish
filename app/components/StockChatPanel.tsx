@@ -328,8 +328,8 @@ export default function StockChatPanel({
             )}
           </button>
         </div>
-        <p className="text-[10px] text-gray-300 mt-1.5 px-1">
-          {lang === "zh" ? "⚠️ 仅供参考，不构成投资建议" : "⚠️ For research only — not financial advice"}
+        <p className="text-xs text-gray-500 mt-1.5 px-1">
+          {lang === "zh" ? "⚠️ 仅供参考，不构成投资建议" : "⚠️ For research only — not financial advice. Always do your own research before making investment decisions."}
         </p>
       </div>
     </div>

@@ -674,9 +674,8 @@ export default function ScreenerPage() {
           </div>
         )}
 
-        <p className="text-xs text-gray-400 text-center pb-4">
-          ⚠️ AI-computed fundamental scores are for research only — not financial advice. Scores are computed nightly
-          from yfinance data and Gemini grounding. Always do your own research before making investment decisions.
+        <p className="text-sm text-gray-500 pb-4 border-t border-gray-100 pt-4">
+          ⚠️ AI-computed fundamental scores are for research only — not financial advice. Scores are computed nightly from yfinance data and Gemini grounding. Always do your own research before making investment decisions.
         </p>
       </div>
     </div>
