@@ -140,7 +140,7 @@ export default async function IntelPage({
             </Link>
           </div>
           {/* Analysis type quick-access row */}
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr" }}>
             <Link
               href={`/ticker/${sym}/intel`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
