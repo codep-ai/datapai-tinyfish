@@ -1,14 +1,15 @@
 /**
  * app/brokers/page.tsx
- * Stock Broker Comparison — US & Australia
+ * Stock Broker Comparison — US & Australia (bilingual EN / ZH)
  *
  * LEGAL NOTE: All data is sourced from publicly available broker websites and
  * regulatory disclosures. This is factual information only — not financial
  * advice, not a recommendation to use any particular broker.  Fees change
- * frequently; always verify directly with the broker.
+ * frequently; always verify directly with the broker before opening an account.
  */
 
 import { getLang } from "@/lib/getLang";
+import { t } from "@/lib/translations";
 import {
   AU_BROKERS,
   US_BROKERS,
@@ -53,7 +54,6 @@ export default async function BrokersPage({
   const market: Market = (params.market?.toUpperCase() === "AU" ? "AU" : "US") as Market;
 
   const brokers: Broker[] = market === "AU" ? AU_BROKERS : US_BROKERS;
-
   const isAU = market === "AU";
 
   return (
@@ -69,17 +69,14 @@ export default async function BrokersPage({
           <p className="text-white/60 text-sm">
             <a href="/" className="hover:text-white/90 transition-colors">Home</a>
             {" › "}
-            <span>Broker Comparison</span>
+            <span>{t(lang, "broker_hero_title")}</span>
           </p>
 
-          {/* Title */}
           <h1 className="text-3xl font-bold tracking-tight">
-            Stock Broker Comparison
+            {t(lang, "broker_hero_title")}
           </h1>
           <p className="text-white/80 text-lg max-w-2xl">
-            Factual comparison of publicly listed fees and features for the top
-            retail stock brokers in the{" "}
-            {isAU ? "Australian" : "US"} market.
+            {t(lang, isAU ? "broker_hero_desc_au" : "broker_hero_desc_us")}
           </p>
 
           {/* Country switcher */}
@@ -87,33 +84,27 @@ export default async function BrokersPage({
             <a
               href="/brokers?market=US"
               className="px-5 py-2 rounded-full font-semibold text-sm transition-all"
-              style={
-                market === "US"
-                  ? { background: "#fd8412", color: "white" }
-                  : { background: "rgba(255,255,255,0.15)", color: "white" }
-              }
+              style={market === "US"
+                ? { background: "#fd8412", color: "white" }
+                : { background: "rgba(255,255,255,0.15)", color: "white" }}
             >
-              🇺🇸 US Brokers
+              {t(lang, "broker_btn_us")}
             </a>
             <a
               href="/brokers?market=AU"
               className="px-5 py-2 rounded-full font-semibold text-sm transition-all"
-              style={
-                market === "AU"
-                  ? { background: "#fd8412", color: "white" }
-                  : { background: "rgba(255,255,255,0.15)", color: "white" }
-              }
+              style={market === "AU"
+                ? { background: "#fd8412", color: "white" }
+                : { background: "rgba(255,255,255,0.15)", color: "white" }}
             >
-              🇦🇺 AU Brokers
+              {t(lang, "broker_btn_au")}
             </a>
           </div>
 
-          {/* Quick legend for AU-specific concept */}
+          {/* CHESS explainer (AU only) */}
           {isAU && (
             <div className="bg-white/10 rounded-lg px-4 py-3 max-w-2xl text-sm text-white/90">
-              <strong>CHESS Sponsored</strong> means you directly hold shares on the ASX
-              CHESS system in your own name (HIN), rather than via the broker as custodian.
-              This is an important legal distinction for AU investors.
+              <strong>CHESS</strong> — {t(lang, "broker_chess_explain")}
             </div>
           )}
         </div>
@@ -124,17 +115,17 @@ export default async function BrokersPage({
 
         {/* Summary cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <StatCard label="Brokers listed" value={String(brokers.length)} />
+          <StatCard label={t(lang, "broker_stat_count")} value={String(brokers.length)} />
           <StatCard
-            label="With $0 stock commission"
-            value={String(brokers.filter(b => b.commissionStocks.startsWith("$0")).length)}
+            label={t(lang, "broker_stat_zero_comm")}
+            value={String(brokers.filter(b => b.commissionStocks.startsWith("$0") || b.commissionStocks.startsWith("AUD $0")).length)}
           />
           <StatCard
-            label="With international market access"
+            label={t(lang, "broker_stat_intl")}
             value={String(brokers.filter(b => b.internationalMarkets !== null).length)}
           />
           <StatCard
-            label={isAU ? "CHESS sponsored" : "With IRA / retirement"}
+            label={isAU ? t(lang, "broker_stat_chess") : t(lang, "broker_stat_ira")}
             value={
               isAU
                 ? String(brokers.filter(b => b.chessSponsored === true).length)
@@ -146,28 +137,29 @@ export default async function BrokersPage({
         {/* ── Comparison table ─────────────────────────────────────────────── */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4">
-            {isAU ? "🇦🇺 Australian" : "🇺🇸 US"} Broker Comparison
+            {isAU ? "🇦🇺" : "🇺🇸"} {t(lang, "broker_section_compare")}
           </h2>
 
           <div className="overflow-x-auto rounded-xl shadow-sm border border-gray-200">
             <table className="w-full min-w-[900px] border-collapse bg-white">
               <thead>
                 <tr style={{ background: "linear-gradient(90deg, seagreen, darkseagreen)" }}>
-                  <Th className="rounded-tl-xl">Broker</Th>
-                  <Th>Stock commission</Th>
-                  <Th>ETF commission</Th>
-                  <Th>Options</Th>
-                  <Th>Acct min</Th>
-                  <Th>AU stocks</Th>
-                  <Th>US stocks</Th>
-                  <Th>Intl stocks</Th>
-                  <Th>ETFs</Th>
-                  <Th>Crypto</Th>
-                  {isAU && <Th>CHESS</Th>}
-                  {isAU && <Th>SMSF</Th>}
-                  {!isAU && <Th>IRA</Th>}
-                  <Th>Fractional</Th>
-                  <Th className="rounded-tr-xl">Mobile</Th>
+                  <Th className="rounded-tl-xl">{t(lang, "broker_th_broker")}</Th>
+                  <Th>{t(lang, "broker_th_stock_comm")}</Th>
+                  <Th>{t(lang, "broker_th_etf_comm")}</Th>
+                  <Th>{t(lang, "broker_th_options")}</Th>
+                  <Th>{t(lang, "broker_th_acct_min")}</Th>
+                  <Th>{t(lang, "broker_th_au_stocks")}</Th>
+                  <Th>{t(lang, "broker_th_us_stocks")}</Th>
+                  <Th>{t(lang, "broker_th_intl")}</Th>
+                  <Th>{t(lang, "broker_th_etfs")}</Th>
+                  <Th>{t(lang, "broker_th_crypto")}</Th>
+                  {isAU && <Th>{t(lang, "broker_th_chess")}</Th>}
+                  {isAU && <Th>{t(lang, "broker_th_smsf")}</Th>}
+                  {!isAU && <Th>{t(lang, "broker_th_ira")}</Th>}
+                  {!isAU && <Th>{t(lang, "broker_th_solo401k")}</Th>}
+                  <Th>{t(lang, "broker_th_fractional")}</Th>
+                  <Th className="rounded-tr-xl">{t(lang, "broker_th_mobile")}</Th>
                 </tr>
               </thead>
               <tbody>
@@ -180,7 +172,7 @@ export default async function BrokersPage({
                     <Td>
                       <div className="font-semibold text-gray-900">{b.name}</div>
                       <div className="text-xs text-gray-400 mt-0.5">{b.tagline}</div>
-                      <div className="flex items-center gap-2 mt-1">
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <span className="text-[10px] text-gray-400 bg-gray-100 rounded px-1.5 py-0.5">
                           {b.regulator}
                         </span>
@@ -190,7 +182,7 @@ export default async function BrokersPage({
                           rel="noopener noreferrer nofollow"
                           className="text-[10px] text-emerald-600 hover:underline"
                         >
-                          Visit site ↗
+                          {t(lang, "broker_visit_site")}
                         </a>
                         <a
                           href={b.signupUrl}
@@ -199,13 +191,11 @@ export default async function BrokersPage({
                           className="text-[10px] font-semibold px-2 py-0.5 rounded transition-opacity hover:opacity-80"
                           style={{ background: "#fd8412", color: "white" }}
                         >
-                          Open account →
+                          {t(lang, "broker_open_account")}
                         </a>
                       </div>
                       {b.note && (
-                        <div className="text-[11px] text-gray-400 mt-1 italic">
-                          {b.note}
-                        </div>
+                        <div className="text-[11px] text-gray-400 mt-1 italic">{b.note}</div>
                       )}
                     </Td>
                     <Td className="font-medium">{b.commissionStocks}</Td>
@@ -224,6 +214,7 @@ export default async function BrokersPage({
                     {isAU && <Td><Check val={b.chessSponsored} /></Td>}
                     {isAU && <Td><Check val={b.hasSMSF} /></Td>}
                     {!isAU && <Td><Check val={b.hasIRA} /></Td>}
+                    {!isAU && <Td><Check val={b.hasSolo401k} /></Td>}
                     <Td><Check val={b.hasFractionalShares} /></Td>
                     <Td><Check val={b.hasMobileApp} /></Td>
                   </tr>
@@ -233,36 +224,26 @@ export default async function BrokersPage({
           </div>
         </div>
 
-        {/* ── International access breakdown ───────────────────────────────── */}
+        {/* ── International access cards ────────────────────────────────────── */}
         <div>
           <h2 className="text-xl font-bold text-gray-800 mb-4">
-            International Stock Access
+            🌏 {t(lang, "broker_section_intl")}
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {brokers.map(b => (
-              <IntlCard key={b.id} broker={b} isAU={isAU} />
+              <IntlCard key={b.id} broker={b} isAU={isAU} homeOnlyLabel={t(lang, "broker_intl_home_only")} fxNote={t(lang, "broker_intl_fx_note")} />
             ))}
           </div>
         </div>
 
         {/* ── Disclaimer ───────────────────────────────────────────────────── */}
-        <div className="border-t border-gray-200 pt-6">
+        <div className="border-t border-gray-200 pt-6 space-y-2">
           <p className="text-sm text-gray-500 leading-relaxed">
-            <strong className="text-gray-700">Disclaimer:</strong> The information on
-            this page is sourced from publicly available broker websites, PDS documents,
-            and regulatory disclosures. It is provided for general informational purposes
-            only and is <strong>not financial advice</strong> and not a recommendation
-            to use any particular broker. Fees, features, and regulatory status can change
-            at any time — always verify current information directly with the broker before
-            opening an account. Data last reviewed: <strong>{DATA_REVIEWED_DATE}</strong>.{" "}
-            {isAU && (
-              <>
-                Australian investors should consider whether a product is appropriate for
-                their circumstances and read the relevant Product Disclosure Statement (PDS)
-                before investing.{" "}
-              </>
-            )}
-            DataP.ai has no commercial relationship with any broker listed on this page.
+            <strong className="text-gray-700">{lang === "zh" ? "免责声明：" : "Disclaimer:"}</strong>{" "}
+            {t(lang, "broker_disclaimer")}{" "}
+            {isAU && <>{t(lang, "broker_disclaimer_au")}{" "}</>}
+            {t(lang, "broker_disclaimer_data")} <strong>{DATA_REVIEWED_DATE}</strong>.{" "}
+            {t(lang, "broker_disclaimer_norel")}
           </p>
         </div>
 
@@ -282,7 +263,17 @@ function StatCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-function IntlCard({ broker, isAU }: { broker: Broker; isAU: boolean }) {
+function IntlCard({
+  broker,
+  isAU,
+  homeOnlyLabel,
+  fxNote,
+}: {
+  broker: Broker;
+  isAU: boolean;
+  homeOnlyLabel: string;
+  fxNote: string;
+}) {
   const homeMarkets: string[] = [];
   if (broker.hasAUStocks) homeMarkets.push("🇦🇺 ASX");
   if (broker.hasUSStocks && broker.market === "US") homeMarkets.push("🇺🇸 NYSE / NASDAQ");
@@ -305,14 +296,12 @@ function IntlCard({ broker, isAU }: { broker: Broker; isAU: boolean }) {
         ) : (
           <span className="text-[11px] px-2 py-0.5 rounded-full"
             style={{ background: "#f5f5f5", color: "#aaa" }}>
-            Home market only
+            {homeOnlyLabel}
           </span>
         )}
       </div>
       {broker.internationalMarkets && isAU && (
-        <p className="text-[11px] text-gray-400">
-          Currency conversion applies — check broker FX rates before trading
-        </p>
+        <p className="text-[11px] text-gray-400">{fxNote}</p>
       )}
     </div>
   );

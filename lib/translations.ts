@@ -104,6 +104,61 @@ export const tr = {
 
   panel_modal_title:     { en: "📊 Chart Analysis (CA)", zh: "📊 图表分析(CA)" },
   panel_modal_close:     { en: "Close",                   zh: "关闭" },
+
+  // ── Broker comparison page (/brokers) ────────────────────────────────────────
+  broker_hero_title:       { en: "Stock Broker Comparison",             zh: "股票券商比较" },
+  broker_hero_desc_us:     { en: "Factual comparison of publicly listed fees and features for the top retail stock brokers in the US market.", zh: "以下为美国主要零售股票券商公开费用与功能的客观对比，信息来源于各券商官网。" },
+  broker_hero_desc_au:     { en: "Factual comparison of publicly listed fees and features for the top retail stock brokers in the Australian market.", zh: "以下为澳大利亚主要零售股票券商公开费用与功能的客观对比，信息来源于各券商官网。" },
+  broker_btn_us:           { en: "🇺🇸 US Brokers",                      zh: "🇺🇸 美国券商" },
+  broker_btn_au:           { en: "🇦🇺 AU Brokers",                      zh: "🇦🇺 澳洲券商" },
+  broker_chess_explain:    { en: "CHESS Sponsored means you directly hold shares on the ASX CHESS system in your own name (HIN), rather than via the broker as custodian. This is an important legal distinction for AU investors.", zh: "CHESS托管意味着您以自己名义（HIN编号）直接在ASX CHESS系统中持有股份，而非通过券商作为托管方持有。这对澳大利亚投资者而言是重要的法律区别。" },
+
+  // stat cards
+  broker_stat_count:       { en: "Brokers listed",                      zh: "已收录券商" },
+  broker_stat_zero_comm:   { en: "With $0 stock commission",            zh: "零佣金股票交易" },
+  broker_stat_intl:        { en: "With international market access",    zh: "支持国际市场" },
+  broker_stat_chess:       { en: "CHESS sponsored",                     zh: "CHESS托管" },
+  broker_stat_ira:         { en: "With IRA / retirement",               zh: "支持IRA退休账户" },
+
+  // table headers
+  broker_th_broker:        { en: "Broker",                              zh: "券商" },
+  broker_th_stock_comm:    { en: "Stock commission",                    zh: "股票佣金" },
+  broker_th_etf_comm:      { en: "ETF commission",                      zh: "ETF佣金" },
+  broker_th_options:       { en: "Options",                             zh: "期权" },
+  broker_th_acct_min:      { en: "Acct min",                            zh: "最低入金" },
+  broker_th_au_stocks:     { en: "AU stocks",                           zh: "澳股" },
+  broker_th_us_stocks:     { en: "US stocks",                           zh: "美股" },
+  broker_th_intl:          { en: "Intl stocks",                         zh: "国际股票" },
+  broker_th_etfs:          { en: "ETFs",                                zh: "ETF" },
+  broker_th_crypto:        { en: "Crypto",                              zh: "加密货币" },
+  broker_th_chess:         { en: "CHESS",                               zh: "CHESS" },
+  broker_th_smsf:          { en: "SMSF",                                zh: "SMSF自管养老金" },
+  broker_th_ira:           { en: "IRA",                                 zh: "IRA退休账户" },
+  broker_th_solo401k:      { en: "Solo 401(k)",                         zh: "个人401(k)" },
+  broker_th_fractional:    { en: "Fractional",                          zh: "碎股" },
+  broker_th_mobile:        { en: "Mobile",                              zh: "手机APP" },
+
+  // broker row actions
+  broker_visit_site:       { en: "Visit site ↗",                        zh: "访问官网 ↗" },
+  broker_open_account:     { en: "Open account →",                      zh: "立即开户 →" },
+
+  // section titles
+  broker_section_compare:  { en: "Broker Comparison",                   zh: "券商对比" },
+  broker_section_intl:     { en: "International Stock Access",          zh: "国际股票访问权限" },
+  broker_intl_home_only:   { en: "Home market only",                    zh: "仅限本地市场" },
+  broker_intl_fx_note:     { en: "Currency conversion applies — check broker FX rates before trading", zh: "交易海外股票时需进行货币兑换，请提前确认券商外汇汇率" },
+
+  // disclaimer
+  broker_disclaimer:       {
+    en: "The information on this page is sourced from publicly available broker websites, PDS documents, and regulatory disclosures. It is provided for general informational purposes only and is not financial advice and not a recommendation to use any particular broker. Fees, features, and regulatory status can change at any time — always verify current information directly with the broker before opening an account.",
+    zh: "本页面信息来源于各券商官网、产品披露声明（PDS）及监管公告，仅供一般参考，不构成理财建议，也不构成对任何特定券商的推荐。费用、功能及监管状态随时可能发生变化——开户前请务必直接向券商核实最新信息。",
+  },
+  broker_disclaimer_au:    {
+    en: "Australian investors should consider whether a product is appropriate for their circumstances and read the relevant Product Disclosure Statement (PDS) before investing.",
+    zh: "澳大利亚投资者在投资前应考虑相关产品是否适合自身情况，并阅读相关产品披露声明（PDS）。",
+  },
+  broker_disclaimer_data:  { en: "Data last reviewed:", zh: "数据最后审核时间：" },
+  broker_disclaimer_norel: { en: "DataP.ai has no commercial relationship with any broker listed on this page.", zh: "DataP.ai与本页面所列任何券商均无商业合作关系。" },
 } as const;
 
 export function t(lang: Lang, key: keyof typeof tr): string {
