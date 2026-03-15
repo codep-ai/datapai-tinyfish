@@ -109,7 +109,7 @@ async function parseSseStream(
   return { title, text, finalUrl, tinyfishRunRef };
 }
 
-const TINYFISH_TIMEOUT_MS = 90_000; // 90s max per fetch — prevents hung scans
+const TINYFISH_TIMEOUT_MS = 240_000; // 240s max per fetch — TinyFish can be slow under load
 
 const DEFAULT_GOAL =
   "Extract all visible text content from this page, including news releases, press releases, headlines, dates, and any company announcements. Return as structured data.";

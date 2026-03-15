@@ -248,13 +248,19 @@ export async function finishRun(
   finishedAt: string,
   counts: { scanned: number; changed: number; alerts: number; failed: number }
 ): Promise<void> {
+  const status =
+    counts.failed > 0 && counts.scanned === counts.failed
+      ? "FAILED"
+      : counts.failed > 0
+      ? "PARTIAL"
+      : "SUCCESS";
   await exec(
     `UPDATE datapai.runs
-     SET finished_at=$1, status='SUCCESS',
-         scanned_count=$2, completed_count=$2, changed_count=$3,
-         alerts_created=$4, failed_count=$5
-     WHERE id=$6`,
-    [finishedAt, counts.scanned, counts.changed, counts.alerts, counts.failed, id]
+     SET finished_at=$1, status=$2,
+         scanned_count=$3, completed_count=$3, changed_count=$4,
+         alerts_created=$5, failed_count=$6
+     WHERE id=$7`,
+    [finishedAt, status, counts.scanned, counts.changed, counts.alerts, counts.failed, id]
   );
 }
 
