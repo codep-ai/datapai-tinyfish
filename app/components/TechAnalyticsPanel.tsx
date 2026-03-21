@@ -188,22 +188,22 @@ function ChartModal({
   return (
     <div
       className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto p-4"
-      style={{ background: "rgba(0,0,0,0.75)" }}
+      style={{ background: "rgba(0,0,0,0.5)" }}
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
         className="relative w-full max-w-4xl my-8 rounded-2xl overflow-hidden shadow-2xl"
-        style={{ background: "#0e1117" }}
+        style={{ background: "#ffffff" }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200" style={{ background: "#f8fafc" }}>
           <div>
-            <span className="text-white font-bold text-lg">{T("panel_modal_title")}</span>
-            <span className="ml-3 text-white/40 text-sm">Gemini Vision · {chart.indicators?.timeframe ?? "1d"}</span>
+            <span className="text-gray-800 font-bold text-lg">{T("panel_modal_title")}</span>
+            <span className="ml-3 text-gray-400 text-sm">Gemini Vision · {chart.indicators?.timeframe ?? "1d"}</span>
           </div>
           <button
             onClick={onClose}
-            className="text-white/50 hover:text-white text-2xl leading-none transition-colors"
+            className="text-gray-400 hover:text-gray-700 text-2xl leading-none transition-colors"
           >
             ×
           </button>
@@ -216,7 +216,7 @@ function ChartModal({
             src={`data:image/png;base64,${chart.chart_b64}`}
             alt="Technical analysis chart"
             className="w-full rounded-xl"
-            style={{ border: "1px solid rgba(255,255,255,0.1)" }}
+            style={{ border: "1px solid #e5e7eb" }}
           />
         </div>
 
@@ -225,9 +225,9 @@ function ChartModal({
           <div
             className="rounded-xl p-5 text-sm"
             style={{
-              background: "rgba(255,255,255,0.05)",
-              border: "1px solid rgba(255,255,255,0.12)",
-              color: "#e2e8f0",
+              background: "#f8fafc",
+              border: "1px solid #e2e8f0",
+              color: "#374151",
             }}
           >
             <SimpleMarkdown className="text-sm leading-relaxed">
@@ -236,11 +236,22 @@ function ChartModal({
           </div>
         </div>
 
+        {/* Data provenance trail */}
+        <div className="px-6 pb-3">
+          <div className="flex items-center gap-2 flex-wrap text-xs text-gray-300">
+            <span className="font-semibold text-indigo-500">🌊 TinyFish</span>
+            <span>→ Yahoo Finance OHLCV</span>
+            <span>→ 3-panel chart render</span>
+            <span>→ Gemini Vision pattern recognition</span>
+            <span className="ml-auto italic">{T("panel_not_advice")}</span>
+          </div>
+        </div>
+
         {/* Close footer */}
         <div className="px-6 pb-5 flex justify-end">
           <button
             onClick={onClose}
-            className="px-5 py-2 rounded-lg text-sm font-semibold border border-white/20 text-white/70 hover:text-white transition-colors"
+            className="px-5 py-2 rounded-lg text-sm font-semibold border border-gray-200 text-gray-500 hover:text-gray-700 hover:bg-gray-50 transition-colors"
           >
             {T("panel_modal_close")}
           </button>
@@ -314,6 +325,7 @@ export default function TechAnalyticsPanel({
   const [chartError, setChartError]   = useState<string>("");
   const [showModal, setShowModal]     = useState(false);
   const [chartFromCache, setChartFromCache] = useState(false);
+  const [chartExpanded, setChartExpanded] = useState(true);
 
   async function runChartAnalysis(force = false) {
     setChartPhase("loading");
@@ -946,6 +958,70 @@ export default function TechAnalyticsPanel({
                 <span>→ language change detection</span>
                 <span>→ Yahoo Finance ASX price (multi-timeframe)</span>
                 <span>→ Gemini (Google Search grounded)</span>
+                <span className="ml-auto italic">{T("panel_not_advice")}</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Chart Analysis (CA) inline result panel ─────────────────────────── */}
+      {chartPhase === "done" && chartResult && (
+        <div
+          className="bg-white rounded-2xl shadow-sm overflow-hidden"
+          style={{ border: "2px solid #a5b4fc" }}
+        >
+          <button
+            className="w-full px-8 py-5 flex items-center justify-between border-b text-left hover:bg-indigo-50/50 transition-colors"
+            style={{ borderBottomColor: "#c7d2fe" }}
+            onClick={() => setChartExpanded(!chartExpanded)}
+          >
+            <div className="flex items-center gap-4 flex-wrap">
+              <h2 className="text-2xl font-bold text-[#252525]">💬 Chart Analysis (CA)</h2>
+              {chartFromCache && (
+                <span className="text-xs text-gray-400 font-medium">cached</span>
+              )}
+              <button
+                className="text-xs font-semibold px-3 py-1 rounded-full transition-colors"
+                style={{ background: "#ede9fe", color: "#6366f1", border: "1px solid #a5b4fc" }}
+                onClick={(e) => { e.stopPropagation(); setShowModal(true); }}
+              >
+                🔍 View Full Chart
+              </button>
+            </div>
+            <span className="text-gray-400 text-sm">{chartExpanded ? T("panel_collapse") : T("panel_expand")}</span>
+          </button>
+          {chartExpanded && (
+            <div className="px-8 py-6">
+              {/* Chart thumbnail */}
+              {chartResult.chart_b64 && (
+                <div className="mb-5 cursor-pointer" onClick={() => setShowModal(true)}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={`data:image/png;base64,${chartResult.chart_b64}`}
+                    alt="Technical analysis chart"
+                    className="w-full rounded-xl hover:opacity-90 transition-opacity"
+                    style={{ border: "1px solid #e5e7eb", maxHeight: "400px", objectFit: "contain" }}
+                  />
+                </div>
+              )}
+              {/* Gemini analysis text */}
+              <div className="text-sm text-gray-700 leading-relaxed">
+                <SimpleMarkdown>{chartResult.analysis}</SimpleMarkdown>
+              </div>
+              {/* Data provenance trail */}
+              <div className="mt-5 pt-4 border-t border-gray-100 flex items-center gap-2 flex-wrap text-xs text-gray-300">
+                <span className="font-semibold text-indigo-500">🌊 TinyFish</span>
+                <span>→ Yahoo Finance OHLCV</span>
+                <span>→ 3-panel chart render</span>
+                <span>→ Gemini Vision pattern recognition</span>
+                <span
+                  className="font-bold text-indigo-500 cursor-pointer hover:text-indigo-600 ml-2"
+                  onClick={() => runChartAnalysis(true)}
+                  title="Re-generate chart analysis"
+                >
+                  ↻ Refresh
+                </span>
                 <span className="ml-auto italic">{T("panel_not_advice")}</span>
               </div>
             </div>

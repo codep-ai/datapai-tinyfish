@@ -672,6 +672,56 @@ export async function removeFromWatchlist(userId: string, symbol: string): Promi
   );
 }
 
+export interface TickerPrice {
+  ticker: string;
+  close: number;
+  prev_close: number;
+  change_pct: number;
+  trade_date: string;
+}
+
+export async function getLatestPricesForWatchlist(
+  items: { symbol: string; exchange: string }[]
+): Promise<Record<string, TickerPrice>> {
+  if (!items.length) return {};
+  // Build lookup tickers: ASX stocks use SYMBOL.AX in prices table
+  const allTickers: string[] = [];
+  const symbolToTickers: Record<string, string[]> = {};
+  for (const item of items) {
+    const candidates: string[] = [item.symbol];
+    if (item.exchange === "ASX") candidates.push(`${item.symbol}.AX`);
+    symbolToTickers[item.symbol] = candidates;
+    allTickers.push(...candidates);
+  }
+  const unique = [...new Set(allTickers)];
+  const placeholders = unique.map((_, i) => `$${i + 1}`).join(",");
+  const rows = await q<TickerPrice>(
+    `SELECT p1.ticker, p1.close, p2.close AS prev_close,
+            ROUND(((p1.close - p2.close) / NULLIF(p2.close, 0) * 100)::numeric, 2) AS change_pct,
+            p1.trade_date::text AS trade_date
+     FROM datapai.prices p1
+     JOIN LATERAL (
+       SELECT close FROM datapai.prices p2
+       WHERE p2.ticker = p1.ticker AND p2.trade_date < p1.trade_date
+       ORDER BY p2.trade_date DESC LIMIT 1
+     ) p2 ON true
+     WHERE p1.ticker IN (${placeholders})
+       AND p1.trade_date = (SELECT MAX(trade_date) FROM datapai.prices WHERE ticker = p1.ticker)`,
+    unique
+  );
+  // Map back to watchlist symbols (prefer .AX variant for freshest data)
+  const byTicker: Record<string, TickerPrice> = {};
+  for (const r of rows) byTicker[r.ticker] = r;
+  const result: Record<string, TickerPrice> = {};
+  for (const item of items) {
+    const candidates = symbolToTickers[item.symbol] || [item.symbol];
+    for (const c of candidates.reverse()) { // prefer .AX
+      if (byTicker[c]) { result[item.symbol] = byTicker[c]; break; }
+    }
+  }
+  return result;
+}
+
 export async function isInWatchlist(userId: string, symbol: string): Promise<boolean> {
   const rows = await q(
     `SELECT 1 FROM datapai.watchlist WHERE user_id=$1 AND symbol=$2 LIMIT 1`,
@@ -760,4 +810,147 @@ export async function getUserScanCountToday(userId: string): Promise<number> {
     [userId]
   );
   return parseInt(rows[0]?.cnt ?? "0", 10);
+}
+
+// ── Material Events (Breaking News) ──────────────────────────────────────
+
+export interface MaterialEventRow {
+  id: number;
+  ticker: string;
+  exchange: string;
+  event_type: string;
+  severity: string;
+  sentiment: string;
+  headline: string;
+  summary: string;
+  source_url: string;
+  source_name: string;
+  published_at: string | null;
+  detected_at: string;
+}
+
+/** Get recent material events for a single ticker (default last 72h). */
+export async function getLatestMaterialEvents(
+  ticker: string,
+  exchange?: string,
+  hours = 72,
+  limit = 10
+): Promise<MaterialEventRow[]> {
+  if (exchange) {
+    // Normalize exchange: NASDAQ/NYSE → US to match DB convention
+    const dbExchange = (exchange === "NASDAQ" || exchange === "NYSE") ? "US" : exchange;
+    return q<MaterialEventRow>(
+      `SELECT id, ticker, exchange, event_type, severity, sentiment,
+              headline, summary, source_url, source_name,
+              published_at::text, detected_at::text
+       FROM datapai.material_events
+       WHERE ticker = $1 AND exchange = $2
+         AND detected_at > NOW() - INTERVAL '1 hour' * $3
+       ORDER BY detected_at DESC
+       LIMIT $4`,
+      [ticker, dbExchange, hours, limit]
+    );
+  }
+  return q<MaterialEventRow>(
+    `SELECT id, ticker, exchange, event_type, severity, sentiment,
+            headline, summary, source_url, source_name,
+            published_at::text, detected_at::text
+     FROM datapai.material_events
+     WHERE ticker = $1
+       AND detected_at > NOW() - INTERVAL '1 hour' * $2
+     ORDER BY detected_at DESC
+     LIMIT $3`,
+    [ticker, hours, limit]
+  );
+}
+
+/** Bulk fetch CRITICAL/HIGH material events for multiple tickers (for watchlist). */
+export async function getMaterialEventsForTickers(
+  tickers: { symbol: string; exchange: string }[],
+  hours = 72
+): Promise<Record<string, MaterialEventRow[]>> {
+  if (!tickers.length) return {};
+  // Build pairs of (ticker, exchange) — also try .AX suffix for ASX
+  const allTickers: string[] = [];
+  const symbolToTickers: Record<string, string[]> = {};
+  for (const t of tickers) {
+    const candidates = [t.symbol];
+    if (t.exchange === "ASX") candidates.push(`${t.symbol}.AX`);
+    symbolToTickers[t.symbol] = candidates;
+    allTickers.push(...candidates);
+  }
+  const unique = [...new Set(allTickers)];
+  const placeholders = unique.map((_, i) => `$${i + 1}`).join(",");
+  const rows = await q<MaterialEventRow>(
+    `SELECT id, ticker, exchange, event_type, severity, sentiment,
+            headline, summary, source_url, source_name,
+            published_at::text, detected_at::text
+     FROM datapai.material_events
+     WHERE ticker IN (${placeholders})
+       AND severity IN ('CRITICAL', 'HIGH', 'MEDIUM')
+       AND detected_at > NOW() - INTERVAL '${hours} hours'
+     ORDER BY detected_at DESC`,
+    unique
+  );
+  // Group by original watchlist symbol
+  const result: Record<string, MaterialEventRow[]> = {};
+  const byTicker: Record<string, MaterialEventRow[]> = {};
+  for (const r of rows) {
+    if (!byTicker[r.ticker]) byTicker[r.ticker] = [];
+    byTicker[r.ticker].push(r);
+  }
+  for (const t of tickers) {
+    const candidates = symbolToTickers[t.symbol] || [t.symbol];
+    for (const c of candidates) {
+      if (byTicker[c]) {
+        if (!result[t.symbol]) result[t.symbol] = [];
+        result[t.symbol].push(...byTicker[c]);
+      }
+    }
+  }
+  return result;
+}
+
+// ── Stock Synthesis (AG2 multi-agent) ─────────────────────────────────────
+
+export interface StockSynthesis {
+  ticker: string;
+  exchange: string;
+  direction: string;
+  confidence: number;
+  conviction: string;
+  thesis: string;
+  what_bulls_say: string;
+  what_bears_say: string;
+  key_risk: string;
+  computed_at: string;
+}
+
+export async function getStockSynthesis(ticker: string, exchange: string): Promise<StockSynthesis | null> {
+  const rows = await q<StockSynthesis>(
+    `SELECT * FROM datapai.stock_synthesis
+     WHERE ticker=$1 AND exchange=$2
+     ORDER BY computed_at DESC LIMIT 1`,
+    [ticker, exchange]
+  );
+  return rows[0] ?? null;
+}
+
+export async function getStockSynthesisFlexible(symbol: string, exchange: string): Promise<StockSynthesis | null> {
+  // Try exact match first
+  let result = await getStockSynthesis(symbol, exchange);
+  if (result) return result;
+  // ASX: try with .AX suffix
+  if (exchange === "ASX") {
+    result = await getStockSynthesis(`${symbol}.AX`, exchange);
+    if (result) return result;
+  }
+  // US: try without exchange variants
+  if (exchange !== "ASX") {
+    for (const ex of ["US", "NASDAQ", "NYSE"]) {
+      result = await getStockSynthesis(symbol, ex);
+      if (result) return result;
+    }
+  }
+  return null;
 }

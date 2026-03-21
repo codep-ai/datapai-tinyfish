@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
-import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, getLatestAnalysisWithAgentContent, getTickerScanCount, lookupStock } from "@/lib/db";
+import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, getLatestAnalysisWithAgentContent, getTickerScanCount, lookupStock, getLatestMaterialEvents } from "@/lib/db";
+import { BreakingNewsPanel } from "../../components/BreakingNewsAlert";
 import { fetchPrices } from "@/lib/price";
 import PriceChart from "./PriceChart";
 import { agentSignalLabel, validationLabel, changeTypeLabel } from "@/lib/agent";
@@ -99,6 +100,8 @@ export default async function TickerPage({
       };
     } else {
       // No data yet — show "not monitored" page with prominent Scan button
+      // Still fetch breaking news even for unmonitored tickers
+      const unmonitoredNews = await getLatestMaterialEvents(sym, exchangeLabel, 72, 10);
       return (
         <div>
           <div
@@ -134,6 +137,10 @@ export default async function TickerPage({
           </div>
 
           <div className="max-w-5xl mx-auto px-8 py-10 space-y-6">
+            {/* Breaking news even for unmonitored tickers */}
+            {unmonitoredNews.length > 0 && (
+              <BreakingNewsPanel events={unmonitoredNews} />
+            )}
             {/* What the scan will do */}
             <div className="bg-white border border-gray-100 rounded-2xl p-7 shadow-sm space-y-4">
               <h2 className="text-lg font-bold text-gray-800">
@@ -190,11 +197,12 @@ export default async function TickerPage({
     }
   }
 
-  const [snapshots, analyses, diffs, prices] = await Promise.all([
+  const [snapshots, analyses, diffs, prices, materialEvents] = await Promise.all([
     getTickerSnapshots(sym, 5),
     getTickerAnalyses(sym, 5),
     getTickerDiffs(sym, 5),
     fetchPrices(sym, 30, exchangeLabel),
+    getLatestMaterialEvents(sym, exchangeLabel, 72, 10),
   ]);
 
   const latest = analyses[0] ?? null;
@@ -320,6 +328,11 @@ export default async function TickerPage({
 
       {/* ── Main content ────────────────────────────────────────────────────── */}
       <div className="max-w-5xl mx-auto px-8 py-10 space-y-10">
+
+      {/* ── Breaking News Alerts ───────────────────────────────────────────── */}
+      {materialEvents.length > 0 && (
+        <BreakingNewsPanel events={materialEvents} />
+      )}
 
       {/* ── Agent Flow ─────────────────────────────────────────────────────── */}
       <div className="rounded-2xl border border-gray-100 bg-gray-50 px-8 py-5 space-y-3">
