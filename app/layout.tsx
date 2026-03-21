@@ -10,6 +10,7 @@ import LogoutButton from "./components/LogoutButton";
 import LangToggle from "./components/LangToggle";
 import ProfileBadge from "./components/ProfileBadge";
 import OnboardingBanner from "./components/OnboardingBanner";
+import GlobalCopilot from "./components/GlobalCopilot";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -127,6 +128,9 @@ export default async function RootLayout({
         )}
 
         <main>{children}</main>
+
+        {/* Global AI Copilot — floating chat on every page */}
+        <GlobalCopilot lang={lang} />
 
         {/* Footer */}
         <footer style={{ background: "#252525" }} className="mt-16">
