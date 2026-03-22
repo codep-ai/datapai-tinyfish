@@ -13,11 +13,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { UNIVERSE_ALL } from "@/lib/universe";
 import { getTickerSnapshots, getLatestAnalysisWithAgentContent, lookupStock, getCachedTaSignal } from "@/lib/db";
+import { fetchPrices } from "@/lib/price";
 import { getLang } from "@/lib/getLang";
 import { t } from "@/lib/translations";
 import TechAnalyticsPanel from "../../../components/TechAnalyticsPanel";
 import WatchlistButton from "../../../components/WatchlistButton";
 import StockChatPanel from "../../../components/StockChatPanel";
+import PriceChart from "../PriceChart";
 
 export const dynamic = "force-dynamic";
 
@@ -54,11 +56,13 @@ export default async function IntelPage({
   const exchangeLabel = (ticker?.exchange ?? dirEntry?.exchange ?? "NASDAQ") as string;
   const companyName = ticker?.name ?? dirEntry?.name ?? sym;
 
-  const snapshots = await getTickerSnapshots(sym, 1);
+  const [snapshots, signalSource, cachedTaSignal, prices] = await Promise.all([
+    getTickerSnapshots(sym, 1),
+    getLatestAnalysisWithAgentContent(sym),
+    getCachedTaSignal(sym, 48),
+    fetchPrices(sym, 30, exchangeLabel === "ASX" ? "ASX" : undefined),
+  ]);
   const latestSnap = snapshots[0] ?? null;
-  const signalSource = await getLatestAnalysisWithAgentContent(sym);
-  // Pass cached TA signal (price, RSI, trend) to chat so AI uses current data not training data
-  const cachedTaSignal = await getCachedTaSignal(sym, 48);  // up to 48h old is acceptable
 
   // Sector: from stock_directory (lookupStock already fetched it)
   const sectorLabel = dirEntry?.sector ?? null;
@@ -180,6 +184,29 @@ export default async function IntelPage({
       {/* ── Main content ──────────────────────────────────────────────────────── */}
       <div className="min-h-screen bg-[#fcfcfd]">
         <div className="max-w-5xl mx-auto px-8 py-10">
+
+          {/* ── 30-Day Price Chart ──────────────────────────────────────────── */}
+          {prices.length > 0 && (
+            <div className="mb-8 bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <h2 className="text-lg font-bold text-gray-800 mb-3">
+                📈 {sym} — 30 Day Price
+                {prices.length > 0 && (
+                  <span className="ml-3 text-sm font-normal text-gray-500">
+                    {exchangeLabel === "ASX" ? "A$" : "$"}{prices[prices.length - 1].close.toFixed(2)}
+                    {prices.length >= 2 && (() => {
+                      const chg = ((prices[prices.length - 1].close - prices[0].close) / prices[0].close) * 100;
+                      return (
+                        <span className={chg >= 0 ? "text-green-600 ml-2" : "text-red-600 ml-2"}>
+                          {chg >= 0 ? "+" : ""}{chg.toFixed(1)}%
+                        </span>
+                      );
+                    })()}
+                  </span>
+                )}
+              </h2>
+              <PriceChart data={prices} scanDates={[]} exchange={exchangeLabel} />
+            </div>
+          )}
 
             {/* ── AI Research Co-pilot (top of section) */}
           <StockChatPanel

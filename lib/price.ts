@@ -1,9 +1,11 @@
 /**
- * lib/price.ts  (V3)
- * Fetches real 30-day price data from Yahoo Finance chart API.
- * ASX-listed stocks use the ".AX" suffix required by Yahoo Finance.
- * Falls back to deterministic mock if the request fails.
+ * lib/price.ts  (V4)
+ * Fetches price data from LOCAL Postgres DB first (instant, validated),
+ * falls back to Yahoo Finance if DB has insufficient data.
+ * ASX-listed stocks use the ".AX" suffix for both DB and Yahoo.
  */
+
+import { getPool } from "./db";
 
 export interface PricePoint {
   date: string;  // YYYY-MM-DD
@@ -11,16 +13,40 @@ export interface PricePoint {
   volume: number;
 }
 
-// ─── Real price via Yahoo Finance ─────────────────────────────────────────
+// ─── DB-first price fetch ────────────────────────────────────────────────
 
 export async function fetchPrices(
   ticker: string,
   days = 30,
   exchange?: string
 ): Promise<PricePoint[]> {
-  // Yahoo Finance requires ".AX" suffix for ASX-listed stocks
-  const yahooSymbol = exchange === "ASX" ? `${ticker}.AX` : ticker;
+  // DB stores ASX tickers with .AX suffix (e.g. "ORE.AX")
+  const dbTicker = exchange === "ASX" ? `${ticker}.AX` : ticker;
 
+  // 1. Try local Postgres (instant, validated data)
+  try {
+    const pool = getPool();
+    const { rows } = await pool.query(
+      `SELECT trade_date::text as date, close, volume
+       FROM datapai.prices
+       WHERE ticker = $1
+       ORDER BY trade_date DESC
+       LIMIT $2`,
+      [dbTicker, days],
+    );
+    if (rows.length >= 5) {
+      return rows.reverse().map((r: { date: string; close: number; volume: number }) => ({
+        date: r.date,
+        close: Math.round(r.close * 100) / 100,
+        volume: Math.round(r.volume ?? 0),
+      }));
+    }
+  } catch (dbErr) {
+    console.warn(`[price] DB fetch failed for ${dbTicker}:`, dbErr);
+  }
+
+  // 2. Fall back to Yahoo Finance
+  const yahooSymbol = exchange === "ASX" ? `${ticker}.AX` : ticker;
   try {
     const now = Math.floor(Date.now() / 1000);
     const from = now - days * 24 * 60 * 60;
@@ -29,10 +55,7 @@ export async function fetchPrices(
       `?period1=${from}&period2=${now}&interval=1d`;
 
     const res = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-        Accept: "application/json",
-      },
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
       signal: AbortSignal.timeout(8000),
     });
 
