@@ -212,19 +212,35 @@ function DataPAIScoreCell({ score }: { score: number | null }) {
   );
 }
 
-/** Quality tier chip A/B/C/D */
-function QualityTierCell({ tier }: { tier: string | null }) {
+/** Quality tier chip A/B/C/D with detailed tooltip */
+function QualityTierCell({ tier, row }: { tier: string | null; row?: TechRow }) {
   if (!tier) return <span className="text-gray-300 text-[9px]">—</span>;
-  const styles: Record<string, { bg: string; color: string }> = {
-    A: { bg: "#dcfce7", color: "#166534" },
-    B: { bg: "#dbeafe", color: "#1e40af" },
-    C: { bg: "#fefce8", color: "#854d0e" },
-    D: { bg: "#fef2f2", color: "#991b1b" },
+  const styles: Record<string, { bg: string; color: string; label: string; desc: string }> = {
+    A: { bg: "#dcfce7", color: "#166534", label: "Excellent",
+         desc: "Profitable, growing revenue, healthy balance sheet, strong margins, good ROE" },
+    B: { bg: "#dbeafe", color: "#1e40af", label: "Good",
+         desc: "Mostly profitable, decent growth, reasonable debt levels" },
+    C: { bg: "#fefce8", color: "#854d0e", label: "Fair",
+         desc: "Mixed fundamentals — may lack profitability, growth, or financial health" },
+    D: { bg: "#fef2f2", color: "#991b1b", label: "Poor",
+         desc: "Unprofitable, declining revenue, or weak balance sheet — higher risk" },
   };
-  const s = styles[tier] ?? { bg: "#f3f4f6", color: "#6b7280" };
+  const s = styles[tier] ?? { bg: "#f3f4f6", color: "#6b7280", label: "Unknown", desc: "" };
+  // Build rich tooltip with actual data if available
+  const parts = [`Quality ${tier}: ${s.label}`, s.desc];
+  if (row) {
+    const details: string[] = [];
+    if (row.fl_pe !== null && row.fl_pe !== undefined) details.push(`PE: ${row.fl_pe.toFixed(1)}`);
+    if (row.fl_roe !== null && row.fl_roe !== undefined) details.push(`ROE: ${(row.fl_roe * 100).toFixed(0)}%`);
+    if (row.fl_gross_margin !== null && row.fl_gross_margin !== undefined) details.push(`Margin: ${(row.fl_gross_margin * 100).toFixed(0)}%`);
+    if (row.fl_rev_yoy !== null && row.fl_rev_yoy !== undefined) details.push(`Rev YoY: ${(row.fl_rev_yoy * 100).toFixed(0)}%`);
+    if (row.fl_profitable !== null) details.push(row.fl_profitable ? "✓ Profitable" : "✗ Not profitable");
+    if (row.fl_growing !== null) details.push(row.fl_growing ? "✓ Growing" : "✗ Not growing");
+    if (details.length) parts.push(details.join(" · "));
+  }
   return (
-    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: s.bg, color: s.color }}
-      title={`Quality: ${tier} — ${tier === "A" ? "Excellent" : tier === "B" ? "Good" : tier === "C" ? "Fair" : "Poor"} (PE, margins, growth, debt)`}>
+    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded cursor-help" style={{ background: s.bg, color: s.color }}
+      title={parts.join("\n")}>
       {tier}
     </span>
   );
@@ -708,7 +724,7 @@ function TechnicalTab() {
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Long-term signal (Quarter+): SMA50/200 + 52w High + 6M% + 1Y%">Quarter</th>
                     {/* ── Multi-Factor Score ── */}
                     <th className="px-1 py-2 text-center font-bold text-[#2e8b57] uppercase tracking-wide text-[9px]" title="DataPAI Composite Score: TA (40%) + Fundamentals (30%) + Website Intelligence (30%). 0-100 scale.">Score</th>
-                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Fundamental Quality Tier: A=Excellent, B=Good, C=Fair, D=Poor. Based on PE, margins, ROE, growth, debt.">Qual</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Fundamental Quality Tier (hover each for details)&#10;A = Excellent: profitable, growing, healthy&#10;B = Good: mostly profitable, decent growth&#10;C = Fair: mixed fundamentals&#10;D = Poor: unprofitable or declining&#10;Based on: PE, margins, ROE, revenue growth, debt">Qual</th>
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Website change or news alert severity. Hover for details.">Alert</th>
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Sector classification">Sector</th>
                     {/* ── Price Changes ── */}
@@ -754,7 +770,7 @@ function TechnicalTab() {
                       <td className="px-1 py-2 text-center"><SignalCell signal={signalQuarter(r)} /></td>
                       {/* Multi-factor columns */}
                       <td className="px-1 py-2 text-center"><DataPAIScoreCell score={r.datapai_score} /></td>
-                      <td className="px-1 py-2 text-center"><QualityTierCell tier={r.fl_quality_tier || r.mfs_quality_tier} /></td>
+                      <td className="px-1 py-2 text-center"><QualityTierCell tier={r.fl_quality_tier || r.mfs_quality_tier} row={r} /></td>
                       <td className="px-1 py-2 text-center"><AlertCell ciSeverity={r.ci_severity} ciWhat={r.ci_what_changed} meSeverity={r.me_severity} meHeadline={r.me_headline} /></td>
                       <td className="px-1 py-2 text-center text-[9px] text-gray-500 max-w-[60px] truncate" title={r.fl_sector || ""}>{r.fl_sector ? r.fl_sector.split(" ")[0] : "—"}</td>
                       {/* Price changes */}
