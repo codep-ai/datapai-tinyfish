@@ -22,6 +22,23 @@ export const dynamic = "force-dynamic";
 
 const AGENT_BASE = (process.env.AGENT_BACKEND_BASE_URL ?? "").replace(/\/$/, "");
 
+/** Fetch global market index summary for copilot context */
+async function fetchMarketIndexSummary(): Promise<string> {
+  if (!AGENT_BASE) return "";
+  try {
+    const res = await fetch(`${AGENT_BASE}/agent/index-overview`, { cache: "no-store", signal: AbortSignal.timeout(8_000) });
+    if (!res.ok) return "";
+    const json = await res.json();
+    if (!json.ok || !json.data?.length) return "";
+    const lines = json.data.map((r: Record<string, unknown>) => {
+      const d = Number(r.change_1d_pct) || 0;
+      const rsi = Number(r.rsi_14) || 0;
+      return `${r.name} (${r.ticker}): ${Number(r.latest_close)?.toLocaleString()} ${d >= 0 ? "+" : ""}${d.toFixed(2)}% RSI=${rsi.toFixed(0)} ${r.macd_trend}`;
+    });
+    return `[MARKET INDEX SUMMARY — Global]\n${lines.join("\n")}`;
+  } catch { return ""; }
+}
+
 /** Fetch screener highlights — top gainers, oversold, bullish momentum */
 async function fetchScreenerHighlights(): Promise<string[]> {
   if (!AGENT_BASE) return [];
@@ -175,6 +192,7 @@ export async function GET(req: Request) {
           stock_count: watchlist.length,
           stocks: stockSummaries,
           screener_highlights: screenerHighlights,
+          market_index_summary: await fetchMarketIndexSummary(),
         },
       });
     }
@@ -271,6 +289,7 @@ export async function GET(req: Request) {
         page_type: "general",
         description: `DataP.ai website change intelligence platform. Page: ${page}. Covers ${UNIVERSE.length} US stocks and ${ASX_UNIVERSE.length} ASX stocks. Screener covers 8,500+ tickers with full TA.`,
         screener_highlights: generalHighlights,
+        market_index_summary: await fetchMarketIndexSummary(),
       },
     });
   } catch (err) {
