@@ -502,18 +502,30 @@ export async function lookupStock(symbol: string): Promise<StockDirectoryEntry |
 }
 
 export async function searchStocks(query: string, exchange?: string): Promise<StockDirectoryEntry[]> {
-  const like = `${query.toUpperCase()}%`;
+  const upper = query.toUpperCase();
+  const like = `${upper}%`;
+  const nameLike = `%${upper}%`;
+  // Search by symbol prefix OR company name (case-insensitive)
+  // Symbol prefix matches rank first, then company name matches
   if (exchange) {
     return q<StockDirectoryEntry>(
       `SELECT symbol, name, exchange, sector FROM datapai.stock_directory
-       WHERE symbol LIKE $1 AND exchange=$2 ORDER BY symbol LIMIT 20`,
-      [like, exchange]
+       WHERE exchange=$2 AND (symbol LIKE $1 OR UPPER(name) LIKE $3)
+       ORDER BY
+         CASE WHEN symbol LIKE $1 THEN 0 ELSE 1 END,
+         LENGTH(symbol), symbol
+       LIMIT 20`,
+      [like, exchange, nameLike]
     );
   }
   return q<StockDirectoryEntry>(
     `SELECT symbol, name, exchange, sector FROM datapai.stock_directory
-     WHERE symbol LIKE $1 ORDER BY symbol LIMIT 20`,
-    [like]
+     WHERE symbol LIKE $1 OR UPPER(name) LIKE $2
+     ORDER BY
+       CASE WHEN symbol LIKE $1 THEN 0 ELSE 1 END,
+       LENGTH(symbol), symbol
+     LIMIT 20`,
+    [like, nameLike]
   );
 }
 

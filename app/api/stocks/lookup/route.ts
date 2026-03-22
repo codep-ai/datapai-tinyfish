@@ -2,15 +2,59 @@
  * GET /api/stocks/lookup?symbol=TWE
  * GET /api/stocks/lookup?q=BH&exchange=ASX   ← prefix search (autocomplete)
  *
- * Returns stock info from the stock_directory table.
+ * Returns stock info from the stock_directory table + live price from screener_metrics.
  * If the table is empty (not yet seeded), falls back to UNIVERSE_ALL lookup.
  */
 
 import { NextResponse } from "next/server";
 import { lookupStock, searchStocks, countStockDirectory } from "@/lib/db";
 import { UNIVERSE_ALL } from "@/lib/universe";
+import { getPool } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
+
+interface StockResult {
+  symbol: string;
+  name: string;
+  exchange: string;
+  sector: string | null;
+  price?: number | null;
+  change_1d_pct?: number | null;
+  change_1m_pct?: number | null;
+  market_cap?: number | null;
+  volume?: number | null;
+}
+
+/** Enrich search results with price data from screener_metrics */
+async function enrichWithPrices(results: StockResult[]): Promise<StockResult[]> {
+  if (results.length === 0) return results;
+  try {
+    const pool = getPool();
+    const symbols = results.map((r) => r.symbol);
+    const rows = await pool.query(
+      `SELECT ticker, exchange, latest_close, change_1d_pct, change_1m_pct, latest_volume
+       FROM datapai.screener_metrics
+       WHERE ticker = ANY($1)`,
+      [symbols]
+    );
+    const priceMap = new Map<string, Record<string, unknown>>();
+    for (const r of rows.rows) {
+      priceMap.set(`${r.ticker}:${r.exchange}`, r);
+    }
+    return results.map((r) => {
+      const p = priceMap.get(`${r.symbol}:${r.exchange}`);
+      if (p) {
+        r.price = Number(p.latest_close) || null;
+        r.change_1d_pct = Number(p.change_1d_pct) || null;
+        r.change_1m_pct = Number(p.change_1m_pct) || null;
+        r.volume = Number(p.latest_volume) || null;
+      }
+      return r;
+    });
+  } catch {
+    return results; // price enrichment is best-effort
+  }
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -19,17 +63,18 @@ export async function GET(req: Request) {
   const exchange = searchParams.get("exchange")?.toUpperCase().trim();
 
   // ── Prefix search (autocomplete) ──────────────────────────────────────────
-  if (query) {
+  if (query && query.length >= 1) {
     const total = await countStockDirectory();
     if (total > 0) {
-      const results = await searchStocks(query, exchange || undefined);
+      const raw = await searchStocks(query, exchange || undefined);
+      const results = await enrichWithPrices(raw as StockResult[]);
       return NextResponse.json({ results, source: "db" });
     }
     // Fallback: search UNIVERSE_ALL
     const results = UNIVERSE_ALL.filter(
       (t) => t.symbol.startsWith(query) && (!exchange || t.exchange === exchange)
     ).map((t) => ({ symbol: t.symbol, name: t.name, exchange: t.exchange ?? "US", sector: null }));
-    return NextResponse.json({ results, source: "universe" });
+    return NextResponse.json({ results: await enrichWithPrices(results as StockResult[]), source: "universe" });
   }
 
   // ── Exact symbol lookup ────────────────────────────────────────────────────
@@ -40,7 +85,10 @@ export async function GET(req: Request) {
   const total = await countStockDirectory();
   if (total > 0) {
     const result = await lookupStock(symbol);
-    if (result) return NextResponse.json({ ...result, source: "db" });
+    if (result) {
+      const enriched = await enrichWithPrices([result as StockResult]);
+      return NextResponse.json({ ...enriched[0], source: "db" });
+    }
   }
 
   // Fallback: check UNIVERSE_ALL

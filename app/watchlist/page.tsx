@@ -58,7 +58,7 @@ export default async function WatchlistPage() {
             <span className="text-white font-bold">9,000+ US &amp; ASX stocks</span>{" "}
             covered · powered by AI agents
           </p>
-          <TickerSearch />
+          <TickerSearch showWatchlistAction />
 
           <div className="flex gap-3 items-center flex-wrap">
             <Link
