@@ -561,7 +561,8 @@ export async function countStockDirectory(exchange?: string): Promise<number> {
 
 export async function createUser(id: string, email: string, passwordHash: string): Promise<void> {
   await exec(
-    `INSERT INTO datapai.users (id, email, password_hash, created_at) VALUES ($1,$2,$3,$4)`,
+    `INSERT INTO datapai.users (id, email, password_hash, created_at, plan, plan_status)
+     VALUES ($1,$2,$3,$4,'watch','active')`,
     [id, email.toLowerCase().trim(), passwordHash, new Date().toISOString()]
   );
 }

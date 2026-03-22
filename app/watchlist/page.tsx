@@ -148,62 +148,96 @@ export default async function WatchlistPage() {
 
               <div className="px-6 py-5">
                 {/* Signal distribution */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-5">
-                  <div className="text-center p-3 rounded-xl bg-green-50 border border-green-100">
-                    <div className="text-2xl font-bold text-green-700">{buyCount}</div>
-                    <div className="text-xs text-green-600 font-medium">BUY</div>
-                  </div>
-                  <div className="text-center p-3 rounded-xl bg-gray-50 border border-gray-100">
-                    <div className="text-2xl font-bold text-gray-600">{holdCount}</div>
-                    <div className="text-xs text-gray-500 font-medium">HOLD</div>
-                  </div>
-                  <div className="text-center p-3 rounded-xl bg-red-50 border border-red-100">
-                    <div className="text-2xl font-bold text-red-700">{sellCount}</div>
-                    <div className="text-xs text-red-600 font-medium">SELL</div>
-                  </div>
-                  <div className="text-center p-3 rounded-xl bg-blue-50 border border-blue-100">
-                    <div className="text-2xl font-bold text-blue-700">{Math.round(avgConf * 100)}%</div>
-                    <div className="text-xs text-blue-600 font-medium">Avg Confidence</div>
-                  </div>
-                  <div className="text-center p-3 rounded-xl" style={{
-                    background: newsAlertCount > 0 ? "#fef2f2" : "#f9fafb",
-                    border: newsAlertCount > 0 ? "1px solid #fca5a5" : "1px solid #e5e7eb",
-                  }}>
-                    <div className="text-2xl font-bold" style={{ color: newsAlertCount > 0 ? "#dc2626" : "#9ca3af" }}>{newsAlertCount}</div>
-                    <div className="text-xs font-medium" style={{ color: newsAlertCount > 0 ? "#dc2626" : "#9ca3af" }}>News Alerts</div>
-                  </div>
-                </div>
+                {(() => {
+                  const buyStocks = synthList.filter(([, s]) => s.direction === "BUY" || s.direction === "STRONG_BUY").map(([sym]) => sym);
+                  const sellStocks = synthList.filter(([, s]) => s.direction === "SELL" || s.direction === "STRONG_SELL").map(([sym]) => sym);
+                  const holdStocks = synthList.filter(([, s]) => s.direction === "HOLD").map(([sym]) => sym);
+                  const newsStocks = Object.entries(newsMap).filter(([, evts]) => evts.length > 0).map(([sym]) => sym);
+                  return (
+                    <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-5">
+                      <div className="text-center p-3 rounded-xl bg-green-50 border border-green-100 cursor-default group relative"
+                        title={buyStocks.length ? `BUY: ${buyStocks.join(", ")}` : "No BUY signals"}>
+                        <div className="text-2xl font-bold text-green-700">{buyCount}</div>
+                        <div className="text-xs text-green-600 font-medium">BUY</div>
+                        {buyStocks.length > 0 && (
+                          <div className="text-[10px] text-green-500 mt-1 leading-tight">{buyStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-green-800 mr-1">{s}</Link>)}</div>
+                        )}
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-gray-50 border border-gray-100 cursor-default"
+                        title={holdStocks.length ? `HOLD: ${holdStocks.join(", ")}` : "No HOLD signals"}>
+                        <div className="text-2xl font-bold text-gray-600">{holdCount}</div>
+                        <div className="text-xs text-gray-500 font-medium">HOLD</div>
+                        {holdStocks.length > 0 && (
+                          <div className="text-[10px] text-gray-400 mt-1 leading-tight">{holdStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-gray-700 mr-1">{s}</Link>)}</div>
+                        )}
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-red-50 border border-red-100 cursor-default"
+                        title={sellStocks.length ? `SELL: ${sellStocks.join(", ")}` : "No SELL signals"}>
+                        <div className="text-2xl font-bold text-red-700">{sellCount}</div>
+                        <div className="text-xs text-red-600 font-medium">SELL</div>
+                        {sellStocks.length > 0 && (
+                          <div className="text-[10px] text-red-500 mt-1 leading-tight">{sellStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-red-800 mr-1">{s}</Link>)}</div>
+                        )}
+                      </div>
+                      <div className="text-center p-3 rounded-xl bg-blue-50 border border-blue-100">
+                        <div className="text-2xl font-bold text-blue-700">{Math.round(avgConf * 100)}%</div>
+                        <div className="text-xs text-blue-600 font-medium">Avg Confidence</div>
+                      </div>
+                      <div className="text-center p-3 rounded-xl cursor-default" style={{
+                        background: newsAlertCount > 0 ? "#fef2f2" : "#f9fafb",
+                        border: newsAlertCount > 0 ? "1px solid #fca5a5" : "1px solid #e5e7eb",
+                      }} title={newsStocks.length ? `Alerts: ${newsStocks.join(", ")}` : "No alerts"}>
+                        <div className="text-2xl font-bold" style={{ color: newsAlertCount > 0 ? "#dc2626" : "#9ca3af" }}>{newsAlertCount}</div>
+                        <div className="text-xs font-medium" style={{ color: newsAlertCount > 0 ? "#dc2626" : "#9ca3af" }}>News Alerts</div>
+                        {newsStocks.length > 0 && (
+                          <div className="text-[10px] mt-1 leading-tight" style={{ color: "#dc2626" }}>{newsStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-red-800 mr-1">{s}</Link>)}</div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Critical news warning */}
                 {criticalNews.length > 0 && (
                   <div className="rounded-lg px-4 py-3 mb-4" style={{ background: "#fef2f2", border: "1.5px solid #ef4444" }}>
                     <span className="text-sm font-bold text-red-800">
-                      🚨 CRITICAL: {criticalNews.map(([sym]) => sym).join(", ")} — check breaking news immediately
+                      🚨 CRITICAL:{" "}
+                      {criticalNews.map(([sym], i) => (
+                        <span key={sym}>
+                          {i > 0 && ", "}
+                          <Link href={`/ticker/${sym}`} className="underline hover:text-red-600">{sym}</Link>
+                        </span>
+                      ))}
+                      {" "}— check breaking news immediately
                     </span>
                   </div>
                 )}
 
-                {/* Top signals */}
+                {/* Top signals — clickable links to ticker pages */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {topSells.length > 0 && (
                     <div>
-                      <div className="text-xs font-bold text-red-700 uppercase tracking-wider mb-2">Top Sell Signals</div>
+                      <div className="text-xs font-bold text-red-700 uppercase tracking-wider mb-2">⚠️ Top Sell Signals</div>
                       {topSells.map(([sym, s]) => (
-                        <div key={sym} className="flex items-start gap-2 mb-2">
-                          <span className="text-xs font-bold text-red-600 min-w-[48px]">{sym}</span>
+                        <Link key={sym} href={`/ticker/${sym}`}
+                          className="flex items-start gap-2 mb-2 p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer">
+                          <span className="text-xs font-bold text-red-600 min-w-[48px] underline">{sym}</span>
                           <span className="text-xs text-gray-600 line-clamp-2">{s.what_bears_say || s.key_risk || s.thesis}</span>
-                        </div>
+                          <span className="text-[10px] text-red-400 ml-auto shrink-0">→</span>
+                        </Link>
                       ))}
                     </div>
                   )}
                   {topBuys.length > 0 && (
                     <div>
-                      <div className="text-xs font-bold text-green-700 uppercase tracking-wider mb-2">Top Buy Signals</div>
+                      <div className="text-xs font-bold text-green-700 uppercase tracking-wider mb-2">🟢 Top Buy Signals</div>
                       {topBuys.map(([sym, s]) => (
-                        <div key={sym} className="flex items-start gap-2 mb-2">
-                          <span className="text-xs font-bold text-green-600 min-w-[48px]">{sym}</span>
+                        <Link key={sym} href={`/ticker/${sym}`}
+                          className="flex items-start gap-2 mb-2 p-2 rounded-lg hover:bg-green-50 transition-colors cursor-pointer">
+                          <span className="text-xs font-bold text-green-600 min-w-[48px] underline">{sym}</span>
                           <span className="text-xs text-gray-600 line-clamp-2">{s.what_bulls_say || s.thesis}</span>
-                        </div>
+                          <span className="text-[10px] text-green-400 ml-auto shrink-0">→</span>
+                        </Link>
                       ))}
                     </div>
                   )}
