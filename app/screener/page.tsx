@@ -53,6 +53,32 @@ interface TechRow {
   volume_ratio: number | null;
   volatility_20d: number | null;
   computed_at: string | null;
+  // ── Multi-factor enrichment (from backend) ──
+  datapai_score: number | null;
+  mfs_signal_days: string | null;
+  mfs_signal_weeks: string | null;
+  mfs_signal_months: string | null;
+  mfs_signal_quarter: string | null;
+  mfs_quality_tier: string | null;
+  fl_quality_tier: string | null;
+  fl_pe: number | null;
+  fl_fwd_pe: number | null;
+  fl_gross_margin: number | null;
+  fl_roe: number | null;
+  fl_rev_yoy: number | null;
+  fl_profitable: boolean | null;
+  fl_growing: boolean | null;
+  fl_healthy: boolean | null;
+  fl_analyst_rating: string | null;
+  fl_market_cap: number | null;
+  fl_sector: string | null;
+  ci_alert_score: number | null;
+  ci_severity: string | null;
+  ci_signal_type: string | null;
+  ci_what_changed: string | null;
+  me_severity: string | null;
+  me_sentiment: string | null;
+  me_headline: string | null;
 }
 
 interface FundRow {
@@ -166,6 +192,67 @@ function RsiSignal({ rsi }: { rsi: number | null }) {
   if (rsi >= 70) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#fef2f2", color: "#991b1b" }}>OVERBOUGHT</span>;
   if (rsi <= 30) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#dcfce7", color: "#166534" }}>OVERSOLD</span>;
   return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#f3f4f6", color: "#6b7280" }}>NEUTRAL</span>;
+}
+
+// ── DataPAI Score + Quality Tier + Alert helpers ────────────────────────────
+
+/** DataPAI composite score 0-100 bar with color coding */
+function DataPAIScoreCell({ score }: { score: number | null }) {
+  if (score === null || score === undefined) return <span className="text-gray-300 text-[9px]">—</span>;
+  const color = score >= 65 ? "#15803d" : score >= 45 ? "#92400e" : "#dc2626";
+  const bg = score >= 65 ? "#dcfce7" : score >= 45 ? "#fefce8" : "#fef2f2";
+  const label = score >= 65 ? "STRONG" : score >= 45 ? "NEUTRAL" : "WEAK";
+  return (
+    <div className="flex items-center gap-1" title={`DataPAI Score: ${score}/100 — combines TA + Fundamentals + Website Intelligence + News`}>
+      <span className="text-[10px] font-extrabold tabular-nums w-6 text-right" style={{ color }}>{score}</span>
+      <div className="w-10 h-2 rounded-full overflow-hidden" style={{ background: "#f3f4f6" }}>
+        <div className="h-full rounded-full" style={{ width: `${score}%`, background: color }} />
+      </div>
+    </div>
+  );
+}
+
+/** Quality tier chip A/B/C/D */
+function QualityTierCell({ tier }: { tier: string | null }) {
+  if (!tier) return <span className="text-gray-300 text-[9px]">—</span>;
+  const styles: Record<string, { bg: string; color: string }> = {
+    A: { bg: "#dcfce7", color: "#166534" },
+    B: { bg: "#dbeafe", color: "#1e40af" },
+    C: { bg: "#fefce8", color: "#854d0e" },
+    D: { bg: "#fef2f2", color: "#991b1b" },
+  };
+  const s = styles[tier] ?? { bg: "#f3f4f6", color: "#6b7280" };
+  return (
+    <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded" style={{ background: s.bg, color: s.color }}
+      title={`Quality: ${tier} — ${tier === "A" ? "Excellent" : tier === "B" ? "Good" : tier === "C" ? "Fair" : "Poor"} (PE, margins, growth, debt)`}>
+      {tier}
+    </span>
+  );
+}
+
+/** Website change / news alert chip */
+function AlertCell({ ciSeverity, ciWhat, meSeverity, meHeadline }: {
+  ciSeverity: string | null; ciWhat: string | null;
+  meSeverity: string | null; meHeadline: string | null;
+}) {
+  // Pick the most significant alert (CI = website change, ME = news)
+  const sev = ciSeverity || meSeverity;
+  const detail = ciWhat || meHeadline;
+  if (!sev) return <span className="text-gray-300 text-[9px]">—</span>;
+  const upper = sev.toUpperCase();
+  if (upper === "CRITICAL") return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "#fef2f2", color: "#991b1b" }} title={detail || ""}>🔴 CRIT</span>;
+  if (upper === "HIGH") return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "#fff7ed", color: "#c2410c" }} title={detail || ""}>🟠 HIGH</span>;
+  if (upper === "MEDIUM") return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "#fefce8", color: "#854d0e" }} title={detail || ""}>🟡 MED</span>;
+  return <span className="text-[9px] font-bold px-1.5 py-0.5 rounded" style={{ background: "#f3f4f6", color: "#6b7280" }} title={detail || ""}>⚪ LOW</span>;
+}
+
+/** Market cap formatter */
+function mcapFmt(v: number | null): string {
+  if (v === null || v === undefined) return "—";
+  if (v >= 1e12) return "$" + (v / 1e12).toFixed(1) + "T";
+  if (v >= 1e9) return "$" + (v / 1e9).toFixed(1) + "B";
+  if (v >= 1e6) return "$" + (v / 1e6).toFixed(0) + "M";
+  return "$" + volFmt(v);
 }
 
 // ── Composite Buy / Hold / Sell signal for each timeframe ────────────────────
@@ -608,7 +695,7 @@ function TechnicalTab() {
             </div>
 
             <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-x-auto">
-              <table className="w-full min-w-[1700px] text-xs">
+              <table className="w-full min-w-[1900px] text-xs">
                 <thead>
                   <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
                     <th className="px-1 py-2 w-8" title="Add to watchlist">☆</th>
@@ -619,6 +706,11 @@ function TechnicalTab() {
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Near-term signal (Weeks): SMA10/20 + 5D% + BB + Volume">Weeks</th>
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Medium-term signal (Months): SMA20/50 + 1M% + 3M% + OBV">Months</th>
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Long-term signal (Quarter+): SMA50/200 + 52w High + 6M% + 1Y%">Quarter</th>
+                    {/* ── Multi-Factor Score ── */}
+                    <th className="px-1 py-2 text-center font-bold text-[#2e8b57] uppercase tracking-wide text-[9px]" title="DataPAI Composite Score: TA (40%) + Fundamentals (30%) + Website Intelligence (30%). 0-100 scale.">Score</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Fundamental Quality Tier: A=Excellent, B=Good, C=Fair, D=Poor. Based on PE, margins, ROE, growth, debt.">Qual</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Website change or news alert severity. Hover for details.">Alert</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Sector classification">Sector</th>
                     {/* ── Price Changes ── */}
                     <Th label="1D %" col="change_1d_pct" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="1-day price change %" />
                     <Th label="5D %" col="change_5d_pct" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="5-day price change %" />
@@ -660,6 +752,11 @@ function TechnicalTab() {
                       <td className="px-1 py-2 text-center"><SignalCell signal={signalWeeks(r)} /></td>
                       <td className="px-1 py-2 text-center"><SignalCell signal={signalMonths(r)} /></td>
                       <td className="px-1 py-2 text-center"><SignalCell signal={signalQuarter(r)} /></td>
+                      {/* Multi-factor columns */}
+                      <td className="px-1 py-2 text-center"><DataPAIScoreCell score={r.datapai_score} /></td>
+                      <td className="px-1 py-2 text-center"><QualityTierCell tier={r.fl_quality_tier || r.mfs_quality_tier} /></td>
+                      <td className="px-1 py-2 text-center"><AlertCell ciSeverity={r.ci_severity} ciWhat={r.ci_what_changed} meSeverity={r.me_severity} meHeadline={r.me_headline} /></td>
+                      <td className="px-1 py-2 text-center text-[9px] text-gray-500 max-w-[60px] truncate" title={r.fl_sector || ""}>{r.fl_sector ? r.fl_sector.split(" ")[0] : "—"}</td>
                       {/* Price changes */}
                       <td className="px-2 py-2 text-right">{pctCell(r.change_1d_pct)}</td>
                       <td className="px-2 py-2 text-right">{pctCell(r.change_5d_pct)}</td>
