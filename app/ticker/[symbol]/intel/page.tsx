@@ -29,7 +29,7 @@ export async function generateMetadata({
   params: Promise<{ symbol: string }>;
 }): Promise<Metadata> {
   const { symbol } = await params;
-  const sym = symbol.toUpperCase();
+  const sym = decodeURIComponent(symbol).toUpperCase();
   const ticker = UNIVERSE_ALL.find((t) => t.symbol === sym);
   return {
     title: `${sym} AI analysis — TinyFish × DataP.ai`,
@@ -47,7 +47,7 @@ export default async function IntelPage({
   const { symbol } = await params;
   const sp = await searchParams;
   const autoRun = (sp?.run ?? null) as string | null;
-  const sym = symbol.toUpperCase();
+  const sym = decodeURIComponent(symbol).toUpperCase();
   const lang = await getLang();
 
   const ticker = UNIVERSE_ALL.find((tk) => tk.symbol === sym);

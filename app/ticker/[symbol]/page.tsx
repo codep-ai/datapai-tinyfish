@@ -77,7 +77,7 @@ export default async function TickerPage({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  const sym = symbol.toUpperCase();
+  const sym = decodeURIComponent(symbol).toUpperCase();
 
   // Resolve display info regardless of universe membership
   let ticker: typeof UNIVERSE_ALL[number] | undefined = UNIVERSE_ALL.find((t) => t.symbol === sym);
