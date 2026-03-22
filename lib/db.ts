@@ -493,12 +493,29 @@ export async function getCachedPrices(ticker: string, limit = 30): Promise<{ dat
 // ─── Stock directory ──────────────────────────────────────────────────────
 
 export async function lookupStock(symbol: string): Promise<StockDirectoryEntry | null> {
+  const upper = symbol.toUpperCase();
+  // Check stock_directory first
   const rows = await q<StockDirectoryEntry>(
     `SELECT symbol, name, exchange, sector FROM datapai.stock_directory
      WHERE symbol=$1 ORDER BY exchange LIMIT 1`,
-    [symbol.toUpperCase()]
+    [upper]
   );
-  return rows[0] ?? null;
+  if (rows[0]) return rows[0];
+  // Fallback: ticker_universe (covers indexes like ^GSPC, ^DJI, 000001.SS)
+  const uniRows = await q<{ ticker: string; company_name: string; exchange: string }>(
+    `SELECT ticker, company_name, exchange FROM datapai.ticker_universe
+     WHERE ticker=$1 AND is_active=TRUE LIMIT 1`,
+    [upper]
+  );
+  if (uniRows[0]) {
+    return {
+      symbol: uniRows[0].ticker,
+      name: uniRows[0].company_name,
+      exchange: uniRows[0].exchange,
+      sector: null,
+    } as StockDirectoryEntry;
+  }
+  return null;
 }
 
 export async function searchStocks(query: string, exchange?: string): Promise<StockDirectoryEntry[]> {
