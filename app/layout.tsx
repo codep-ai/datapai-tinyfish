@@ -71,6 +71,8 @@ export default async function RootLayout({
                 style={{ fontSize: "0.92rem" }}>{t(lang, "nav_aiAnalysis")}</a>
               <a href="/screener" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>Screener</a>
+              <a href="/indexes" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
+                style={{ fontSize: "0.92rem" }}>Indexes</a>
               <a href="/pricing" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>{t(lang, "nav_pricing")}</a>
             </nav>
