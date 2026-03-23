@@ -1,0 +1,23 @@
+# =============================================================================
+# datapai-tinyfish EC2 crontab — TinyFish IR page scanning
+# Install: crontab -l | cat - scripts/crontab.ec2.txt | crontab -
+# All times UTC.  PORT=3085
+# =============================================================================
+
+SHELL=/bin/bash
+PORT=3085
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 1. DAILY IR SCAN — ASX  (after ASX close + EOD rollup + TA daily)
+#    ASX market closes 16:00 AEDT = 06:00 UTC.
+#    Scan fires at 07:30 UTC Mon-Fri — after EOD rollup (06:30) and TA (07:00).
+#    Uses /api/run?exchange=ASX — respects 2-concurrent TinyFish limit internally.
+# ─────────────────────────────────────────────────────────────────────────────
+30 7 * * 1-5    curl -s -X POST "http://localhost:${PORT}/api/run?exchange=ASX" >> /var/log/datapai/tinyfish-scan-asx.log 2>&1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 2. DAILY IR SCAN — US  (after NYSE close + EOD rollup)
+#    NYSE closes 16:00 ET = 21:00 UTC.
+#    Scan fires at 21:30 UTC Mon-Fri — 30 min after EOD rollup (20:30).
+# ─────────────────────────────────────────────────────────────────────────────
+30 21 * * 1-5   curl -s -X POST "http://localhost:${PORT}/api/run?exchange=US" >> /var/log/datapai/tinyfish-scan-us.log 2>&1

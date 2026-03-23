@@ -984,3 +984,12 @@ export async function getStockSynthesisFlexible(symbol: string, exchange: string
   }
   return null;
 }
+
+export async function getAllWatchlistTickers(): Promise<WatchlistItem[]> {
+  return q<WatchlistItem>(
+    `SELECT DISTINCT ON (symbol) user_id, symbol, exchange, name, added_at
+     FROM datapai.watchlist
+     ORDER BY symbol, added_at DESC`,
+    []
+  );
+}

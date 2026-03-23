@@ -20,7 +20,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
 import type { TickerInfo } from "@/lib/universe";
 import { scanTicker, AGENT_ENABLED, resolveTickerUrl } from "@/lib/scan-pipeline";
-import { insertRun, startRun, finishRun, failRun, getWatchlist } from "@/lib/db";
+import { insertRun, startRun, finishRun, failRun, getWatchlist, getAllWatchlistTickers } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
 export const maxDuration = 300;
@@ -68,21 +68,25 @@ async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
 
 export async function POST(req: NextRequest) {
   const exchange = req.nextUrl.searchParams.get("exchange") ?? null;
-  const useWatchlist = req.nextUrl.searchParams.get("watchlist") === "true";
 
   let universe: TickerInfo[];
 
-  if (useWatchlist) {
-    // Watchlist scan requires auth — universe is user-specific
-    const user = await getAuthUser();
-    if (!user) {
-      return NextResponse.json(
-        { error: "Login required to scan your watchlist" },
-        { status: 401 }
-      );
-    }
-    const watchlistItems = await getWatchlist(user.userId);
-    universe = watchlistItems.map((item) => {
+  // Start with the hardcoded universe for the exchange
+  const baseUniverse =
+    exchange === "ASX" ? ASX_UNIVERSE
+    : exchange === "US"  ? UNIVERSE
+    : UNIVERSE_ALL;
+
+  // Always merge watchlist stocks into the scan — no separate mode needed.
+  // This ensures watchlist stocks get scanned alongside the base universe.
+  const allWatchlistItems = await getAllWatchlistTickers();
+  const watchlistForExchange = allWatchlistItems
+    .filter((item) => {
+      if (!exchange) return true;
+      const itemExch = item.exchange === "NASDAQ" || item.exchange === "NYSE" ? "US" : item.exchange;
+      return itemExch === exchange;
+    })
+    .map((item) => {
       const known = UNIVERSE_ALL.find((t) => t.symbol === item.symbol);
       if (known) return known;
       const exch = item.exchange ?? "US";
@@ -93,12 +97,11 @@ export async function POST(req: NextRequest) {
         exchange: exch as TickerInfo["exchange"],
       };
     });
-  } else {
-    universe =
-      exchange === "ASX" ? ASX_UNIVERSE
-      : exchange === "US"  ? UNIVERSE
-      : UNIVERSE_ALL;
-  }
+
+  // Merge and deduplicate by symbol
+  const seen = new Set(baseUniverse.map((t) => t.symbol));
+  const extra = watchlistForExchange.filter((t) => !seen.has(t.symbol));
+  universe = [...baseUniverse, ...extra];
 
   const runId = crypto.randomUUID();
   const startedAt = new Date().toISOString();

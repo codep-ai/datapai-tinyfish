@@ -26,12 +26,12 @@ const HORIZON_OPTIONS = [
 ];
 
 const STRATEGY_OPTIONS = [
-  { value: "VALUE",    label: "Value",     desc: "Cheap vs intrinsic value (P/E, P/B, EV/EBITDA)" },
-  { value: "GROWTH",   label: "Growth",    desc: "Revenue & earnings acceleration" },
-  { value: "MOMENTUM", label: "Momentum",  desc: "Price / relative-strength trend following" },
-  { value: "DIVIDEND", label: "Dividend",  desc: "Income — yield, payout ratio, consistency" },
-  { value: "INDEX",    label: "Index",     desc: "Passive — ETF / broad market tracking" },
-  { value: "SWING",    label: "Swing",     desc: "Short technical patterns — breakouts, supports" },
+  { value: "VALUE",    label: "Value",     desc: "Find undervalued companies trading below their true worth" },
+  { value: "GROWTH",   label: "Growth",    desc: "Invest in fast-growing companies with rising revenue" },
+  { value: "MOMENTUM", label: "Momentum",  desc: "Buy stocks that are already going up and riding the trend" },
+  { value: "DIVIDEND", label: "Dividend",  desc: "Earn regular income from company dividend payments" },
+  { value: "INDEX",    label: "Index / ETF", desc: "Simple and passive — just track the market (e.g. S&P 500)" },
+  { value: "SWING",    label: "Short-term trading", desc: "Buy and sell within days or weeks based on price patterns" },
 ];
 
 const EXCHANGE_OPTIONS = [
@@ -47,15 +47,21 @@ const SIZE_OPTIONS = [
 ];
 
 const ANALYSIS_OPTIONS = [
-  { value: "TA",    label: "Technical Analysis", emoji: "📈", desc: "Price action, indicators, chart patterns, momentum signals" },
-  { value: "FA",    label: "Fundamental Analysis", emoji: "📊", desc: "Valuation, earnings quality, margins, balance sheet" },
-  { value: "MIX",   label: "Mix TA + FA",         emoji: "⚖️", desc: "Balanced — technical entry/exit + fundamental conviction" },
-  { value: "OTHER", label: "Macro / Thematic",    emoji: "🌍", desc: "Sector rotation, macro-economic, thematic investing" },
+  { value: "TA",    label: "Technical Analysis (TA)", emoji: "📈", desc: "Use price charts, indicators and patterns to time your trades" },
+  { value: "FA",    label: "Fundamental Analysis (FA)", emoji: "📊", desc: "Evaluate company financials — earnings, valuation, balance sheet" },
+  { value: "MIX",   label: "Mix of both (TA + FA)",    emoji: "⚖️", desc: "Use financials to pick good companies, charts to time entry" },
+  { value: "OTHER", label: "Macro / Big picture",      emoji: "🌍", desc: "Focus on economy, interest rates, sectors and global trends" },
 ];
 
 const LANG_OPTIONS = [
-  { value: "en", label: "English",        emoji: "🇬🇧", desc: "All AI responses in English" },
-  { value: "zh", label: "中文 (Chinese)", emoji: "🇨🇳", desc: "所有AI分析以简体中文回复" },
+  { value: "en",    label: "English",        emoji: "🇬🇧", desc: "All AI responses in English" },
+  { value: "zh",    label: "简体中文",        emoji: "🇨🇳", desc: "所有AI分析以简体中文回复" },
+  { value: "zh-TW", label: "繁體中文",        emoji: "🇹🇼", desc: "所有AI分析以繁體中文回覆" },
+  { value: "ja",    label: "日本語",          emoji: "🇯🇵", desc: "すべてのAI分析を日本語で表示" },
+  { value: "ko",    label: "한국어",          emoji: "🇰🇷", desc: "모든 AI 분석을 한국어로 표시" },
+  { value: "vi",    label: "Tiếng Việt",     emoji: "🇻🇳", desc: "Tất cả phân tích AI bằng tiếng Việt" },
+  { value: "th",    label: "ภาษาไทย",       emoji: "🇹🇭", desc: "การวิเคราะห์ AI ทั้งหมดเป็นภาษาไทย" },
+  { value: "ms",    label: "Bahasa Melayu",  emoji: "🇲🇾", desc: "Semua analisis AI dalam Bahasa Melayu" },
 ];
 
 const STYLE_OPTIONS = [
@@ -249,7 +255,7 @@ export default function OnboardingPage() {
           {step === 3 && (
             <>
               <StepHeader step={3} title="Strategy focus?"
-                sub="Select all that apply — you can use multiple approaches." />
+                sub="How do you like to pick stocks? Select all that interest you." />
               <CheckCards options={STRATEGY_OPTIONS} value={strategies} onChange={setStrategies} />
             </>
           )}

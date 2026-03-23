@@ -9,7 +9,7 @@ import Link from "next/link";
 interface PasswordRule { label: string; test: (p: string) => boolean }
 
 const PASSWORD_RULES: PasswordRule[] = [
-  { label: "At least 12 characters",          test: (p) => p.length >= 12 },
+  { label: "At least 10 characters",          test: (p) => p.length >= 10 },
   { label: "Uppercase letter (A–Z)",           test: (p) => /[A-Z]/.test(p) },
   { label: "Lowercase letter (a–z)",           test: (p) => /[a-z]/.test(p) },
   { label: "Number (0–9)",                     test: (p) => /[0-9]/.test(p) },
@@ -53,8 +53,8 @@ function StrengthMeter({ password }: { password: string }) {
           {PASSWORD_RULES.map((r) => {
             const ok = r.test(password);
             return (
-              <li key={r.label} className={`text-xs flex items-center gap-1.5 ${ok ? "text-emerald-600" : "text-gray-400"}`}>
-                <span>{ok ? "✓" : "○"}</span>
+              <li key={r.label} className={`text-xs flex items-center gap-1.5 ${ok ? "text-emerald-600" : "text-red-400"}`}>
+                <span>{ok ? "✓" : "✗"}</span>
                 {r.label}
               </li>
             );
@@ -159,7 +159,7 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="new-password"
-              placeholder="••••••••••••"
+              placeholder="••••••••••"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
             <StrengthMeter password={password} />
@@ -176,7 +176,7 @@ export default function RegisterPage() {
               onChange={(e) => setConfirm(e.target.value)}
               required
               autoComplete="new-password"
-              placeholder="••••••••••••"
+              placeholder="••••••••••"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
             {confirm.length > 0 && (

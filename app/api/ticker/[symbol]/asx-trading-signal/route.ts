@@ -37,7 +37,7 @@ export async function POST(
       { status: 401 }
     );
   }
-  const access = await checkAiSignalAccess(authUser.userId);
+  const access = await checkAiSignalAccess(authUser.userId, symbol);
   if (!access.allowed) {
     return NextResponse.json(
       { error: access.message, upgradeUrl: "/pricing" },

@@ -124,7 +124,7 @@ export async function POST(
         { status: 401 }
       );
     }
-    const scanCheck = await checkScanLimit(authUser.userId);
+    const scanCheck = await checkScanLimit(authUser.userId, symbol);
     if (!scanCheck.allowed) {
       return NextResponse.json(
         { error: scanCheck.message, upgradeUrl: "/pricing" },

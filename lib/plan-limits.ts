@@ -111,32 +111,49 @@ export async function checkWatchlistLimit(userId: string): Promise<CheckResult> 
   return { allowed: true };
 }
 
-export async function checkAiSignalAccess(userId: string): Promise<CheckResult> {
+export async function checkAiSignalAccess(userId: string, symbol?: string): Promise<CheckResult> {
   const user = await getUserById(userId);
   const plan  = (user as unknown as Record<string, string>)?.plan ?? "watch";
   const limits = getLimits(plan);
 
   if (!limits.aiSignals) {
+    // Free plan: allow AI signals for stocks in the user's watchlist (up to 10)
+    if (symbol) {
+      const watchlist = await getWatchlist(userId);
+      const inWatchlist = watchlist.some((w) => w.symbol === symbol.toUpperCase());
+      if (inWatchlist) {
+        return { allowed: true }; // watchlist stock — unlock AI signals
+      }
+    }
     return {
       allowed: false,
-      message: `AI signals (Technical Analysis, Chart Vision, ASX Trading Signal) are not available on the free plan. Upgrade to Individual ($49/mo) to unlock.`,
+      message: `AI signals are available for your watchlist stocks (up to ${limits.watchlistStocks}). Add this stock to your watchlist first, or upgrade to Individual ($49/mo) for unlimited access.`,
     };
   }
   return { allowed: true };
 }
 
-export async function checkScanLimit(userId: string): Promise<CheckResult> {
+export async function checkScanLimit(userId: string, symbol?: string): Promise<CheckResult> {
   const user = await getUserById(userId);
   const plan  = (user as unknown as Record<string, string>)?.plan ?? "watch";
   const limits = getLimits(plan);
 
   if (limits.scansPerDay === -1) return { allowed: true };
 
+  // Free plan: allow scans for watchlist stocks without counting against daily limit
+  if (symbol && plan === "watch") {
+    const watchlist = await getWatchlist(userId);
+    const inWatchlist = watchlist.some((w) => w.symbol === symbol.toUpperCase());
+    if (inWatchlist) {
+      return { allowed: true }; // watchlist stock — no scan limit
+    }
+  }
+
   const count = await getUserScanCountToday(userId);
   if (count >= limits.scansPerDay) {
     return {
       allowed: false,
-      message: `Your ${planLabel(plan)} plan allows ${limits.scansPerDay} on-demand scan${limits.scansPerDay === 1 ? "" : "s"} per day. Upgrade for more.`,
+      message: `Your ${planLabel(plan)} plan allows ${limits.scansPerDay} on-demand scan${limits.scansPerDay === 1 ? "" : "s"} per day. Add this stock to your watchlist for unlimited scans, or upgrade for more.`,
     };
   }
   return { allowed: true };
