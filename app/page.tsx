@@ -2,6 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { UNIVERSE } from "@/lib/universe";
 import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getLatestPricesForWatchlist } from "@/lib/db";
+import { getLang } from "@/lib/getLang";
+import { loadTranslations } from "@/lib/i18n";
+import { t } from "@/lib/translations";
 import LiveScanProgress from "./components/LiveScanProgress";
 import TickerSearch from "./components/TickerSearch";
 import WatchlistButton from "./components/WatchlistButton";
@@ -10,6 +13,8 @@ import StockViewToggle from "./components/StockViewToggle";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
+  const lang = await getLang();
+  const labels = await loadTranslations(lang);
   const [alertMap, scannedSet, recentRuns, priceMap] = await Promise.all([
     getAlertSummaryMap(),
     getScannedTickerSet(),
@@ -28,18 +33,18 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto px-6 space-y-3">
 
           <h1 className="text-2xl font-bold text-white">
-            US Stocks · Website Change Intelligence
+            {t(labels, "hero_title_us")}
           </h1>
 
           <p className="text-white/80 text-sm font-medium">
-            Spot language shifts on company websites before they move stock prices —{" "}
-            <span className="text-white font-bold">9,000+ US &amp; ASX stocks</span>{" "}
-            covered · powered by{" "}
+            {t(labels, "hero_spot_shifts")} —{" "}
+            <span className="text-white font-bold">9,000+ {t(labels, "hero_stocks_covered")}</span>{" "}
+            {t(labels, "hero_covered_label")}{" "}
             <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer"
               className="text-white font-bold underline underline-offset-2 hover:text-white/80 transition-colors">
               TinyFish
             </a>{" "}
-            real-browser technology &amp; AI agents
+            {t(labels, "hero_realBrowser_agents")}
           </p>
 
           <TickerSearch />
@@ -51,7 +56,7 @@ export default async function Home() {
                 className="px-6 py-2.5 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
                 style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff" }}
               >
-                ⚡ View {alertCount} Alert{alertCount !== 1 ? "s" : ""} →
+                ⚡ {t(labels, "hero_view_n_alerts")} {alertCount} {t(labels, "hero_alerts_suffix")} →
               </Link>
             )}
             <LiveScanProgress heroButton />
@@ -69,11 +74,11 @@ export default async function Home() {
               className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               style={{ background: lastRun.status === "SUCCESS" ? "#2e8b57" : lastRun.status === "RUNNING" ? "#fd8412" : "#ef4444" }}
             />
-            <span>Last scan: <strong>{new Date(lastRun.started_at).toLocaleString()}</strong></span>
+            <span>{t(labels, "last_scan_label")} <strong>{new Date(lastRun.started_at).toLocaleString()}</strong></span>
             <span className="text-gray-300">·</span>
-            <span><strong>{lastRun.scanned_count}</strong> scanned</span>
+            <span><strong>{lastRun.scanned_count}</strong> {t(labels, "scanned")}</span>
             <span className="text-gray-300">·</span>
-            <span style={{ color: "#f97316" }}><strong>{lastRun.changed_count}</strong> changed</span>
+            <span style={{ color: "#f97316" }}><strong>{lastRun.changed_count}</strong> {t(labels, "changed")}</span>
             {lastRun.failed_count > 0 && (
               <>
                 <span className="text-gray-300">·</span>
@@ -81,12 +86,12 @@ export default async function Home() {
                   style={{ color: "#ef4444", cursor: "help" }}
                   title={`${lastRun.failed_count} IR pages were unreachable this scan — typically login-gated, paywalled, or temporarily down. These are retried automatically next run and do not affect signal quality for the stocks that completed successfully.`}
                 >
-                  <strong>{lastRun.failed_count}</strong> failed ⓘ
+                  <strong>{lastRun.failed_count}</strong> {t(labels, "failed")} ⓘ
                 </span>
               </>
             )}
             <Link href={`/run/${lastRun.id}`} className="ml-auto text-gray-400 hover:text-gray-700 underline underline-offset-2 text-xs">
-              View run detail →
+              {t(labels, "view_run_detail")} →
             </Link>
           </div>
         )}
@@ -232,7 +237,7 @@ export default async function Home() {
               </div>
             );
 
-            return <StockViewToggle gridView={gridView} listView={listView} />;
+            return <StockViewToggle gridView={gridView} listView={listView} gridLabel={t(labels, "view_grid")} listLabel={t(labels, "view_list")} />;
           })()}
         </div>
 

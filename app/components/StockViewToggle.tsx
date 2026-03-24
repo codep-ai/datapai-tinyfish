@@ -4,9 +4,13 @@ import { useState } from "react";
 export default function StockViewToggle({
   gridView,
   listView,
+  gridLabel = "Grid",
+  listLabel = "List",
 }: {
   gridView: React.ReactNode;
   listView: React.ReactNode;
+  gridLabel?: string;
+  listLabel?: string;
 }) {
   const [view, setView] = useState<"grid" | "list">("grid");
   return (
@@ -21,7 +25,7 @@ export default function StockViewToggle({
               : { background: "#f3f4f6", color: "#6b7280" }
           }
         >
-          ▦ Grid
+          ▦ {gridLabel}
         </button>
         <button
           onClick={() => setView("list")}
@@ -32,7 +36,7 @@ export default function StockViewToggle({
               : { background: "#f3f4f6", color: "#6b7280" }
           }
         >
-          ☰ List
+          ☰ {listLabel}
         </button>
       </div>
       {view === "grid" ? gridView : listView}

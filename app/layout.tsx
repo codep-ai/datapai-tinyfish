@@ -149,14 +149,9 @@ export default async function RootLayout({
               <div className="flex items-start gap-3 bg-amber-950/40 border border-amber-500/20 rounded-xl px-5 py-4">
                 <span className="text-amber-400 text-xl flex-shrink-0 mt-0.5">&#9888;</span>
                 <div>
-                  <p className="text-amber-200 text-sm font-bold mb-1">Important Disclaimer</p>
+                  <p className="text-amber-200 text-sm font-bold mb-1">{t(labels, "disclaimer_title")}</p>
                   <p className="text-amber-100/80 text-xs leading-relaxed">
-                    All data, signals, scores, and AI-generated content on DataP.ai are for <strong className="text-amber-200">educational and informational purposes only</strong> and
-                    do <strong className="text-amber-200">NOT</strong> constitute financial advice, investment recommendations, or solicitation to buy or sell securities.
-                    Technical indicators are computed from historical price data and backtested against past performance —
-                    <strong className="text-amber-200"> past performance does not guarantee future results</strong>.
-                    Always conduct your own research and consult a qualified financial advisor before making investment decisions.
-                    DataP.ai and its operators are not responsible for any trading losses.
+                    {t(labels, "disclaimer_body")}
                   </p>
                 </div>
               </div>

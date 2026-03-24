@@ -83,11 +83,11 @@ export default async function VietnamPage() {
               className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               style={{ background: lastRun.status === "SUCCESS" ? "#c8102e" : lastRun.status === "RUNNING" ? "#FFD700" : "#ef4444" }}
             />
-            <span>Last scan: <strong>{new Date(lastRun.started_at).toLocaleString()}</strong></span>
+            <span>{t(labels, "last_scan_label")} <strong>{new Date(lastRun.started_at).toLocaleString()}</strong></span>
             <span className="text-gray-300">·</span>
             <span><strong>{lastRun.scanned_count}</strong> {t(labels, "scanned")}</span>
             <span className="text-gray-300">·</span>
-            <span style={{ color: "#c8102e" }}><strong>{vnAlertCount}</strong> VN tickers with data</span>
+            <span style={{ color: "#c8102e" }}><strong>{vnAlertCount}</strong> {t(labels, "tickers_with_data")}</span>
             <Link href={`/run/${lastRun.id}`} className="ml-auto text-gray-400 hover:text-gray-700 underline underline-offset-2 text-xs">
               {t(labels, "view_run_detail")} →
             </Link>
@@ -222,7 +222,7 @@ export default async function VietnamPage() {
               </div>
             );
 
-            return <StockViewToggle gridView={gridView} listView={listView} />;
+            return <StockViewToggle gridView={gridView} listView={listView} gridLabel={t(labels, "view_grid")} listLabel={t(labels, "view_list")} />;
           })()}
         </div>
 

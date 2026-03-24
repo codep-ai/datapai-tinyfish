@@ -2,6 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { ASX_UNIVERSE } from "@/lib/universe";
 import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getLatestPricesForWatchlist } from "@/lib/db";
+import { getLang } from "@/lib/getLang";
+import { loadTranslations } from "@/lib/i18n";
+import { t } from "@/lib/translations";
 import LiveScanProgress from "../components/LiveScanProgress";
 import TickerSearch from "../components/TickerSearch";
 import WatchlistButton from "../components/WatchlistButton";
@@ -10,6 +13,8 @@ import StockViewToggle from "../components/StockViewToggle";
 export const dynamic = "force-dynamic";
 
 export default async function AsxPage() {
+  const lang = await getLang();
+  const labels = await loadTranslations(lang);
   const [alertMap, scannedSet, recentRuns, priceMap] = await Promise.all([
     getAlertSummaryMap(),
     getScannedTickerSet(),
@@ -33,13 +38,17 @@ export default async function AsxPage() {
         <div className="max-w-6xl mx-auto px-6 space-y-3">
 
           <h1 className="text-2xl font-bold text-white">
-            ASX Company Intelligence
+            {t(labels, "hero_title_asx")}
           </h1>
 
           <p className="text-white/80 text-sm font-medium">
-            Spot language shifts on company websites before they move stock prices —{" "}
-            <span className="text-white font-bold">2,000+ ASX stocks</span>{" "}
-            covered · powered by AI agents
+            {t(labels, "hero_spot_shifts")} —{" "}
+            <span className="text-white font-bold">2,000+ {t(labels, "hero_stocks_covered")}</span>{" "}
+            {t(labels, "hero_covered_label")}{" "}
+            <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer"
+              className="text-white font-bold underline underline-offset-2 hover:text-white/80 transition-colors">
+              TinyFish
+            </a>
           </p>
 
           <TickerSearch />
@@ -50,7 +59,7 @@ export default async function AsxPage() {
               className="px-6 py-2.5 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
               style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff" }}
             >
-              ⚡ View All Alerts →
+              ⚡ {t(labels, "hero_view_alerts")} →
             </Link>
             <LiveScanProgress exchange="ASX" heroButton />
           </div>
@@ -67,13 +76,13 @@ export default async function AsxPage() {
               className="w-2.5 h-2.5 rounded-full flex-shrink-0"
               style={{ background: lastRun.status === "SUCCESS" ? "#003087" : lastRun.status === "RUNNING" ? "#FFD700" : "#ef4444" }}
             />
-            <span>Last scan: <strong>{new Date(lastRun.started_at).toLocaleString()}</strong></span>
+            <span>{t(labels, "last_scan_label")} <strong>{new Date(lastRun.started_at).toLocaleString()}</strong></span>
             <span className="text-gray-300">·</span>
-            <span><strong>{lastRun.scanned_count}</strong> scanned</span>
+            <span><strong>{lastRun.scanned_count}</strong> {t(labels, "scanned")}</span>
             <span className="text-gray-300">·</span>
-            <span style={{ color: "#003087" }}><strong>{asxAlertCount}</strong> ASX tickers with data</span>
+            <span style={{ color: "#003087" }}><strong>{asxAlertCount}</strong> {t(labels, "tickers_with_data")}</span>
             <Link href={`/run/${lastRun.id}`} className="ml-auto text-gray-400 hover:text-gray-700 underline underline-offset-2 text-xs">
-              View run detail →
+              {t(labels, "view_run_detail")} →
             </Link>
           </div>
         )}
@@ -215,7 +224,7 @@ export default async function AsxPage() {
               </div>
             );
 
-            return <StockViewToggle gridView={gridView} listView={listView} />;
+            return <StockViewToggle gridView={gridView} listView={listView} gridLabel={t(labels, "view_grid")} listLabel={t(labels, "view_list")} />;
           })()}
 
         </div>
