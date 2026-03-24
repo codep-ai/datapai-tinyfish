@@ -51,10 +51,11 @@ export async function POST(
   }
 
   // Parse body — lang drives cache bypass and Python prompt language
+  const SUPPORTED_LANGS = ["en", "zh", "zh-TW", "ja", "ko", "vi", "th", "ms"];
   let lang = "en";
-  try { const b = await req.json(); if (b?.lang === "zh") lang = "zh"; } catch { /* ok */ }
-  // Chinese requests bypass the EN cache (never read or write zh content to cache)
-  const useCache = lang !== "zh";
+  try { const b = await req.json(); if (b?.lang && SUPPORTED_LANGS.includes(b.lang)) lang = b.lang; } catch { /* ok */ }
+  // Non-English requests bypass the EN cache
+  const useCache = lang === "en";
 
   // ── 1. Cache lookup ───────────────────────────────────────────────────────
   if (!skipCache && useCache) {

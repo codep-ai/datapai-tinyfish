@@ -192,11 +192,15 @@ export default async function TickerPage({
               </div>
               {/* ── Scan + Watchlist CTAs ── */}
               <div className="pt-2 flex items-center gap-3 flex-wrap">
-                <TickerScanButton symbol={sym} isMonitored={false} resolvedUrl={defaultUrl} />
+                <TickerScanButton symbol={sym} isMonitored={false} resolvedUrl={defaultUrl} scanLabel={t(labels, "btn_scan_stock")} />
                 <WatchlistButton
                   symbol={sym}
                   exchange={exchangeLabel}
                   name={companyName !== sym ? companyName : undefined}
+                  loginLabel={t(labels, "btn_login_watch")}
+                  watchLabel={t(labels, "btn_watch")}
+                  watchingLabel={t(labels, "btn_watching")}
+                  addLabel={t(labels, "btn_add_watchlist")}
                 />
               </div>
             </div>
@@ -346,6 +350,10 @@ export default async function TickerPage({
               symbol={sym}
               exchange={ticker.exchange ?? "US"}
               name={ticker.name}
+              loginLabel={t(labels, "btn_login_watch")}
+              watchLabel={t(labels, "btn_watch")}
+              watchingLabel={t(labels, "btn_watching")}
+              addLabel={t(labels, "btn_add_watchlist")}
             />
             <Link
               href={`/ticker/${sym}/report`}
@@ -356,7 +364,7 @@ export default async function TickerPage({
             >
               📋 {t(labels, "ticker_ir_report")} →
             </Link>
-            <TickerScanButton symbol={sym} isMonitored={true} resolvedUrl={ticker.url} />
+            <TickerScanButton symbol={sym} isMonitored={true} resolvedUrl={ticker.url} rescanLabel={t(labels, "btn_rescan")} />
           </div>
           {/* Analysis type quick-access row */}
           <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr", justifyItems: "start" }}>
@@ -473,17 +481,17 @@ export default async function TickerPage({
           </span>
         </div>
         <div className="flex items-center gap-4 text-xs text-gray-400 flex-wrap">
-          <span>📦 {totalScans} scans stored permanently in database</span>
-          {latestSnap && <span>🕐 Last scan: {new Date(latestSnap.fetched_at).toLocaleString()}</span>}
+          <span>📦 {totalScans} {t(labels, "ticker_scans_stored")}</span>
+          {latestSnap && <span>🕐 {t(labels, "last_scan_label")} {new Date(latestSnap.fetched_at).toLocaleString()}</span>}
           {latestSignal && !signalIsFromLatest && (
             <span className="text-amber-600 font-medium">
-              ⚡ Showing AI signal from {new Date(latestSignal.fetched_at).toLocaleDateString()} — latest scan was no-signal
+              ⚡ {t(labels, "ticker_signal_from")} {new Date(latestSignal.fetched_at).toLocaleDateString()}
             </span>
           )}
           {latestIsNoSignal && signalIsFromLatest && (
-            <span className="text-green-600 font-medium">✓ No new financial signal in latest scan</span>
+            <span className="text-green-600 font-medium">✓ {t(labels, "ticker_no_signal")}</span>
           )}
-          <span className="ml-auto hidden md:block">Web execution by TinyFish · Financial intelligence by DataP.ai</span>
+          <span className="ml-auto hidden md:block">{t(labels, "ticker_powered_tagline")}</span>
         </div>
       </div>
 

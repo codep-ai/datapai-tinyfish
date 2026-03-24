@@ -30,9 +30,11 @@ interface Props {
   isMonitored?: boolean;
   /** Source URL the scan will use (shown below progress) */
   resolvedUrl?: string;
+  rescanLabel?: string;
+  scanLabel?: string;
 }
 
-export default function TickerScanButton({ symbol, isMonitored = false, resolvedUrl }: Props) {
+export default function TickerScanButton({ symbol, isMonitored = false, resolvedUrl, rescanLabel, scanLabel }: Props) {
   const [phase, setPhase] = useState<"idle" | "running" | "done" | "error">("idle");
   const [runId, setRunId] = useState<string | null>(null);
   const [steps, setSteps] = useState<{ step: string; status: string; message?: string }[]>([]);
@@ -103,7 +105,7 @@ export default function TickerScanButton({ symbol, isMonitored = false, resolved
         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-white text-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
         style={{ background: isMonitored ? "rgba(255,255,255,0.18)" : "#2e8b57", border: isMonitored ? "1.5px solid rgba(255,255,255,0.5)" : "none" }}
       >
-        {isMonitored ? "🔄 Re-scan" : "⚡ Scan This Stock"}
+        {isMonitored ? `🔄 ${rescanLabel ?? "Re-scan"}` : `⚡ ${scanLabel ?? "Scan This Stock"}`}
       </button>
     );
   }

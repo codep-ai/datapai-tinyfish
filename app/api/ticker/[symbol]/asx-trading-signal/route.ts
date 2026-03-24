@@ -81,7 +81,7 @@ export async function POST(
         },
         announcement_text: body.announcement_text ?? "",
         use_grounding:     true,
-        lang:              body.lang === "zh" ? "zh" : "en",
+        lang:              ["en","zh","zh-TW","ja","ko","vi","th","ms"].includes(body.lang) ? body.lang : "en",
       }),
       signal: AbortSignal.timeout(175_000),
     });

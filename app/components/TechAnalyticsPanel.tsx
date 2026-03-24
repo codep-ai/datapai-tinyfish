@@ -398,7 +398,7 @@ export default function TechAnalyticsPanel({
     setMiResult(null);
     setMiError("");
     try {
-      const params = new URLSearchParams({ exchange });
+      const params = new URLSearchParams({ exchange, lang });
       if (sector) params.set("sector", sector);
       if (force)  params.set("fresh", "1");
       const res = await fetch(
@@ -658,7 +658,7 @@ export default function TechAnalyticsPanel({
         {/* Loading messages */}
         {taPhase === "loading" && (
           <div className="mt-4">
-            <Spinner label="Fetching live OHLCV data → computing indicators → generating Gemini signal…" />
+            <Spinner label={T("panel_loading_ohlcv")} />
             <p className="text-gray-400 text-xs mt-1">{T("panel_ta_time")}</p>
           </div>
         )}

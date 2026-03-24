@@ -100,6 +100,7 @@ export async function GET(
   const exchange = req.nextUrl.searchParams.get("exchange") ?? "US";
   const sector   = req.nextUrl.searchParams.get("sector")   ?? null;
   const fresh    = req.nextUrl.searchParams.get("fresh")    === "1";
+  const lang     = req.nextUrl.searchParams.get("lang")     ?? "en";
 
   // ── Result cache check ────────────────────────────────────────────────────
   const cacheKey = `${sym}:${exchange}:${sector ?? ""}`;
@@ -182,6 +183,7 @@ export async function GET(
         ticker:          sym,
         exchange,
         sector:          sector ?? "",
+        lang,
         sources_used:    sourcesUsed,
         profile_context: profileCtx || null,  // investor profile for personalised framing
         // All source texts keyed by source id

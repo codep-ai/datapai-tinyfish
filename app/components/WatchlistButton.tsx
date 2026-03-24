@@ -7,11 +7,15 @@ interface WatchlistButtonProps {
   exchange?: string;
   name?: string;
   compact?: boolean; // icon-only mode for stock grid cards
+  loginLabel?: string;
+  watchLabel?: string;
+  watchingLabel?: string;
+  addLabel?: string;
 }
 
 type AuthState = "loading" | "unauthenticated" | "authenticated";
 
-export default function WatchlistButton({ symbol, exchange = "US", name, compact }: WatchlistButtonProps) {
+export default function WatchlistButton({ symbol, exchange = "US", name, compact, loginLabel, watchLabel, watchingLabel, addLabel }: WatchlistButtonProps) {
   const [authState, setAuthState] = useState<AuthState>("loading");
   const [inWatchlist, setInWatchlist] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -102,7 +106,7 @@ export default function WatchlistButton({ symbol, exchange = "US", name, compact
         style={{ background: "#f5f3ff", color: "#6366f1", border: "1.5px solid #c4b5fd" }}
         title="Log in to add to your watchlist"
       >
-        🔐 Log in to Watch
+        🔐 {loginLabel ?? "Log in to Watch"}
       </a>
     );
   }
@@ -114,7 +118,7 @@ export default function WatchlistButton({ symbol, exchange = "US", name, compact
         className="inline-flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg opacity-30 select-none"
         style={{ background: "#f3f4f6", color: "#9ca3af", border: "1.5px solid #e5e7eb" }}
       >
-        ☆ Watch
+        ☆ {watchLabel ?? "Watch"}
       </span>
     );
   }
@@ -138,7 +142,7 @@ export default function WatchlistButton({ symbol, exchange = "US", name, compact
       ) : (
         <span>☆</span>
       )}
-      {inWatchlist ? "Watching" : "Add to Watchlist"}
+      {inWatchlist ? (watchingLabel ?? "Watching") : (addLabel ?? "Add to Watchlist")}
     </button>
   );
 }
