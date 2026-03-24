@@ -86,9 +86,10 @@ export default async function TickerPage({
 
   // Resolve display info regardless of universe membership
   let ticker: typeof UNIVERSE_ALL[number] | undefined = UNIVERSE_ALL.find((t) => t.symbol === sym);
-  const dirEntry = ticker ? null : await lookupStock(sym, lang);
+  const dirEntry = await lookupStock(sym, lang);
   const exchangeLabel = (ticker?.exchange ?? dirEntry?.exchange ?? "NASDAQ") as string;
-  const companyName = ticker?.name ?? dirEntry?.name ?? sym;
+  // Prefer localized name from DB, fallback to hardcoded universe, then symbol
+  const companyName = dirEntry?.name ?? ticker?.name ?? sym;
   const defaultUrl = ticker?.url ?? resolveTickerUrl(sym, exchangeLabel);
 
   // ── Market Index: skip scan check, render index detail page ──────────────
