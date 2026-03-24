@@ -2,7 +2,7 @@ export interface TickerInfo {
   symbol: string;
   name: string;
   url: string;
-  exchange?: "NASDAQ" | "NYSE" | "ASX";
+  exchange?: "NASDAQ" | "NYSE" | "ASX" | "HOSE";
 }
 
 export const UNIVERSE: TickerInfo[] = [
@@ -52,5 +52,30 @@ export const ASX_UNIVERSE: TickerInfo[] = [
   { symbol: "QAN",  name: "Qantas Airways",           url: "https://investor.qantas.com/news-releases", exchange: "ASX" },
 ];
 
+/** Top Vietnamese blue chips — HOSE + HNX (691 total in DB).
+ *  URLs point to stock info pages on Vietnamese exchanges. */
+export const VN_UNIVERSE: TickerInfo[] = [
+  { symbol: "VIC",  name: "Vingroup",                 url: "https://www.vingroup.net/en/investor-relations", exchange: "HOSE" },
+  { symbol: "VCB",  name: "Vietcombank",              url: "https://www.vietcombank.com.vn/en/Investor-Relations", exchange: "HOSE" },
+  { symbol: "VHM",  name: "Vinhomes",                 url: "https://www.vinhomes.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "VNM",  name: "Vinamilk",                 url: "https://www.vinamilk.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "HPG",  name: "Hoa Phat Group",           url: "https://www.hoaphat.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "FPT",  name: "FPT Corporation",          url: "https://www.fpt.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "MWG",  name: "Mobile World Group",       url: "https://mwg.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "MSN",  name: "Masan Group",              url: "https://www.masangroup.com/investor-relations", exchange: "HOSE" },
+  { symbol: "TCB",  name: "Techcombank",              url: "https://www.techcombank.com.vn/investor-relations", exchange: "HOSE" },
+  { symbol: "MBB",  name: "MB Bank",                  url: "https://www.mbbank.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "ACB",  name: "Asia Commercial Bank",     url: "https://www.acb.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "STB",  name: "Sacombank",                url: "https://www.sacombank.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "SSI",  name: "SSI Securities",           url: "https://www.ssi.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "VPB",  name: "VP Bank",                  url: "https://www.vpbank.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "GAS",  name: "PetroVietnam Gas",         url: "https://www.pvgas.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "PLX",  name: "Petrolimex",               url: "https://www.petrolimex.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "SAB",  name: "Sabeco",                   url: "https://www.sabeco.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "BVH",  name: "Bao Viet Holdings",        url: "https://www.baoviet.com.vn/en/investor-relations", exchange: "HOSE" },
+  { symbol: "REE",  name: "REE Corporation",          url: "https://www.reecorp.com/en/investor-relations", exchange: "HOSE" },
+  { symbol: "PNJ",  name: "Phu Nhuan Jewelry",        url: "https://www.pnj.com.vn/en/investor-relations", exchange: "HOSE" },
+];
+
 /** All monitored tickers across all markets. */
-export const UNIVERSE_ALL: TickerInfo[] = [...UNIVERSE, ...ASX_UNIVERSE];
+export const UNIVERSE_ALL: TickerInfo[] = [...UNIVERSE, ...ASX_UNIVERSE, ...VN_UNIVERSE];

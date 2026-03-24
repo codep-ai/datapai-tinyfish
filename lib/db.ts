@@ -720,6 +720,7 @@ export async function getLatestPricesForWatchlist(
   for (const item of items) {
     const candidates: string[] = [item.symbol];
     if (item.exchange === "ASX") candidates.push(`${item.symbol}.AX`);
+    if (item.exchange === "HOSE") candidates.push(`${item.symbol}.VN`);
     symbolToTickers[item.symbol] = candidates;
     allTickers.push(...candidates);
   }
