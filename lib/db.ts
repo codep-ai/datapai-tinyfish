@@ -598,7 +598,7 @@ export async function getActiveStocks(exchange: string, lang = "en", limit = 50)
      LEFT JOIN datapai.stock_directory sd
        ON sd.symbol = tu.ticker AND sd.exchange = tu.exchange AND sd.lang = $2
      WHERE tu.exchange = $1 AND tu.is_active = TRUE
-     ORDER BY tu.ticker
+     ORDER BY tu.is_featured DESC, tu.featured_order ASC, tu.ticker
      LIMIT $3`,
     [exchange, lang, limit]
   );
