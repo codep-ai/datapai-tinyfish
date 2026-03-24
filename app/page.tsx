@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const lang = await getLang();
   const labels = await loadTranslations(lang);
-  const stocks = await getActiveStocks("US", lang, 30);
+  const stocks = await getActiveStocks("US", lang, 30, true);
   const [alertMap, scannedSet, recentRuns, priceMap] = await Promise.all([
     getAlertSummaryMap(),
     getScannedTickerSet(),

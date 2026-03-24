@@ -587,7 +587,8 @@ export interface ActiveStock {
   yf_symbol: string;
 }
 
-export async function getActiveStocks(exchange: string, lang = "en", limit = 50): Promise<ActiveStock[]> {
+export async function getActiveStocks(exchange: string, lang = "en", limit = 50, featuredOnly = false): Promise<ActiveStock[]> {
+  const featuredClause = featuredOnly ? "AND tu.is_featured = TRUE" : "";
   return q<ActiveStock>(
     `SELECT tu.ticker AS symbol,
             COALESCE(sd.name, tu.company_name, tu.ticker) AS name,
@@ -597,7 +598,7 @@ export async function getActiveStocks(exchange: string, lang = "en", limit = 50)
      FROM datapai.ticker_universe tu
      LEFT JOIN datapai.stock_directory sd
        ON sd.symbol = tu.ticker AND sd.exchange = tu.exchange AND sd.lang = $2
-     WHERE tu.exchange = $1 AND tu.is_active = TRUE
+     WHERE tu.exchange = $1 AND tu.is_active = TRUE ${featuredClause}
      ORDER BY tu.is_featured DESC, tu.featured_order ASC, tu.ticker
      LIMIT $3`,
     [exchange, lang, limit]

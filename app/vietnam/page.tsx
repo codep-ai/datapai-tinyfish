@@ -21,7 +21,7 @@ function fmtVND(value: number): string {
 
 export default async function VietnamPage() {
   const lang = await getLang();
-  const stocks = await getActiveStocks("HOSE", lang, 30);
+  const stocks = await getActiveStocks("HOSE", lang, 30, true);
   const [labels, alertMap, scannedSet, recentRuns, priceMap, totalVn] = await Promise.all([
     loadTranslations(lang),
     getAlertSummaryMap(),
