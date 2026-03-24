@@ -99,16 +99,16 @@ export default async function Home() {
         {/* Monitored universe */}
         <div>
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-3xl font-bold text-[#252525]">Monitored Universe <span className="text-lg font-normal text-gray-400 ml-1">🇺🇸 US Markets</span></h2>
+            <h2 className="text-3xl font-bold text-[#252525]">{t(labels, "section_top_stocks")} <span className="text-lg font-normal text-gray-400 ml-1">🇺🇸 {t(labels, "section_us_market")}</span></h2>
             <div className="flex items-center gap-4 text-sm text-gray-400">
               {alertCount > 0 && (
                 <span className="flex items-center gap-1">
                   <span className="inline-block w-3 h-3 rounded-sm" style={{ background: "#4ade80" }} />
-                  = change detected
+                  = {t(labels, "change_detected")}
                 </span>
               )}
-              <Link href="/asx" className="text-brand hover:underline font-medium">🇦🇺 Australia →</Link>
-              <Link href="/alerts" className="text-brand hover:underline">View all alerts →</Link>
+              <Link href="/asx" className="text-brand hover:underline font-medium">🇦🇺 {t(labels, "nav_asx_short")} →</Link>
+              <Link href="/alerts" className="text-brand hover:underline">{t(labels, "hero_view_alerts")} →</Link>
             </div>
           </div>
 
@@ -158,21 +158,21 @@ export default async function Home() {
                               <div className="text-[10px] text-gray-300">{price.trade_date}</div>
                             </>
                           ) : (
-                            <div className="text-xs text-gray-300 mt-1">No price data</div>
+                            <div className="text-xs text-gray-300 mt-1">{t(labels, "no_price_data")}</div>
                           )}
                         </div>
                         {hasAlert && (
                           <div className="mt-1.5 pt-1.5 border-t border-gray-100 space-y-0.5">
                             <div className="text-xs font-medium" style={{ color: "#166534" }}
                               title={analysis.changed_pct != null && analysis.changed_pct > 90 ? "Large baseline diff — page content significantly changed vs. initial snapshot" : undefined}>
-                              {analysis.changed_pct != null ? (analysis.changed_pct > 90 ? "Significant change" : `${analysis.changed_pct.toFixed(1)}% changed`) : "—"}
+                              {analysis.changed_pct != null ? (analysis.changed_pct > 90 ? t(labels, "significant_change") : `${analysis.changed_pct.toFixed(1)}% ${t(labels, "changed")}`) : "—"}
                             </div>
                             <div className="text-xs text-gray-400">conf {Math.round(confidence * 100)}%</div>
                           </div>
                         )}
                         {!hasAlert && hasSnapshot && (
                           <div className="mt-1.5 pt-1.5 border-t border-gray-100">
-                            <span className="text-xs text-gray-400">✓ Baseline saved</span>
+                            <span className="text-xs text-gray-400">✓ {t(labels, "baseline_saved")}</span>
                           </div>
                         )}
                       </Link>
@@ -188,12 +188,12 @@ export default async function Home() {
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wider">
                       <th className="px-4 py-3 font-semibold">#</th>
-                      <th className="px-4 py-3 font-semibold">Ticker</th>
-                      <th className="px-4 py-3 font-semibold">Name</th>
-                      <th className="px-4 py-3 font-semibold text-right">Price</th>
-                      <th className="px-4 py-3 font-semibold text-right">Change %</th>
-                      <th className="px-4 py-3 font-semibold text-right">Date</th>
-                      <th className="px-4 py-3 font-semibold text-center">Scan</th>
+                      <th className="px-4 py-3 font-semibold">{t(labels, "ticker_label")}</th>
+                      <th className="px-4 py-3 font-semibold">{t(labels, "name_label")}</th>
+                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "price")}</th>
+                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "change_pct_label")}</th>
+                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "date_label")}</th>
+                      <th className="px-4 py-3 font-semibold text-center">{t(labels, "scan_label")}</th>
                       <th className="px-4 py-3 font-semibold text-center"></th>
                     </tr>
                   </thead>
@@ -221,7 +221,7 @@ export default async function Home() {
                           <td className="px-4 py-3 text-right text-xs text-gray-400">{price?.trade_date ?? "—"}</td>
                           <td className="px-4 py-3 text-center text-xs">
                             {analysis ? (
-                              <span className="text-green-700 font-medium">{analysis.changed_pct != null && analysis.changed_pct > 90 ? "Sig. change" : analysis.changed_pct != null ? `${analysis.changed_pct.toFixed(1)}%` : "—"}</span>
+                              <span className="text-green-700 font-medium">{analysis.changed_pct != null && analysis.changed_pct > 90 ? t(labels, "significant_change") : analysis.changed_pct != null ? `${analysis.changed_pct.toFixed(1)}%` : "—"}</span>
                             ) : (
                               <span className="text-gray-300">—</span>
                             )}
@@ -243,22 +243,13 @@ export default async function Home() {
 
         {/* How it works */}
         <div>
-          <h2 className="text-3xl font-bold text-[#252525] mb-6">How It Works</h2>
+          <h2 className="text-3xl font-bold text-[#252525] mb-6">{t(labels, "how_it_works")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Step 1 — TinyFish (special card with logo) */}
-            <div className="bg-white border-2 border-[#2e8b57] rounded-2xl p-6 shadow-sm">
-              <div className="text-brand font-bold text-3xl mb-3">1</div>
-              <div className="flex items-center gap-2 mb-2">
-                <Image src="/logos/tinyfish.svg" width={72} height={16} alt="TinyFish" style={{ height: "16px", width: "auto" }} />
-                <span className="text-[#252525] font-bold text-lg">Fetches</span>
-              </div>
-              <div className="text-gray-500 text-base">Real browser rendering of JavaScript-heavy investor pages — no scraping shortcuts</div>
-            </div>
-            {/* Steps 2–4 */}
             {[
-              { step: "2", label: "DataP.ai Cleans", desc: "Removes nav/footer noise, hashes content, stores versioned snapshots in Postgres" },
-              { step: "3", label: "Diff & Score", desc: "Text diff detects wording shifts. Word-list scores measure commitment/hedging/risk" },
-              { step: "4", label: "AI Signal", desc: "GPT/Gemini summary with direct quotes, confidence score, and price chart context" },
+              { step: "1", label: t(labels, "step1_label"), desc: t(labels, "step1_desc") },
+              { step: "2", label: t(labels, "step2_label"), desc: t(labels, "step2_desc") },
+              { step: "3", label: t(labels, "step3_label"), desc: t(labels, "step3_desc") },
+              { step: "4", label: t(labels, "step4_label"), desc: t(labels, "step4_desc") },
             ].map((item) => (
               <div key={item.step} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <div className="text-brand font-bold text-3xl mb-3">{item.step}</div>
@@ -272,20 +263,20 @@ export default async function Home() {
         {/* Trust layer callout */}
         <div className="border border-gray-200 rounded-2xl p-8 bg-white shadow-sm">
           <h3 className="font-bold text-xl text-[#252525] mb-4">
-            DataP.ai Trust Layer — every alert is fully reproducible
+            {t(labels, "trust_title")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-base text-gray-500">
             <div>
-              <div className="font-semibold text-gray-700 mb-2">Source &amp; Audit</div>
-              Source URL · Snapshot hash · TinyFish run ID · Scan timestamp
+              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_source")}</div>
+              {t(labels, "trust_source_desc")}
             </div>
             <div>
-              <div className="font-semibold text-gray-700 mb-2">Evidence</div>
-              Before/after text · Diff snippet · Direct quotes from changed lines
+              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_evidence")}</div>
+              {t(labels, "trust_evidence_desc")}
             </div>
             <div>
-              <div className="font-semibold text-gray-700 mb-2">AI Layer</div>
-              Paid LLM summary (GPT/Gemini) · Signal classification · Confidence score
+              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_ai")}</div>
+              {t(labels, "trust_ai_desc")}
             </div>
           </div>
         </div>

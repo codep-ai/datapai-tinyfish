@@ -91,11 +91,11 @@ export default async function AsxPage() {
         <div>
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-3xl font-bold text-[#252525]">
-              ASX Blue Chips
-              <span className="text-lg font-normal text-gray-400 ml-2">🇦🇺 Australian Securities Exchange</span>
+              🇦🇺 {t(labels, "section_top_stocks")}
+              <span className="text-lg font-normal text-gray-400 ml-2">{t(labels, "section_asx_market")}</span>
             </h2>
             <div className="flex items-center gap-4 text-sm text-gray-400">
-              <Link href="/alerts" className="hover:underline" style={{ color: "#003087" }}>View all alerts →</Link>
+              <Link href="/alerts" className="hover:underline" style={{ color: "#003087" }}>{t(labels, "hero_view_alerts")} →</Link>
             </div>
           </div>
 
@@ -145,22 +145,22 @@ export default async function AsxPage() {
                               <div className="text-[10px] text-gray-300">{price.trade_date}</div>
                             </>
                           ) : (
-                            <div className="text-xs text-gray-300 mt-1">No price data</div>
+                            <div className="text-xs text-gray-300 mt-1">{t(labels, "no_price_data")}</div>
                           )}
                         </div>
                         {hasAlert && (
                           <div className="mt-1.5 pt-1.5 border-t border-gray-100 space-y-0.5">
                             <div className="text-xs font-medium" style={{ color: "#92400e" }}>
-                              {analysis.changed_pct != null && analysis.changed_pct > 90 ? "Significant change" : analysis.changed_pct != null ? `${analysis.changed_pct.toFixed(1)}% changed` : "—"}
+                              {analysis.changed_pct != null && analysis.changed_pct > 90 ? t(labels, "significant_change") : analysis.changed_pct != null ? `${analysis.changed_pct.toFixed(1)}% ${t(labels, "changed")}` : "—"}
                             </div>
                             <div className="text-xs text-gray-400">conf {Math.round(confidence * 100)}%</div>
                           </div>
                         )}
                         {!hasAlert && hasSnapshot && (
-                          <div className="mt-1.5 pt-1.5 border-t border-gray-100"><span className="text-xs text-gray-400">✓ Baseline saved</span></div>
+                          <div className="mt-1.5 pt-1.5 border-t border-gray-100"><span className="text-xs text-gray-400">✓ {t(labels, "baseline_saved")}</span></div>
                         )}
                         {!hasAlert && !hasSnapshot && (
-                          <div className="mt-1.5 pt-1.5 border-t border-gray-100"><span className="text-xs text-gray-300">Not yet scanned</span></div>
+                          <div className="mt-1.5 pt-1.5 border-t border-gray-100"><span className="text-xs text-gray-300">{t(labels, "not_yet_scanned")}</span></div>
                         )}
                       </Link>
                     </div>
@@ -175,12 +175,12 @@ export default async function AsxPage() {
                   <thead>
                     <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wider">
                       <th className="px-4 py-3 font-semibold">#</th>
-                      <th className="px-4 py-3 font-semibold">Ticker</th>
-                      <th className="px-4 py-3 font-semibold">Name</th>
-                      <th className="px-4 py-3 font-semibold text-right">Price</th>
-                      <th className="px-4 py-3 font-semibold text-right">Change %</th>
-                      <th className="px-4 py-3 font-semibold text-right">Date</th>
-                      <th className="px-4 py-3 font-semibold text-center">Scan</th>
+                      <th className="px-4 py-3 font-semibold">{t(labels, "ticker_label")}</th>
+                      <th className="px-4 py-3 font-semibold">{t(labels, "name_label")}</th>
+                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "price")}</th>
+                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "change_pct_label")}</th>
+                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "date_label")}</th>
+                      <th className="px-4 py-3 font-semibold text-center">{t(labels, "scan_label")}</th>
                       <th className="px-4 py-3 font-semibold text-center"></th>
                     </tr>
                   </thead>
@@ -208,7 +208,7 @@ export default async function AsxPage() {
                           <td className="px-4 py-3 text-right text-xs text-gray-400">{price?.trade_date ?? "—"}</td>
                           <td className="px-4 py-3 text-center text-xs">
                             {analysis ? (
-                              <span className="text-amber-700 font-medium">{analysis.changed_pct != null && analysis.changed_pct > 90 ? "Sig. change" : analysis.changed_pct != null ? `${analysis.changed_pct.toFixed(1)}%` : "—"}</span>
+                              <span className="text-amber-700 font-medium">{analysis.changed_pct != null && analysis.changed_pct > 90 ? t(labels, "significant_change") : analysis.changed_pct != null ? `${analysis.changed_pct.toFixed(1)}%` : "—"}</span>
                             ) : (
                               <span className="text-gray-300">—</span>
                             )}
@@ -231,13 +231,13 @@ export default async function AsxPage() {
 
         {/* How it works for ASX */}
         <div>
-          <h2 className="text-2xl font-bold text-[#252525] mb-5">How ASX Monitoring Works</h2>
+          <h2 className="text-2xl font-bold text-[#252525] mb-5">{t(labels, "how_it_works")}</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
-              { step: "1", label: "TinyFish Fetches ASX", desc: "Real-browser agent reads the ASX announcements feed for each monitored company" },
-              { step: "2", label: "DataP.ai Cleans", desc: "Removes boilerplate, hashes announcement content, stores versioned snapshots in Postgres" },
-              { step: "3", label: "Diff & Score", desc: "Detects new announcements, wording changes and language shifts in corporate disclosures" },
-              { step: "4", label: "DataP.ai Financial Agents", desc: "Multi-agent pipeline: guidance withdrawal, risk expansion, tone shift — with investigation & validation" },
+              { step: "1", label: t(labels, "step1_label"), desc: t(labels, "step1_desc") },
+              { step: "2", label: t(labels, "step2_label"), desc: t(labels, "step2_desc") },
+              { step: "3", label: t(labels, "step3_label"), desc: t(labels, "step3_desc") },
+              { step: "4", label: t(labels, "step4_label"), desc: t(labels, "step4_desc") },
             ].map((item) => (
               <div key={item.step} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
                 <div className="font-bold text-3xl mb-3" style={{ color: "#003087" }}>{item.step}</div>
@@ -251,20 +251,20 @@ export default async function AsxPage() {
         {/* ASX-specific trust note */}
         <div className="border border-blue-200 rounded-2xl p-8 bg-white shadow-sm">
           <h3 className="font-bold text-xl text-[#003087] mb-4">
-            🇦🇺 ASX Intelligence — Powered by DataP.ai &amp; TinyFish
+            🇦🇺 {t(labels, "section_asx_market")} — {t(labels, "trust_title")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-base text-gray-500">
             <div>
-              <div className="font-semibold text-gray-700 mb-2">Source</div>
-              ASX announcement feed · Company IR pages · Market-sensitive disclosures
+              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_source")}</div>
+              {t(labels, "trust_source_desc")}
             </div>
             <div>
-              <div className="font-semibold text-gray-700 mb-2">Signals Detected</div>
-              Guidance withdrawal · Risk disclosure expansion · Tone softening · New major announcements
+              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_evidence")}</div>
+              {t(labels, "trust_evidence_desc")}
             </div>
             <div>
-              <div className="font-semibold text-gray-700 mb-2">Coverage</div>
-              ASX Blue Chips: BHP, CBA, CSL, NAB, ANZ, WBC, WES, MQG, TLS, WOW, RIO, FMG
+              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_ai")}</div>
+              {t(labels, "trust_ai_desc")}
             </div>
           </div>
         </div>
