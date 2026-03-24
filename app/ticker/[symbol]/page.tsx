@@ -337,16 +337,16 @@ export default async function TickerPage({
           {latest && Math.abs(latest.alert_score) > 0.3 && (
             <p className="text-white text-lg font-semibold">
               {latest.alert_score > 1
-                ? "⚠ Word-score alert: page shifted toward more cautious language."
+                ? t(labels, "hero_wordscore_cautious")
                 : latest.alert_score < -1
-                ? "✓ Word-score: language has become more confident and committed."
-                : "~ Moderate wording change detected on this page."}
+                ? t(labels, "hero_wordscore_confident")
+                : t(labels, "hero_wordscore_moderate")}
               <span className="ml-3 text-white/60 text-base font-normal">
                 {hasAgentSignal
-                  ? `AG2 signal: ${latest.agent_signal_type?.replace(/_/g, " ")}`
-                  : "No AG2 financial signal"}
-                {" · "}conf {Math.round(latest.confidence * 100)}%
-                {hasFlags && " · ⚠ quality flags"}
+                  ? `${t(labels, "hero_ag2_signal")}: ${agentSignalLabel(latest.agent_signal_type, labels)}`
+                  : t(labels, "hero_no_ag2_signal")}
+                {" · "}{t(labels, "hero_conf")} {Math.round(latest.confidence * 100)}%
+                {hasFlags && ` · ${t(labels, "hero_quality_flags")}`}
               </span>
             </p>
           )}

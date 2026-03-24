@@ -12,6 +12,35 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import WatchlistButton from "@/app/components/WatchlistButton";
 
+// ── i18n helpers ─────────────────────────────────────────────────────────────
+
+type Labels = Record<string, string>;
+
+function getLangFromCookie(): string {
+  if (typeof document === "undefined") return "en";
+  const match = document.cookie.match(/(?:^|;\s*)lang=([^;]*)/);
+  return match?.[1] ?? "en";
+}
+
+/** Fetch UI labels from /api/i18n/labels for client components */
+function useLabels(): Labels {
+  const [labels, setLabels] = useState<Labels>({});
+  useEffect(() => {
+    const lang = getLangFromCookie();
+    if (lang === "en") return; // English is the hardcoded fallback
+    fetch(`/api/i18n/labels?lang=${lang}&category=screener,enum`)
+      .then((r) => r.json())
+      .then(setLabels)
+      .catch(() => {}); // fallback to English on error
+  }, []);
+  return labels;
+}
+
+/** Lookup a label, fallback to English default */
+function L(labels: Labels, key: string, fallback: string): string {
+  return labels[key] ?? fallback;
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 interface TechRow {
@@ -109,7 +138,14 @@ function pctCell(v: number | null) {
   );
 }
 
-function trendChip(trend: string | null) {
+const TREND_LABEL_KEY: Record<string, string> = {
+  BULLISH: "signal_bullish_chip", BEARISH: "signal_bearish_chip",
+  UP: "signal_up_chip", DOWN: "signal_down_chip", FLAT: "signal_flat_chip",
+  OVERBOUGHT: "signal_overbought_chip", OVERSOLD: "signal_oversold_chip",
+  NEUTRAL: "signal_neutral_chip",
+};
+
+function trendChip(trend: string | null, labels?: Labels) {
   if (!trend) return <span className="text-gray-300 text-xs">—</span>;
   const defaults: Record<string, { bg: string; text: string }> = {
     BULLISH:    { bg: "#dcfce7", text: "#166534" },
@@ -122,10 +158,11 @@ function trendChip(trend: string | null) {
     NEUTRAL:    { bg: "#f3f4f6", text: "#6b7280" },
   };
   const c = defaults[trend] ?? { bg: "#f3f4f6", text: "#6b7280" };
+  const display = labels && TREND_LABEL_KEY[trend] ? L(labels, TREND_LABEL_KEY[trend], trend) : trend;
   return (
     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap"
       style={{ background: c.bg, color: c.text }}>
-      {trend}
+      {display}
     </span>
   );
 }
@@ -148,13 +185,19 @@ const SIGNAL_COLORS: Record<string, { bg: string; text: string; border: string }
   STRONG_SELL: { bg: "#fef2f2", text: "#991b1b", border: "#f87171" },
 };
 
-function SignalChip({ signal }: { signal: string | null }) {
+const SIGNAL_LABEL_KEY: Record<string, string> = {
+  STRONG_BUY: "signal_strong_buy", BUY: "signal_buy",
+  NEUTRAL: "signal_hold", SELL: "signal_sell", STRONG_SELL: "signal_strong_sell",
+};
+
+function SignalChip({ signal, labels }: { signal: string | null; labels?: Labels }) {
   if (!signal) return <span className="text-gray-300 text-sm">—</span>;
   const c = SIGNAL_COLORS[signal] ?? { bg: "#f9fafb", text: "#6b7280", border: "#d1d5db" };
+  const display = labels && SIGNAL_LABEL_KEY[signal] ? L(labels, SIGNAL_LABEL_KEY[signal], signal.replace("_", " ")) : signal.replace("_", " ");
   return (
     <span className="text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap"
       style={{ background: c.bg, color: c.text, border: `1.5px solid ${c.border}` }}>
-      {signal.replace("_", " ")}
+      {display}
     </span>
   );
 }
@@ -187,11 +230,11 @@ function RsiCell({ rsi }: { rsi: number | null }) {
 }
 
 /** RSI zone signal chip */
-function RsiSignal({ rsi }: { rsi: number | null }) {
+function RsiSignal({ rsi, labels }: { rsi: number | null; labels?: Labels }) {
   if (rsi === null || rsi === undefined) return <span className="text-gray-300 text-xs">—</span>;
-  if (rsi >= 70) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#fef2f2", color: "#991b1b" }}>OVERBOUGHT</span>;
-  if (rsi <= 30) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#dcfce7", color: "#166534" }}>OVERSOLD</span>;
-  return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#f3f4f6", color: "#6b7280" }}>NEUTRAL</span>;
+  if (rsi >= 70) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#fef2f2", color: "#991b1b" }}>{L(labels ?? {}, "signal_overbought_chip", "OVERBOUGHT")}</span>;
+  if (rsi <= 30) return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#dcfce7", color: "#166534" }}>{L(labels ?? {}, "signal_oversold_chip", "OVERSOLD")}</span>;
+  return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap" style={{ background: "#f3f4f6", color: "#6b7280" }}>{L(labels ?? {}, "signal_neutral_chip", "NEUTRAL")}</span>;
 }
 
 // ── DataPAI Score + Quality Tier + Alert helpers ────────────────────────────
@@ -397,18 +440,23 @@ const SIGNAL_CHIP_STYLE: Record<Signal, { bg: string; color: string }> = {
   HOLD: { bg: "#fefce8", color: "#854d0e" },
 };
 
-function SignalCell({ signal }: { signal: Signal }) {
+const COMPOSITE_SIGNAL_KEY: Record<Signal, string> = {
+  BUY: "signal_buy", SELL: "signal_sell", HOLD: "signal_hold",
+};
+
+function SignalCell({ signal, labels }: { signal: Signal; labels?: Labels }) {
   const s = SIGNAL_CHIP_STYLE[signal];
+  const display = labels ? L(labels, COMPOSITE_SIGNAL_KEY[signal], signal) : signal;
   return (
     <span className="text-[9px] font-extrabold px-2 py-0.5 rounded-full whitespace-nowrap"
       style={{ background: s.bg, color: s.color }}>
-      {signal}
+      {display}
     </span>
   );
 }
 
 /** Single SMA cross cell — shows bullish/bearish chip */
-function SmaCrossCell({ fast, slow, label }: { fast: number | null; slow: number | null; label: string }) {
+function SmaCrossCell({ fast, slow, label, labels }: { fast: number | null; slow: number | null; label: string; labels?: Labels }) {
   if (fast === null || slow === null) return <span className="text-gray-300 text-[9px]">—</span>;
   const bullish = fast > slow;
   const pctDiff = ((fast - slow) / slow) * 100;
@@ -421,7 +469,7 @@ function SmaCrossCell({ fast, slow, label }: { fast: number | null; slow: number
       }}
       title={`SMA${label}: ${bullish ? "Bullish" : "Bearish"} (${pctDiff >= 0 ? "+" : ""}${pctDiff.toFixed(1)}%)`}
     >
-      {bullish ? "▲ Bull" : "▼ Bear"}
+      {bullish ? L(labels ?? {}, "sma_bull", "▲ Bull") : L(labels ?? {}, "sma_bear", "▼ Bear")}
     </span>
   );
 }
@@ -450,6 +498,7 @@ function Th({ label, col, sortBy, sortDir, onClick, align = "left", tip }: {
 
 export default function ScreenerPage() {
   const [tab, setTab] = useState<"technical" | "fundamental">("technical");
+  const labels = useLabels();
 
   return (
     <div>
@@ -459,7 +508,7 @@ export default function ScreenerPage() {
           <div className="flex items-end gap-6">
             <h1 className="text-3xl font-bold text-white drop-shadow-sm pb-3"
               style={{ fontFamily: "var(--font-rajdhani)" }}>
-              Stock Screener
+              {L(labels, "screener_title", "Stock Screener")}
             </h1>
             <div className="flex gap-1 mb-0">
               {(["technical", "fundamental"] as const).map((t) => (
@@ -469,7 +518,9 @@ export default function ScreenerPage() {
                     ? { background: "#fff", color: "#2e8b57" }
                     : { background: "rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)" }
                   }>
-                  {t === "technical" ? "📈 Technical (8,500+)" : "📊 Fundamental (~30)"}
+                  {t === "technical"
+                    ? `📈 ${L(labels, "screener_tab_technical", "Technical")} (8,500+)`
+                    : `📊 ${L(labels, "screener_tab_fundamental", "Fundamental")} (~30)`}
                 </button>
               ))}
             </div>
@@ -477,7 +528,7 @@ export default function ScreenerPage() {
         </div>
       </div>
 
-      {tab === "technical" ? <TechnicalTab /> : <FundamentalTab />}
+      {tab === "technical" ? <TechnicalTab labels={labels} /> : <FundamentalTab labels={labels} />}
     </div>
   );
 }
@@ -486,7 +537,7 @@ export default function ScreenerPage() {
 // Technical Screener Tab
 // ══════════════════════════════════════════════════════════════════════════════
 
-function TechnicalTab() {
+function TechnicalTab({ labels }: { labels: Labels }) {
   const [exchange,   setExchange]   = useState("US");
   const [sortBy,     setSortBy]     = useState("change_1d_pct");
   const [sortDir,    setSortDir]    = useState("desc");
@@ -566,7 +617,7 @@ function TechnicalTab() {
 
             {/* Exchange */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">Exchange</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_exchange", "Exchange")}</label>
               <div className="flex gap-1">
                 {["US", "ASX"].map((ex) => (
                   <button key={ex} onClick={() => setExchange(ex)}
@@ -582,93 +633,93 @@ function TechnicalTab() {
 
             {/* Price range */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">Price ($)</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_price", "Price ($)")}</label>
               <div className="flex gap-1">
-                <input type="number" placeholder="Min" value={minPrice} onChange={(e) => setMinPrice(e.target.value)}
+                <input type="number" placeholder={L(labels, "screener_filter_min", "Min")} value={minPrice} onChange={(e) => setMinPrice(e.target.value)}
                   className="w-16 text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700" />
-                <input type="number" placeholder="Max" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)}
+                <input type="number" placeholder={L(labels, "screener_filter_max", "Max")} value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)}
                   className="w-16 text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700" />
               </div>
             </div>
 
             {/* RSI range */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">RSI (14)</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_rsi", "RSI (14)")}</label>
               <div className="flex gap-1">
-                <input type="number" placeholder="Min" value={minRsi} onChange={(e) => setMinRsi(e.target.value)}
+                <input type="number" placeholder={L(labels, "screener_filter_min", "Min")} value={minRsi} onChange={(e) => setMinRsi(e.target.value)}
                   className="w-14 text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700" />
-                <input type="number" placeholder="Max" value={maxRsi} onChange={(e) => setMaxRsi(e.target.value)}
+                <input type="number" placeholder={L(labels, "screener_filter_max", "Max")} value={maxRsi} onChange={(e) => setMaxRsi(e.target.value)}
                   className="w-14 text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700" />
               </div>
             </div>
 
             {/* MACD Trend */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">MACD</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_macd", "MACD")}</label>
               <select value={macdTrend} onChange={(e) => setMacdTrend(e.target.value)}
                 className="text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700">
-                <option value="">Any</option>
-                <option value="BULLISH">Bullish</option>
-                <option value="BEARISH">Bearish</option>
+                <option value="">{L(labels, "screener_filter_any", "Any")}</option>
+                <option value="BULLISH">{L(labels, "screener_bullish", "Bullish")}</option>
+                <option value="BEARISH">{L(labels, "screener_bearish", "Bearish")}</option>
               </select>
             </div>
 
             {/* KDJ Signal */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">KDJ</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_kdj", "KDJ")}</label>
               <select value={kdjSignal} onChange={(e) => setKdjSignal(e.target.value)}
                 className="text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700">
-                <option value="">Any</option>
-                <option value="OVERBOUGHT">Overbought</option>
-                <option value="OVERSOLD">Oversold</option>
-                <option value="NEUTRAL">Neutral</option>
+                <option value="">{L(labels, "screener_filter_any", "Any")}</option>
+                <option value="OVERBOUGHT">{L(labels, "screener_overbought", "Overbought")}</option>
+                <option value="OVERSOLD">{L(labels, "screener_oversold", "Oversold")}</option>
+                <option value="NEUTRAL">{L(labels, "screener_neutral", "Neutral")}</option>
               </select>
             </div>
 
             {/* MA Crossovers */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">MA Cross</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_ma_cross", "MA Cross")}</label>
               <div className="flex gap-2">
                 <label className="flex items-center gap-1 text-xs text-white cursor-pointer">
                   <input type="checkbox" checked={goldenCross} onChange={(e) => { setGoldenCross(e.target.checked); if (e.target.checked) setDeathCross(false); }} />
-                  Golden
+                  {L(labels, "screener_filter_golden", "Golden")}
                 </label>
                 <label className="flex items-center gap-1 text-xs text-white cursor-pointer">
                   <input type="checkbox" checked={deathCross} onChange={(e) => { setDeathCross(e.target.checked); if (e.target.checked) setGoldenCross(false); }} />
-                  Death
+                  {L(labels, "screener_filter_death", "Death")}
                 </label>
               </div>
             </div>
 
             {/* Volume ratio */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">Vol ratio ≥</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_vol_ratio", "Vol ratio ≥")}</label>
               <input type="number" step="0.5" placeholder="e.g. 2" value={minVolRatio} onChange={(e) => setMinVolRatio(e.target.value)}
                 className="w-16 text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700" />
             </div>
 
             {/* 52w proximity */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">52w</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_52w", "52w")}</label>
               <div className="flex gap-1">
                 <select value={near52High} onChange={(e) => { setNear52High(e.target.value); if (e.target.value) setNear52Low(""); }}
                   className="text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700">
-                  <option value="">Any</option>
-                  <option value="5">Near High (5%)</option>
-                  <option value="10">Near High (10%)</option>
+                  <option value="">{L(labels, "screener_filter_any", "Any")}</option>
+                  <option value="5">{L(labels, "screener_filter_near_high", "Near High")} (5%)</option>
+                  <option value="10">{L(labels, "screener_filter_near_high", "Near High")} (10%)</option>
                 </select>
                 <select value={near52Low} onChange={(e) => { setNear52Low(e.target.value); if (e.target.value) setNear52High(""); }}
                   className="text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700">
-                  <option value="">Any</option>
-                  <option value="10">Near Low (10%)</option>
-                  <option value="20">Near Low (20%)</option>
+                  <option value="">{L(labels, "screener_filter_any", "Any")}</option>
+                  <option value="10">{L(labels, "screener_filter_near_low", "Near Low")} (10%)</option>
+                  <option value="20">{L(labels, "screener_filter_near_low", "Near Low")} (20%)</option>
                 </select>
               </div>
             </div>
 
             {/* Limit */}
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">Show</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_show", "Show")}</label>
               <select value={limit} onChange={(e) => setLimit(Number(e.target.value))}
                 className="text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700">
                 {[20, 50, 100, 200].map((n) => <option key={n} value={n}>{n}</option>)}
@@ -679,7 +730,7 @@ function TechnicalTab() {
             <button onClick={runScreener} disabled={loading}
               className="px-5 py-2 rounded-xl text-xs font-bold transition-all hover:brightness-110 disabled:opacity-60 shadow-md"
               style={{ background: "#fd8412", color: "#fff" }}>
-              {loading ? "⟳ Scanning…" : "🔍 Screen"}
+              {loading ? `⟳ ${L(labels, "screener_btn_scanning", "Scanning…")}` : `🔍 ${L(labels, "screener_btn_screen", "Screen")}`}
             </button>
           </div>
         </div>
@@ -693,7 +744,7 @@ function TechnicalTab() {
           <div className="flex items-center justify-center py-20">
             <div className="text-center space-y-2">
               <div className="text-3xl animate-pulse">📈</div>
-              <p className="text-gray-500 text-sm">Scanning {exchange} stocks…</p>
+              <p className="text-gray-500 text-sm">{L(labels, "screener_scanning", "Scanning stocks…")}</p>
             </div>
           </div>
         )}
@@ -702,11 +753,11 @@ function TechnicalTab() {
           <>
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-500">
-                <strong>{rows.length}</strong> of <strong>{total.toLocaleString()}</strong> {exchange} stocks
-                {rows.length < total && " (filtered)"}
+                <strong>{rows.length}</strong> {L(labels, "screener_of", "of")} <strong>{total.toLocaleString()}</strong> {exchange} {L(labels, "screener_stocks", "stocks")}
+                {rows.length < total && ` ${L(labels, "screener_filtered", "(filtered)")}`}
               </p>
               <p className="text-xs text-gray-400">
-                Updated: {rows[0]?.trade_date ?? "—"} · Click column headers to sort
+                {L(labels, "screener_updated", "Updated")}: {rows[0]?.trade_date ?? "—"} · {L(labels, "screener_sort_tip", "Click column headers to sort")}
               </p>
             </div>
 
@@ -715,36 +766,36 @@ function TechnicalTab() {
                 <thead>
                   <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
                     <th className="px-1 py-2 w-8" title="Add to watchlist">☆</th>
-                    <Th label="Ticker" col="ticker" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} tip="Stock ticker symbol" />
-                    <Th label="Price" col="latest_close" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="Latest closing price" />
+                    <Th label={L(labels, "screener_th_ticker", "Ticker")} col="ticker" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} tip="Stock ticker symbol" />
+                    <Th label={L(labels, "screener_th_price", "Price")} col="latest_close" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="Latest closing price" />
                     {/* ── Composite Signals (right after price) ── */}
-                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Short-term signal (Days): RSI + MACD + KDJ + SMA5/10">Days</th>
-                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Near-term signal (Weeks): SMA10/20 + 5D% + BB + Volume">Weeks</th>
-                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Medium-term signal (Months): SMA20/50 + 1M% + 3M% + OBV">Months</th>
-                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Long-term signal (Quarter+): SMA50/200 + 52w High + 6M% + 1Y%">Quarter</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Short-term signal (Days): RSI + MACD + KDJ + SMA5/10">{L(labels, "screener_th_days", "Days")}</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Near-term signal (Weeks): SMA10/20 + 5D% + BB + Volume">{L(labels, "screener_th_weeks", "Weeks")}</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Medium-term signal (Months): SMA20/50 + 1M% + 3M% + OBV">{L(labels, "screener_th_months", "Months")}</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Long-term signal (Quarter+): SMA50/200 + 52w High + 6M% + 1Y%">{L(labels, "screener_th_quarter", "Quarter")}</th>
                     {/* ── Multi-Factor Score ── */}
-                    <th className="px-1 py-2 text-center font-bold text-[#2e8b57] uppercase tracking-wide text-[9px]" title="DataPAI Composite Score: TA (40%) + Fundamentals (30%) + Website Intelligence (30%). 0-100 scale.">Score</th>
-                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Fundamental Quality Tier (hover each for details)&#10;A = Excellent: profitable, growing, healthy&#10;B = Good: mostly profitable, decent growth&#10;C = Fair: mixed fundamentals&#10;D = Poor: unprofitable or declining&#10;Based on: PE, margins, ROE, revenue growth, debt">Qual</th>
-                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Website change or news alert severity. Hover for details.">Alert</th>
-                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Sector classification">Sector</th>
+                    <th className="px-1 py-2 text-center font-bold text-[#2e8b57] uppercase tracking-wide text-[9px]" title="DataPAI Composite Score: TA (40%) + Fundamentals (30%) + Website Intelligence (30%). 0-100 scale.">{L(labels, "screener_th_score", "Score")}</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Fundamental Quality Tier (hover each for details)&#10;A = Excellent: profitable, growing, healthy&#10;B = Good: mostly profitable, decent growth&#10;C = Fair: mixed fundamentals&#10;D = Poor: unprofitable or declining&#10;Based on: PE, margins, ROE, revenue growth, debt">{L(labels, "screener_th_qual", "Qual")}</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Website change or news alert severity. Hover for details.">{L(labels, "screener_th_alert", "Alert")}</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Sector classification">{L(labels, "screener_th_sector", "Sector")}</th>
                     {/* ── Price Changes ── */}
                     <Th label="1D %" col="change_1d_pct" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="1-day price change %" />
                     <Th label="5D %" col="change_5d_pct" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="5-day price change %" />
                     <Th label="1M %" col="change_1m_pct" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="1-month price change %" />
                     {/* ── Detailed TA ── */}
                     <Th label="RSI(14)" col="rsi_14" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="Relative Strength Index (14-day). <30 = oversold, >70 = overbought" />
-                    <th className="px-2 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[10px]" title="RSI Zone: OVERBOUGHT (>70), OVERSOLD (<30), NEUTRAL (30-70)">RSI Signal</th>
-                    <th className="px-2 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[10px]" title="MACD crossover: BULLISH = MACD line above signal line, BEARISH = below">MACD</th>
-                    <th className="px-2 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[10px]" title="KDJ Stochastic: OVERBOUGHT (K>80), OVERSOLD (K<20), NEUTRAL">KDJ</th>
+                    <th className="px-2 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[10px]" title="RSI Zone: OVERBOUGHT (>70), OVERSOLD (<30), NEUTRAL (30-70)">{L(labels, "screener_th_rsi_signal", "RSI Signal")}</th>
+                    <th className="px-2 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[10px]" title="MACD crossover: BULLISH = MACD line above signal line, BEARISH = below">{L(labels, "screener_filter_macd", "MACD")}</th>
+                    <th className="px-2 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[10px]" title="KDJ Stochastic: OVERBOUGHT (K>80), OVERSOLD (K<20), NEUTRAL">{L(labels, "screener_filter_kdj", "KDJ")}</th>
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Short-term: SMA5 vs SMA10 (days). Bullish = SMA5 above SMA10">SMA5/10</th>
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Near-term: SMA10 vs SMA20 (weeks). Bullish = SMA10 above SMA20">SMA10/20</th>
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Medium-term: SMA20 vs SMA50 (months). Bullish = SMA20 above SMA50">SMA20/50</th>
                     <th className="px-1 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[9px]" title="Long-term: SMA50 vs SMA200 (golden/death cross). Bullish = SMA50 above SMA200">SMA50/200</th>
-                    <th className="px-2 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[10px]" title="On-Balance Volume trend — UP = buying pressure, DOWN = selling pressure">OBV</th>
-                    <Th label="52w High" col="pct_from_52w_high" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="% below 52-week high. 0% = at 52-week high" />
-                    <Th label="Vol Ratio" col="volume_ratio" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="Today's volume / 20-day average volume. >2.0 = unusual volume spike" />
-                    <Th label="Volume" col="latest_volume" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="Latest trading volume (shares)" />
-                    <Th label="Volatility" col="volatility_20d" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="20-day annualized volatility %. Higher = more price swings" />
+                    <th className="px-2 py-2 text-center font-bold text-gray-500 uppercase tracking-wide text-[10px]" title="On-Balance Volume trend — UP = buying pressure, DOWN = selling pressure">{L(labels, "screener_th_obv", "OBV")}</th>
+                    <Th label={L(labels, "screener_th_52w_high", "52w High")} col="pct_from_52w_high" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="% below 52-week high. 0% = at 52-week high" />
+                    <Th label={L(labels, "screener_th_vol_ratio", "Vol Ratio")} col="volume_ratio" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="Today's volume / 20-day average volume. >2.0 = unusual volume spike" />
+                    <Th label={L(labels, "screener_th_volume", "Volume")} col="latest_volume" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="Latest trading volume (shares)" />
+                    <Th label={L(labels, "screener_th_volatility", "Volatility")} col="volatility_20d" sortBy={sortBy} sortDir={sortDir} onClick={handleSort} align="right" tip="20-day annualized volatility %. Higher = more price swings" />
                   </tr>
                 </thead>
                 <tbody>
@@ -764,10 +815,10 @@ function TechnicalTab() {
                         {r.latest_close !== null ? (r.latest_close < 1 ? r.latest_close.toFixed(4) : r.latest_close.toFixed(2)) : "—"}
                       </td>
                       {/* Composite signals (right after price) */}
-                      <td className="px-1 py-2 text-center"><SignalCell signal={signalDays(r)} /></td>
-                      <td className="px-1 py-2 text-center"><SignalCell signal={signalWeeks(r)} /></td>
-                      <td className="px-1 py-2 text-center"><SignalCell signal={signalMonths(r)} /></td>
-                      <td className="px-1 py-2 text-center"><SignalCell signal={signalQuarter(r)} /></td>
+                      <td className="px-1 py-2 text-center"><SignalCell signal={signalDays(r)} labels={labels} /></td>
+                      <td className="px-1 py-2 text-center"><SignalCell signal={signalWeeks(r)} labels={labels} /></td>
+                      <td className="px-1 py-2 text-center"><SignalCell signal={signalMonths(r)} labels={labels} /></td>
+                      <td className="px-1 py-2 text-center"><SignalCell signal={signalQuarter(r)} labels={labels} /></td>
                       {/* Multi-factor columns */}
                       <td className="px-1 py-2 text-center"><DataPAIScoreCell score={r.datapai_score} /></td>
                       <td className="px-1 py-2 text-center"><QualityTierCell tier={r.fl_quality_tier || r.mfs_quality_tier} row={r} /></td>
@@ -779,14 +830,14 @@ function TechnicalTab() {
                       <td className="px-2 py-2 text-right">{pctCell(r.change_1m_pct)}</td>
                       {/* Detailed TA */}
                       <td className="px-2 py-2 text-right"><RsiCell rsi={r.rsi_14} /></td>
-                      <td className="px-2 py-2 text-center"><RsiSignal rsi={r.rsi_14} /></td>
-                      <td className="px-2 py-2 text-center">{trendChip(r.macd_trend)}</td>
-                      <td className="px-2 py-2 text-center">{trendChip(r.kdj_signal)}</td>
-                      <td className="px-1 py-2 text-center"><SmaCrossCell fast={r.sma_5} slow={r.sma_10} label="5/10" /></td>
-                      <td className="px-1 py-2 text-center"><SmaCrossCell fast={r.sma_10} slow={r.sma_20} label="10/20" /></td>
-                      <td className="px-1 py-2 text-center"><SmaCrossCell fast={r.sma_20} slow={r.sma_50} label="20/50" /></td>
-                      <td className="px-1 py-2 text-center"><SmaCrossCell fast={r.sma_50} slow={r.sma_200} label="50/200" /></td>
-                      <td className="px-2 py-2 text-center">{trendChip(r.obv_trend)}</td>
+                      <td className="px-2 py-2 text-center"><RsiSignal rsi={r.rsi_14} labels={labels} /></td>
+                      <td className="px-2 py-2 text-center">{trendChip(r.macd_trend, labels)}</td>
+                      <td className="px-2 py-2 text-center">{trendChip(r.kdj_signal, labels)}</td>
+                      <td className="px-1 py-2 text-center"><SmaCrossCell fast={r.sma_5} slow={r.sma_10} label="5/10" labels={labels} /></td>
+                      <td className="px-1 py-2 text-center"><SmaCrossCell fast={r.sma_10} slow={r.sma_20} label="10/20" labels={labels} /></td>
+                      <td className="px-1 py-2 text-center"><SmaCrossCell fast={r.sma_20} slow={r.sma_50} label="20/50" labels={labels} /></td>
+                      <td className="px-1 py-2 text-center"><SmaCrossCell fast={r.sma_50} slow={r.sma_200} label="50/200" labels={labels} /></td>
+                      <td className="px-2 py-2 text-center">{trendChip(r.obv_trend, labels)}</td>
                       <td className="px-2 py-2 text-right">{pctCell(r.pct_from_52w_high)}</td>
                       <td className="px-2 py-2 text-right">
                         <span className={`text-xs tabular-nums font-semibold ${(r.volume_ratio ?? 0) >= 2 ? "text-blue-600" : "text-gray-500"}`}>
@@ -808,15 +859,15 @@ function TechnicalTab() {
         {!loading && rows.length === 0 && !error && (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-12 text-center">
             <div className="text-3xl mb-3">🔍</div>
-            <p className="font-semibold text-gray-700 mb-1">No stocks match your filters</p>
-            <p className="text-sm text-gray-400">Try relaxing the filters or switching exchange.</p>
+            <p className="font-semibold text-gray-700 mb-1">{L(labels, "screener_no_match", "No stocks match your filters")}</p>
+            <p className="text-sm text-gray-400">{L(labels, "screener_no_match_hint", "Try relaxing the filters or switching exchange.")}</p>
           </div>
         )}
 
         {/* ── Backtest Results ──────────────────────────────────────────── */}
         <details className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <summary className="px-5 py-3 cursor-pointer text-sm font-semibold text-gray-600 hover:text-gray-800 select-none">
-            Signal Backtest Results &amp; Methodology (v2, 171 US stocks, Jan 2024 &ndash; Mar 2026)
+            {L(labels, "screener_backtest_title", "Signal Backtest Results & Methodology")} (v2, 171 US stocks, Jan 2024 &ndash; Mar 2026)
           </summary>
           <div className="px-5 pb-5 space-y-4">
 
@@ -946,7 +997,7 @@ function TechnicalTab() {
         </details>
 
         <p className="text-xs text-gray-400 pt-2 border-t border-gray-100">
-          Technical indicators pre-computed nightly from price data. Not financial advice.
+          {L(labels, "screener_disclaimer", "Technical indicators pre-computed nightly from price data. Not financial advice.")}
         </p>
       </div>
     </>
@@ -957,7 +1008,7 @@ function TechnicalTab() {
 // Fundamental Screener Tab (preserved from original)
 // ══════════════════════════════════════════════════════════════════════════════
 
-function FundamentalTab() {
+function FundamentalTab({ labels }: { labels: Labels }) {
   const [exchange, setExchange] = useState("US");
   const [signal,   setSignal]   = useState("");
   const [sector,   setSector]   = useState("");
@@ -998,7 +1049,7 @@ function FundamentalTab() {
         <div className="max-w-7xl mx-auto px-8">
           <div className="flex items-end gap-3 flex-wrap">
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase">Exchange</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase">{L(labels, "screener_filter_exchange", "Exchange")}</label>
               <div className="flex gap-1">
                 {["US", "ASX"].map((ex) => (
                   <button key={ex} onClick={() => setExchange(ex)}
@@ -1010,26 +1061,26 @@ function FundamentalTab() {
               </div>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase">AI Signal</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase">{L(labels, "screener_fund_ai_signal", "AI Signal")}</label>
               <select value={signal} onChange={(e) => setSignal(e.target.value)}
                 className="text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700">
-                <option value="">All</option>
-                <option value="STRONG_BUY">STRONG BUY</option>
-                <option value="BUY">BUY</option>
-                <option value="NEUTRAL">NEUTRAL</option>
-                <option value="SELL">SELL</option>
+                <option value="">{L(labels, "screener_fund_all", "All")}</option>
+                <option value="STRONG_BUY">{L(labels, "signal_strong_buy", "STRONG BUY")}</option>
+                <option value="BUY">{L(labels, "signal_buy", "BUY")}</option>
+                <option value="NEUTRAL">{L(labels, "signal_neutral_chip", "NEUTRAL")}</option>
+                <option value="SELL">{L(labels, "signal_sell", "SELL")}</option>
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase">Sector</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase">{L(labels, "screener_fund_sector", "Sector")}</label>
               <select value={sector} onChange={(e) => setSector(e.target.value)}
                 className="text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700 min-w-[140px]">
-                <option value="">All sectors</option>
+                <option value="">{L(labels, "screener_fund_all_sectors", "All sectors")}</option>
                 {SECTOR_OPTIONS.filter(Boolean).map((s) => <option key={s}>{s}</option>)}
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-[10px] font-semibold text-white/70 uppercase">Min Score</label>
+              <label className="text-[10px] font-semibold text-white/70 uppercase">{L(labels, "screener_fund_min_score", "Min Score")}</label>
               <select value={minScore} onChange={(e) => setMinScore(e.target.value)}
                 className="text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700">
                 <option value="">Any</option>
@@ -1042,7 +1093,7 @@ function FundamentalTab() {
             <button onClick={runScreener} disabled={loading}
               className="px-5 py-2 rounded-xl text-xs font-bold hover:brightness-110 disabled:opacity-60 shadow-md"
               style={{ background: "#fd8412", color: "#fff" }}>
-              {loading ? "⟳ Scanning…" : "🔍 Screen"}
+              {loading ? `⟳ ${L(labels, "screener_btn_scanning", "Scanning…")}` : `🔍 ${L(labels, "screener_btn_screen", "Screen")}`}
             </button>
           </div>
         </div>
@@ -1056,17 +1107,17 @@ function FundamentalTab() {
             <table className="w-full min-w-[900px] text-xs">
               <thead>
                 <tr style={{ background: "#f8fafc", borderBottom: "2px solid #e2e8f0" }}>
-                  <th className="text-left px-3 py-2 font-bold text-gray-500 uppercase">Ticker</th>
-                  <th className="text-left px-3 py-2 font-bold text-gray-500 uppercase">Company</th>
-                  <th className="text-left px-3 py-2 font-bold text-gray-500 uppercase">Sector</th>
-                  <th className="text-center px-3 py-2 font-bold text-gray-500 uppercase">Signal</th>
-                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">Score</th>
-                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">Val</th>
-                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">Qual</th>
-                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">Growth</th>
-                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">Macro</th>
-                  <th className="text-center px-3 py-2 font-bold text-gray-500 uppercase">Analyst</th>
-                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">Upside</th>
+                  <th className="text-left px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_ticker", "Ticker")}</th>
+                  <th className="text-left px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_company", "Company")}</th>
+                  <th className="text-left px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_sector", "Sector")}</th>
+                  <th className="text-center px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_signal", "Signal")}</th>
+                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_score", "Score")}</th>
+                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_val", "Val")}</th>
+                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_qual", "Qual")}</th>
+                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_growth", "Growth")}</th>
+                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_macro", "Macro")}</th>
+                  <th className="text-center px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_analyst", "Analyst")}</th>
+                  <th className="text-right px-3 py-2 font-bold text-gray-500 uppercase">{L(labels, "screener_th_upside", "Upside")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1079,7 +1130,7 @@ function FundamentalTab() {
                     </td>
                     <td className="px-3 py-2 text-gray-700 max-w-[160px] truncate">{r.company_name ?? "—"}</td>
                     <td className="px-3 py-2 text-gray-500">{r.sector ?? "—"}</td>
-                    <td className="px-3 py-2 text-center"><SignalChip signal={r.fundamental_signal} /></td>
+                    <td className="px-3 py-2 text-center"><SignalChip signal={r.fundamental_signal} labels={labels} /></td>
                     <td className="px-3 py-2"><ScoreBar value={r.fundamental_score} /></td>
                     <td className="px-3 py-2"><ScoreBar value={r.valuation_score} /></td>
                     <td className="px-3 py-2"><ScoreBar value={r.quality_score} range={[0, 1]} /></td>
@@ -1101,7 +1152,7 @@ function FundamentalTab() {
         )}
         {!loading && rows.length === 0 && !error && (
           <div className="bg-white rounded-xl border p-12 text-center">
-            <p className="text-gray-500 text-sm">No stocks match filters. Try relaxing criteria.</p>
+            <p className="text-gray-500 text-sm">{L(labels, "screener_fund_no_match", "No stocks match filters. Try relaxing criteria.")}</p>
           </div>
         )}
       </div>

@@ -27,50 +27,63 @@ interface PageContext {
   [key: string]: unknown;
 }
 
-// ── Suggested questions per page type ────────────────────────────────────────
+// ── i18n helpers ─────────────────────────────────────────────────────────────
 
-const PAGE_SUGGESTIONS: Record<string, string[]> = {
+type CLabels = Record<string, string>;
+
+function useCopilotLabels(lang: string): CLabels {
+  const [labels, setLabels] = useState<CLabels>({});
+  useEffect(() => {
+    if (lang === "en") return;
+    fetch(`/api/i18n/labels?lang=${lang}&category=copilot`)
+      .then((r) => r.json())
+      .then(setLabels)
+      .catch(() => {});
+  }, [lang]);
+  return labels;
+}
+
+function cl(labels: CLabels, key: string, fallback: string): string {
+  return labels[key] ?? fallback;
+}
+
+// ── Suggested questions per page type (label keys + English fallbacks) ────────
+
+const PAGE_SUGGESTION_KEYS: Record<string, { key: string; en: string }[]> = {
   us_homepage: [
-    "Which US stocks have the most significant website changes today?",
-    "Give me a quick overview of the current market sentiment",
-    "Which stocks in the monitored universe have the best technicals?",
+    { key: "copilot_q_us_1", en: "Which US stocks have the most significant website changes today?" },
+    { key: "copilot_q_us_2", en: "Give me a quick overview of the current market sentiment" },
+    { key: "copilot_q_us_3", en: "Which stocks in the monitored universe have the best technicals?" },
   ],
   asx_homepage: [
-    "Which ASX blue chips have recent IR page changes?",
-    "Compare BHP and RIO — any divergence in their disclosures?",
-    "What's the overall sentiment for Australian banks today?",
+    { key: "copilot_q_us_1", en: "Which ASX blue chips have recent IR page changes?" },
+    { key: "copilot_q_us_2", en: "Compare BHP and RIO — any divergence in their disclosures?" },
+    { key: "copilot_q_us_3", en: "What's the overall sentiment for Australian banks today?" },
   ],
   watchlist: [
-    "Summarise my watchlist — which stocks need attention?",
-    "Any breaking news or critical alerts for my stocks?",
-    "Which of my watchlist stocks has the strongest technical setup?",
-    "Beyond my watchlist, any good buy opportunities from the screener?",
+    { key: "copilot_q_watch_1", en: "Summarise my watchlist — which stocks need attention?" },
+    { key: "copilot_q_watch_2", en: "Any breaking news or critical alerts for my stocks?" },
   ],
   alerts: [
-    "Explain the top alerts — what changed and why does it matter?",
-    "Which alert has the highest confidence score?",
-    "Are any of these changes related to earnings guidance?",
+    { key: "copilot_q_watch_2", en: "Explain the top alerts — what changed and why does it matter?" },
   ],
   ticker_detail: [
-    "What are the key risks for this stock right now?",
-    "Summarise the latest IR page changes detected",
-    "What do the technicals say about entry points?",
+    { key: "copilot_q_ticker_1", en: "What are the key risks for this stock right now?" },
+    { key: "copilot_q_ticker_2", en: "Summarise the latest IR page changes detected" },
+    { key: "copilot_q_ticker_3", en: "What do the technicals say about entry points?" },
   ],
   ticker_intel: [
-    "Compare the TA and FA signals — are they aligned?",
-    "What's the AI's overall view on this stock?",
-    "Run me through the key chart patterns",
+    { key: "copilot_q_intel_1", en: "Compare the TA and FA signals — are they aligned?" },
+    { key: "copilot_q_intel_2", en: "What's the AI's overall view on this stock?" },
+    { key: "copilot_q_intel_3", en: "Run me through the key chart patterns" },
   ],
   screener: [
-    "Which stocks have the strongest buy setup right now?",
-    "Show me oversold stocks with high volume — potential bounce plays",
-    "Compare the top US gainers vs ASX gainers today",
-    "Any stocks near 52-week lows with bullish MACD?",
+    { key: "copilot_q_screener_1", en: "Which stocks have the strongest buy setup right now?" },
+    { key: "copilot_q_screener_2", en: "Show me oversold stocks with high volume — potential bounce plays" },
   ],
   general: [
-    "Which stocks should I buy today based on the screener?",
-    "Which stocks are showing the strongest signals today?",
-    "Show me oversold US stocks with bullish momentum",
+    { key: "copilot_q_screener_1", en: "Which stocks should I buy today based on the screener?" },
+    { key: "copilot_q_us_3", en: "Which stocks are showing the strongest signals today?" },
   ],
 };
 
@@ -102,6 +115,7 @@ function persistState(state: { messages: Message[]; sessionId: string | null; op
 
 export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
   const pathname = usePathname();
+  const copilotLabels = useCopilotLabels(lang);
 
   // Restore state from sessionStorage on mount
   const [hydrated, setHydrated] = useState(false);
@@ -323,7 +337,8 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
     try { sessionStorage.removeItem(STORAGE_KEY); } catch { /* ok */ }
   }
 
-  const suggestions = PAGE_SUGGESTIONS[pageCtx?.page_type ?? "general"] ?? PAGE_SUGGESTIONS.general;
+  const suggestionDefs = PAGE_SUGGESTION_KEYS[pageCtx?.page_type ?? "general"] ?? PAGE_SUGGESTION_KEYS.general;
+  const suggestions = suggestionDefs.map((s) => cl(copilotLabels, s.key, s.en));
   const isEmpty     = messages.length === 0;
   const pageLabel   = pageCtx?.page_type?.replace(/_/g, " ") ?? "loading…";
 
@@ -425,8 +440,16 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
         <div className="px-4 py-1.5 text-xs text-gray-400 bg-gray-50 border-b border-gray-100 flex items-center gap-1.5 flex-shrink-0">
           <span className="w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0" />
           <span className="truncate">
-            {pageCtx.description?.slice(0, 80)}
-            {(pageCtx.description?.length ?? 0) > 80 ? "…" : ""}
+            {(() => {
+              // For ticker pages, build a localized context line
+              if (pageCtx.symbol && pageCtx.company) {
+                const viewing = cl(copilotLabels, "copilot_viewing", "Viewing");
+                const on = cl(copilotLabels, "copilot_on", "on");
+                return `${viewing} ${pageCtx.symbol} (${pageCtx.company}) ${on} ${pageCtx.exchange ?? ""}`;
+              }
+              const desc = pageCtx.description ?? "";
+              return desc.length > 80 ? desc.slice(0, 80) + "…" : desc;
+            })()}
           </span>
         </div>
       )}
@@ -438,14 +461,12 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
           <div className="space-y-3">
             <div className="text-center py-3">
               <p className="text-gray-500 text-sm">
-                {lang === "zh"
-                  ? "我是您的AI研究助手。我了解您正在查看的页面内容。"
-                  : "I'm your AI research co-pilot. I know what you're looking at on this page."}
+                {cl(copilotLabels, "copilot_intro", "I'm your AI research co-pilot. I know what you're looking at on this page.")}
               </p>
             </div>
             <div className="space-y-1.5">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">
-                {lang === "zh" ? "试试问" : "Try asking"}
+                {cl(copilotLabels, "copilot_try_asking", "Try asking")}
               </p>
               {suggestions.map((q, i) => (
                 <button
@@ -514,11 +535,7 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
             onKeyDown={handleKeyDown}
             rows={2}
             disabled={loading}
-            placeholder={
-              lang === "zh"
-                ? "问任何问题… (Enter发送)"
-                : "Ask anything… (Enter to send)"
-            }
+            placeholder={cl(copilotLabels, "copilot_placeholder", "Ask anything… (Enter to send)")}
             className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:border-[#2e8b57] focus:ring-1 focus:ring-[#2e8b57] disabled:opacity-50 transition-colors"
             style={{ maxHeight: "80px", lineHeight: "1.4" }}
           />
@@ -541,7 +558,7 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
           </button>
         </div>
         <p className="text-[10px] text-gray-400 mt-1 px-1">
-          {lang === "zh" ? "仅供参考，不构成投资建议" : "For research only — not financial advice"}
+          {cl(copilotLabels, "copilot_disclaimer", "For research only — not financial advice")}
         </p>
       </div>
     </div>

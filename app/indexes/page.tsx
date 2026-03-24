@@ -3,6 +3,25 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 
+type Labels = Record<string, string>;
+
+function useLabels(): Labels {
+  const [labels, setLabels] = useState<Labels>({});
+  useEffect(() => {
+    const lang = getLangFromCookie();
+    if (lang === "en") return;
+    fetch(`/api/i18n/labels?lang=${lang}&category=index,screener,enum`)
+      .then((r) => r.json())
+      .then(setLabels)
+      .catch(() => {});
+  }, []);
+  return labels;
+}
+
+function ll(labels: Labels, key: string, fallback: string): string {
+  return labels[key] ?? fallback;
+}
+
 interface IndexRow {
   ticker: string;
   name: string;
@@ -71,24 +90,24 @@ function RsiChip({ rsi }: { rsi: number | null }) {
   );
 }
 
-function MacdChip({ trend }: { trend: string | null }) {
+function MacdChip({ trend, labels }: { trend: string | null; labels?: Labels }) {
   if (!trend) return <span className="text-gray-300 text-xs">—</span>;
   const bull = trend === "BULLISH";
   return (
     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
       style={{ background: bull ? "#dcfce7" : "#fef2f2", color: bull ? "#166534" : "#991b1b" }}>
-      {bull ? "BULL" : "BEAR"}
+      {bull ? ll(labels ?? {}, "signal_bullish_chip", "BULL") : ll(labels ?? {}, "signal_bearish_chip", "BEAR")}
     </span>
   );
 }
 
-function TrendChip({ sma50, sma200 }: { sma50: number | null; sma200: number | null }) {
+function TrendChip({ sma50, sma200, labels }: { sma50: number | null; sma200: number | null; labels?: Labels }) {
   if (!sma50 || !sma200) return <span className="text-gray-300 text-xs">—</span>;
   const bull = sma50 > sma200;
   return (
     <span className="text-[10px] font-bold px-2 py-0.5 rounded"
       style={{ background: bull ? "#dcfce7" : "#fef2f2", color: bull ? "#166534" : "#991b1b" }}>
-      {bull ? "▲ Golden" : "▼ Death"}
+      {bull ? `▲ ${ll(labels ?? {}, "screener_filter_golden", "Golden")}` : `▼ ${ll(labels ?? {}, "screener_filter_death", "Death")}`}
     </span>
   );
 }
@@ -96,6 +115,7 @@ function TrendChip({ sma50, sma200 }: { sma50: number | null; sma200: number | n
 export default function IndexesPage() {
   const [data, setData] = useState<IndexRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const labels = useLabels();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -136,18 +156,18 @@ export default function IndexesPage() {
             className="text-3xl font-bold text-white drop-shadow-sm"
             style={{ fontFamily: "var(--font-rajdhani)" }}
           >
-            Global Market Indexes
+            {ll(labels, "index_title", "Global Market Indexes")}
           </h1>
           <p className="text-white/80 text-sm">
-            16 major indexes across 4 regions — daily OHLCV with RSI, MACD, SMA cross analysis
+            {ll(labels, "index_desc", "16 major indexes across 4 regions — daily OHLCV with RSI, MACD, SMA cross analysis")}
           </p>
           {!loading && data.length > 0 && (
             <div className="flex gap-4 text-sm">
               <span className="bg-white/20 text-white px-3 py-1 rounded-full font-semibold">
-                {totalUp} up
+                {totalUp} {ll(labels, "index_up", "up")}
               </span>
               <span className="bg-white/20 text-white px-3 py-1 rounded-full font-semibold">
-                {totalDown} down
+                {totalDown} {ll(labels, "index_down", "down")}
               </span>
             </div>
           )}
@@ -170,8 +190,8 @@ export default function IndexesPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
-                        <th className="text-left px-4 py-2">Index</th>
-                        <th className="text-right px-3 py-2">Level</th>
+                        <th className="text-left px-4 py-2">{ll(labels, "index_th_index", "Index")}</th>
+                        <th className="text-right px-3 py-2">{ll(labels, "index_th_level", "Level")}</th>
                         <th className="text-right px-3 py-2">1D</th>
                         <th className="text-right px-3 py-2">5D</th>
                         <th className="text-right px-3 py-2">1M</th>
@@ -179,8 +199,8 @@ export default function IndexesPage() {
                         <th className="text-right px-3 py-2">1Y</th>
                         <th className="text-center px-3 py-2">RSI</th>
                         <th className="text-center px-3 py-2">MACD</th>
-                        <th className="text-center px-3 py-2">Trend</th>
-                        <th className="text-right px-3 py-2">vs 52w High</th>
+                        <th className="text-center px-3 py-2">{ll(labels, "index_th_trend", "Trend")}</th>
+                        <th className="text-right px-3 py-2">{ll(labels, "index_th_52w", "vs 52w High")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -202,8 +222,8 @@ export default function IndexesPage() {
                           <td className="text-right px-3 py-2"><ChgCell val={idx.change_3m_pct} /></td>
                           <td className="text-right px-3 py-2"><ChgCell val={idx.change_1y_pct} /></td>
                           <td className="text-center px-3 py-2"><RsiChip rsi={idx.rsi_14} /></td>
-                          <td className="text-center px-3 py-2"><MacdChip trend={idx.macd_trend} /></td>
-                          <td className="text-center px-3 py-2"><TrendChip sma50={idx.sma_50} sma200={idx.sma_200} /></td>
+                          <td className="text-center px-3 py-2"><MacdChip trend={idx.macd_trend} labels={labels} /></td>
+                          <td className="text-center px-3 py-2"><TrendChip sma50={idx.sma_50} sma200={idx.sma_200} labels={labels} /></td>
                           <td className="text-right px-3 py-2">
                             {idx.pct_from_52w_high !== null ? (
                               <span className="text-xs tabular-nums text-gray-600">
@@ -222,7 +242,7 @@ export default function IndexesPage() {
         )}
 
         <div className="mt-6 text-xs text-gray-400 text-center">
-          Data as of market close. RSI, MACD, and trend indicators computed from daily OHLCV.
+          {ll(labels, "index_disclaimer", "Data as of market close. RSI, MACD, and trend indicators computed from daily OHLCV.")}
         </div>
       </div>
     </div>

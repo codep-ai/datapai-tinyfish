@@ -9,9 +9,10 @@
  * Body: { planId: "individual" | "professional" | "business", billing: "monthly" | "annual" }
  */
 
+import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { getAuthUser } from "@/lib/auth";
-import { getUserById, updateUserStripeCustomer } from "@/lib/db";
+import { getUserById, updateUserStripeCustomer, getPricingTier } from "@/lib/db";
 import { stripe, PLANS } from "@/lib/stripe";
 
 export const dynamic = "force-dynamic";
@@ -37,7 +38,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid plan" }, { status: 400 });
   }
 
-  const priceId = billing === "annual" ? plan.stripePriceAnnual : plan.stripePriceMonthly;
+  // Look up region-specific Stripe price ID from DB, fallback to env var
+  const lang = (await cookies()).get("lang")?.value ?? "en";
+  const dbTier = await getPricingTier(planId, lang);
+  const dbPriceId = billing === "annual"
+    ? dbTier?.stripe_price_annual
+    : dbTier?.stripe_price_monthly;
+  const envPriceId = billing === "annual" ? plan.stripePriceAnnual : plan.stripePriceMonthly;
+  const priceId = dbPriceId || envPriceId;
+  const trialDays = dbTier?.trial_days ?? plan.trialDays;
+
   if (!priceId) {
     return NextResponse.json(
       { error: "Stripe price not configured for this plan — contact support" },
@@ -65,12 +75,12 @@ export async function POST(req: NextRequest) {
     payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
     subscription_data: {
-      trial_period_days: plan.trialDays > 0 ? plan.trialDays : undefined,
-      metadata: { datapai_user_id: user.userId, plan: planId },
+      trial_period_days: trialDays > 0 ? trialDays : undefined,
+      metadata: { datapai_user_id: user.userId, plan: planId, region: lang },
     },
     success_url: `${APP_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url:  `${APP_URL}/pricing`,
-    metadata: { datapai_user_id: user.userId, plan: planId },
+    metadata: { datapai_user_id: user.userId, plan: planId, region: lang },
   });
 
   return NextResponse.json({ url: session.url });

@@ -18,6 +18,15 @@ import StockViewToggle from "../components/StockViewToggle";
 
 export const dynamic = "force-dynamic";
 
+/** Translate BUY/SELL/HOLD/STRONG_BUY/STRONG_SELL direction labels */
+const DIR_LABEL_KEY: Record<string, string> = {
+  BUY: "signal_buy", SELL: "signal_sell", HOLD: "signal_hold",
+  STRONG_BUY: "signal_strong_buy", STRONG_SELL: "signal_strong_sell",
+};
+function dirLabel(dir: string, labels: Record<string, string>): string {
+  return labels[DIR_LABEL_KEY[dir] ?? ""] ?? dir.replace(/_/g, " ");
+}
+
 export default async function WatchlistPage() {
   const user = await getAuthUser();
   if (!user) {
@@ -175,25 +184,25 @@ export default async function WatchlistPage() {
                   return (
                     <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-5">
                       <div className="text-center p-3 rounded-xl bg-green-50 border border-green-100 cursor-default group relative"
-                        title={buyStocks.length ? `BUY: ${buyStocks.join(", ")}` : "No BUY signals"}>
+                        title={buyStocks.length ? `${dirLabel("BUY", labels)}: ${buyStocks.join(", ")}` : ""}>
                         <div className="text-2xl font-bold text-green-700">{buyCount}</div>
-                        <div className="text-xs text-green-600 font-medium">BUY</div>
+                        <div className="text-xs text-green-600 font-medium">{dirLabel("BUY", labels)}</div>
                         {buyStocks.length > 0 && (
                           <div className="text-[10px] text-green-500 mt-1 leading-tight">{buyStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-green-800 mr-1">{s}</Link>)}</div>
                         )}
                       </div>
                       <div className="text-center p-3 rounded-xl bg-gray-50 border border-gray-100 cursor-default"
-                        title={holdStocks.length ? `HOLD: ${holdStocks.join(", ")}` : "No HOLD signals"}>
+                        title={holdStocks.length ? `${dirLabel("HOLD", labels)}: ${holdStocks.join(", ")}` : ""}>
                         <div className="text-2xl font-bold text-gray-600">{holdCount}</div>
-                        <div className="text-xs text-gray-500 font-medium">HOLD</div>
+                        <div className="text-xs text-gray-500 font-medium">{dirLabel("HOLD", labels)}</div>
                         {holdStocks.length > 0 && (
                           <div className="text-[10px] text-gray-400 mt-1 leading-tight">{holdStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-gray-700 mr-1">{s}</Link>)}</div>
                         )}
                       </div>
                       <div className="text-center p-3 rounded-xl bg-red-50 border border-red-100 cursor-default"
-                        title={sellStocks.length ? `SELL: ${sellStocks.join(", ")}` : "No SELL signals"}>
+                        title={sellStocks.length ? `${dirLabel("SELL", labels)}: ${sellStocks.join(", ")}` : ""}>
                         <div className="text-2xl font-bold text-red-700">{sellCount}</div>
-                        <div className="text-xs text-red-600 font-medium">SELL</div>
+                        <div className="text-xs text-red-600 font-medium">{dirLabel("SELL", labels)}</div>
                         {sellStocks.length > 0 && (
                           <div className="text-[10px] text-red-500 mt-1 leading-tight">{sellStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-red-800 mr-1">{s}</Link>)}</div>
                         )}
@@ -365,7 +374,7 @@ export default async function WatchlistPage() {
                             <div className="flex items-center gap-1.5">
                               <span className="text-[10px]">{synth.direction === "BUY" || synth.direction === "STRONG_BUY" ? "🟢" : synth.direction === "SELL" || synth.direction === "STRONG_SELL" ? "🔴" : "🟡"}</span>
                               <span className="text-[10px] font-bold uppercase" style={{ color: synth.direction === "BUY" || synth.direction === "STRONG_BUY" ? "#166534" : synth.direction === "SELL" || synth.direction === "STRONG_SELL" ? "#991b1b" : "#6b7280" }}>
-                                {synth.direction.replace(/_/g, " ")}
+                                {dirLabel(synth.direction, labels)}
                               </span>
                               <span className="text-[10px] text-gray-400">{Number(synth.confidence)}%</span>
                             </div>
@@ -444,7 +453,7 @@ export default async function WatchlistPage() {
                             <td className="px-4 py-3 text-center text-xs">
                               {synth ? (
                                 <span className="font-bold" style={{ color: synthColor }}>
-                                  {synth.direction.replace(/_/g, " ")} {Number(synth.confidence)}%
+                                  {dirLabel(synth.direction, labels)} {Number(synth.confidence)}%
                                 </span>
                               ) : (
                                 <span className="text-gray-300">—</span>

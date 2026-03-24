@@ -5,6 +5,7 @@
  * The copilot calls this on page navigation to learn what the user is looking at.
  */
 
+import { cookies } from "next/headers";
 import { getAuthUser } from "@/lib/auth";
 import {
   getWatchlist,
@@ -79,6 +80,7 @@ async function fetchScreenerHighlights(): Promise<string[]> {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const page = searchParams.get("page") ?? "/";
+  const lang = (await cookies()).get("lang")?.value ?? "en";
 
   let user: { userId: string; email: string } | null = null;
   try {
@@ -227,7 +229,7 @@ export async function GET(req: Request) {
     const tickerMatch = page.match(/^\/ticker\/([A-Z0-9.]+)/i);
     if (tickerMatch) {
       const sym = tickerMatch[1].toUpperCase();
-      const tickerDir = await lookupStock(sym);
+      const tickerDir = await lookupStock(sym, lang);
       const exchange = tickerDir?.exchange ?? "US";
 
       const [analysis, taSignal, synthesis] = await Promise.all([

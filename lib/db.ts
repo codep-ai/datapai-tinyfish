@@ -1034,3 +1034,69 @@ export async function getAllWatchlistTickers(): Promise<WatchlistItem[]> {
     []
   );
 }
+
+// ─── Regional Pricing ─────────────────────────────────────────────────────
+
+export interface PricingTier {
+  tier_id: string;
+  region: string;
+  currency: string;
+  currency_symbol: string;
+  monthly_price: number;
+  annual_price: number;
+  stripe_price_monthly: string | null;
+  stripe_price_annual: string | null;
+  trial_days: number;
+}
+
+/** Get pricing tiers for a region (lang code). Falls back to 'en' if region not found. */
+export async function getPricingTiers(region: string): Promise<PricingTier[]> {
+  let rows = await q<PricingTier>(
+    `SELECT tier_id, region, currency, currency_symbol,
+            monthly_price::float, annual_price::float,
+            stripe_price_monthly, stripe_price_annual, trial_days
+     FROM datapai.sys_pricing_tiers
+     WHERE region = $1 AND is_active = true
+     ORDER BY monthly_price`,
+    [region]
+  );
+  // Fallback to English if no rows for this region
+  if (rows.length === 0 && region !== "en") {
+    rows = await q<PricingTier>(
+      `SELECT tier_id, region, currency, currency_symbol,
+              monthly_price::float, annual_price::float,
+              stripe_price_monthly, stripe_price_annual, trial_days
+       FROM datapai.sys_pricing_tiers
+       WHERE region = 'en' AND is_active = true
+       ORDER BY monthly_price`,
+      []
+    );
+  }
+  return rows;
+}
+
+/** Get a single pricing tier for checkout. */
+export async function getPricingTier(tierId: string, region: string): Promise<PricingTier | null> {
+  const rows = await q<PricingTier>(
+    `SELECT tier_id, region, currency, currency_symbol,
+            monthly_price::float, annual_price::float,
+            stripe_price_monthly, stripe_price_annual, trial_days
+     FROM datapai.sys_pricing_tiers
+     WHERE tier_id = $1 AND region = $2 AND is_active = true`,
+    [tierId, region]
+  );
+  if (rows[0]) return rows[0];
+  // Fallback to en
+  if (region !== "en") {
+    const fallback = await q<PricingTier>(
+      `SELECT tier_id, region, currency, currency_symbol,
+              monthly_price::float, annual_price::float,
+              stripe_price_monthly, stripe_price_annual, trial_days
+       FROM datapai.sys_pricing_tiers
+       WHERE tier_id = $1 AND region = 'en' AND is_active = true`,
+      [tierId]
+    );
+    return fallback[0] ?? null;
+  }
+  return null;
+}
