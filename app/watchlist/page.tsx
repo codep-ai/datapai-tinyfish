@@ -73,7 +73,7 @@ export default async function WatchlistPage() {
             <span className="text-white font-bold">{t(labels, "hero_stocks_covered")}</span>{" "}
             {t(labels, "hero_covered_label")}
           </p>
-          <TickerSearch showWatchlistAction analyseLabel={t(labels, "analyse_btn")} lang={lang} />
+          <TickerSearch showWatchlistAction placeholder={t(labels, "intel_search")} analyseLabel={t(labels, "analyse_btn")} lang={lang} />
 
           <div className="flex gap-3 items-center flex-wrap">
             <Link
