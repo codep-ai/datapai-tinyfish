@@ -108,12 +108,12 @@ export default async function AsxPage() {
 
             const gridView = (
               <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                {sorted.map((t) => {
-                  const analysis = alertMap[t.symbol];
+                {sorted.map((tk) => {
+                  const analysis = alertMap[tk.symbol];
                   const hasAlert = !!analysis;
-                  const hasSnapshot = scannedSet.has(t.symbol);
+                  const hasSnapshot = scannedSet.has(tk.symbol);
                   const confidence = analysis?.confidence ?? 0;
-                  const price = priceMap[t.symbol];
+                  const price = priceMap[tk.symbol];
                   const closeNum = price ? Number(price.close) : null;
                   const changePct = price ? Number(price.change_pct) : null;
                   const isUp = changePct !== null && !isNaN(changePct) && changePct >= 0;
@@ -123,18 +123,18 @@ export default async function AsxPage() {
                     ? { background: "#f0fdf4", border: "1.5px solid #86efac" }
                     : { background: "#ffffff", border: "1px solid #e5e7eb" };
                   return (
-                    <div key={t.symbol} className="relative rounded-xl px-4 pt-6 pb-4 transition-all duration-200 group shadow-sm hover:-translate-y-0.5" style={cardStyle}>
+                    <div key={tk.symbol} className="relative rounded-xl px-4 pt-6 pb-4 transition-all duration-200 group shadow-sm hover:-translate-y-0.5" style={cardStyle}>
                       {hasAlert && (
                         <span className="absolute -top-2.5 -right-2.5 text-xs font-bold px-2 py-0.5 rounded-full shadow" style={{ background: "#2e8b57", color: "#fff" }}>
                           {analysis.alert_score > 0 ? "+" : ""}{analysis.alert_score.toFixed(1)}
                         </span>
                       )}
                       <div className="absolute top-1.5 right-1.5 z-10">
-                        <WatchlistButton compact symbol={t.symbol} exchange="ASX" name={t.name} />
+                        <WatchlistButton compact symbol={tk.symbol} exchange="ASX" name={tk.name} />
                       </div>
-                      <Link href={`/ticker/${t.symbol}`} className="block pr-6">
-                        <div className="font-bold text-base text-[#003087] group-hover:opacity-80">{t.symbol}</div>
-                        <div className="text-gray-400 text-xs mt-0.5 truncate">{t.name}</div>
+                      <Link href={`/ticker/${tk.symbol}`} className="block pr-6">
+                        <div className="font-bold text-base text-[#003087] group-hover:opacity-80">{tk.symbol}</div>
+                        <div className="text-gray-400 text-xs mt-0.5 truncate">{tk.name}</div>
                         <div className="mt-2 space-y-0.5">
                           {price && closeNum !== null && !isNaN(closeNum) ? (
                             <>
@@ -185,20 +185,20 @@ export default async function AsxPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sorted.map((t, idx) => {
-                      const price = priceMap[t.symbol];
+                    {sorted.map((tk, idx) => {
+                      const price = priceMap[tk.symbol];
                       const closeNum = price ? Number(price.close) : null;
                       const changePct = price ? Number(price.change_pct) : null;
                       const isUp = changePct !== null && !isNaN(changePct) && changePct >= 0;
-                      const analysis = alertMap[t.symbol];
+                      const analysis = alertMap[tk.symbol];
                       const rowBg = changePct !== null && !isNaN(changePct) && changePct < 0 ? "#fef2f2" : changePct !== null && !isNaN(changePct) && changePct >= 0 ? "#f0fdf4" : "#fff";
                       return (
-                        <tr key={t.symbol} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors" style={{ background: rowBg }}>
+                        <tr key={tk.symbol} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-3 text-gray-400 text-xs">{idx + 1}</td>
                           <td className="px-4 py-3">
-                            <Link href={`/ticker/${t.symbol}`} className="font-bold hover:opacity-80" style={{ color: "#003087" }}>{t.symbol}</Link>
+                            <Link href={`/ticker/${tk.symbol}`} className="font-bold hover:opacity-80" style={{ color: "#003087" }}>{tk.symbol}</Link>
                           </td>
-                          <td className="px-4 py-3 text-gray-500 truncate max-w-[200px]">{t.name}</td>
+                          <td className="px-4 py-3 text-gray-500 truncate max-w-[200px]">{tk.name}</td>
                           <td className="px-4 py-3 text-right font-semibold text-gray-700">
                             {closeNum !== null && !isNaN(closeNum) ? `A$${closeNum.toFixed(2)}` : "—"}
                           </td>
@@ -214,7 +214,7 @@ export default async function AsxPage() {
                             )}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            <WatchlistButton compact symbol={t.symbol} exchange="ASX" name={t.name} />
+                            <WatchlistButton compact symbol={tk.symbol} exchange="ASX" name={tk.name} />
                           </td>
                         </tr>
                       );
