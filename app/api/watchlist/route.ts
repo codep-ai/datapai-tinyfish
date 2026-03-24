@@ -7,9 +7,8 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getWatchlist, addToWatchlist, getAlertSummaryMap } from "@/lib/db";
+import { getWatchlist, addToWatchlist, getAlertSummaryMap, lookupStock } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
-import { UNIVERSE_ALL } from "@/lib/universe";
 import { checkWatchlistLimit } from "@/lib/plan-limits";
 
 export const dynamic = "force-dynamic";
@@ -56,10 +55,10 @@ export async function POST(req: NextRequest) {
 
   const sym = symbol.toUpperCase();
 
-  // Auto-fill name / exchange from known universe if not provided
-  const known = UNIVERSE_ALL.find((t) => t.symbol === sym);
-  const resolvedExchange = exchange ?? known?.exchange ?? "US";
-  const resolvedName = name ?? known?.name ?? null;
+  // Auto-fill name / exchange from DB if not provided
+  const dirEntry = (!exchange || !name) ? await lookupStock(sym) : null;
+  const resolvedExchange = exchange ?? dirEntry?.exchange ?? "US";
+  const resolvedName = name ?? dirEntry?.name ?? null;
 
   await addToWatchlist(user.userId, sym, resolvedExchange, resolvedName);
 

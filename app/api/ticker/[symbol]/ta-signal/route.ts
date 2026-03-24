@@ -14,7 +14,6 @@
  */
 
 import { NextResponse } from "next/server";
-import { UNIVERSE_ALL } from "@/lib/universe";
 import { getCachedTaSignal, upsertTaSignal, lookupStock } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import { checkAiSignalAccess } from "@/lib/plan-limits";
@@ -95,15 +94,11 @@ export async function POST(
   }
 
   // ── 3. Resolve exchange/suffix ────────────────────────────────────────────
-  // Check hardcoded universe first, then fall back to DB stock_directory
-  const tickerInfo = UNIVERSE_ALL.find((t) => t.symbol === symbol);
-  let exchange = tickerInfo?.exchange ?? "";
-  if (!exchange) {
-    try {
-      const dbEntry = await lookupStock(symbol);
-      exchange = dbEntry?.exchange ?? "US";
-    } catch { exchange = "US"; }
-  }
+  let exchange = "";
+  try {
+    const dbEntry = await lookupStock(symbol);
+    exchange = dbEntry?.exchange ?? "US";
+  } catch { exchange = "US"; }
   const suffix = exchange === "ASX" ? ".AX" : "";
 
   // ── 4. Call Python backend ────────────────────────────────────────────────

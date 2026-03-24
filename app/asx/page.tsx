@@ -1,7 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ASX_UNIVERSE } from "@/lib/universe";
-import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getLatestPricesForWatchlist, getLocalizedNames } from "@/lib/db";
+import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getLatestPricesForWatchlist, getActiveStocks } from "@/lib/db";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
 import { t } from "@/lib/translations";
@@ -15,16 +14,15 @@ export const dynamic = "force-dynamic";
 export default async function AsxPage() {
   const lang = await getLang();
   const labels = await loadTranslations(lang);
-  const [alertMap, scannedSet, recentRuns, priceMap, nameMap] = await Promise.all([
+  const stocks = await getActiveStocks("ASX", lang, 30);
+  const [alertMap, scannedSet, recentRuns, priceMap] = await Promise.all([
     getAlertSummaryMap(),
     getScannedTickerSet(),
     getRecentRuns(3),
-    getLatestPricesForWatchlist(ASX_UNIVERSE.map((u) => ({ symbol: u.symbol, exchange: "ASX" }))),
-    getLocalizedNames(ASX_UNIVERSE.map((u) => u.symbol), "ASX", lang),
+    getLatestPricesForWatchlist(stocks.map((s) => ({ symbol: s.symbol, exchange: "ASX" }))),
   ]);
-  const localizedUniverse = ASX_UNIVERSE.map((u) => ({ ...u, name: nameMap[u.symbol] ?? u.name }));
   const lastRun = recentRuns[0] ?? null;
-  const asxAlertCount = localizedUniverse.filter((u) => !!alertMap[u.symbol]).length;
+  const asxAlertCount = stocks.filter((s) => !!alertMap[s.symbol]).length;
 
   return (
     <div>
@@ -102,7 +100,7 @@ export default async function AsxPage() {
           </div>
 
           {(() => {
-            const sorted = [...localizedUniverse].sort((a, b) => {
+            const sorted = [...stocks].sort((a, b) => {
               const pctA = priceMap[a.symbol] ? Number(priceMap[a.symbol].change_pct) : -Infinity;
               const pctB = priceMap[b.symbol] ? Number(priceMap[b.symbol].change_pct) : -Infinity;
               return (isNaN(pctB) ? -Infinity : pctB) - (isNaN(pctA) ? -Infinity : pctA);

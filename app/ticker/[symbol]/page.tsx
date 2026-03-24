@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
+// DB is the single source of truth for stock info — no hardcoded arrays
 import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, getLatestAnalysisWithAgentContent, getTickerScanCount, lookupStock, getLatestMaterialEvents } from "@/lib/db";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
@@ -84,13 +84,14 @@ export default async function TickerPage({
   const lang = await getLang();
   const labels = await loadTranslations(lang);
 
-  // Resolve display info regardless of universe membership
-  let ticker: typeof UNIVERSE_ALL[number] | undefined = UNIVERSE_ALL.find((t) => t.symbol === sym);
+  // Resolve display info from DB (single source of truth)
   const dirEntry = await lookupStock(sym, lang);
-  const exchangeLabel = (ticker?.exchange ?? dirEntry?.exchange ?? "NASDAQ") as string;
-  // Prefer localized name from DB, fallback to hardcoded universe, then symbol
-  const companyName = dirEntry?.name ?? ticker?.name ?? sym;
-  const defaultUrl = ticker?.url ?? resolveTickerUrl(sym, exchangeLabel);
+  const exchangeLabel = (dirEntry?.exchange ?? "US") as string;
+  const companyName = dirEntry?.name ?? sym;
+  const defaultUrl = resolveTickerUrl(sym, exchangeLabel);
+  // Construct ticker-like object for downstream compatibility
+  let ticker: { symbol: string; name: string; url: string; exchange: string } | null =
+    dirEntry ? { symbol: sym, name: companyName, url: defaultUrl, exchange: exchangeLabel } : null;
 
   // ── Market Index: skip scan check, render index detail page ──────────────
   const isIndex = exchangeLabel === "INDEX";
@@ -163,7 +164,7 @@ export default async function TickerPage({
         symbol: sym,
         name: companyName,
         url: existingSnaps[0].url,
-        exchange: exchangeLabel as "NASDAQ" | "NYSE" | "ASX",
+        exchange: exchangeLabel,
       };
     } else {
       // No data yet — show "not monitored" page with prominent Scan button
@@ -245,21 +246,12 @@ export default async function TickerPage({
               </p>
             </div>
 
-            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm text-sm text-gray-500">
-              <p className="font-semibold text-gray-700 mb-3">Monitored universe</p>
-              <div className="flex flex-wrap gap-2">
-                {UNIVERSE_ALL.map((t) => (
-                  <Link
-                    key={t.symbol}
-                    href={`/ticker/${t.symbol}`}
-                    className="px-3 py-1 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5"
-                    style={t.exchange === "ASX"
-                      ? { background: "#eff6ff", color: "#003087", border: "1px solid #bfdbfe" }
-                      : { background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }}
-                  >
-                    {t.symbol}
-                  </Link>
-                ))}
+            <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm text-sm text-gray-500 text-center">
+              <p className="font-semibold text-gray-700 mb-3">{t(labels, "back_to_home")}</p>
+              <div className="flex gap-3 justify-center">
+                <Link href="/" className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-brand hover:opacity-90">🇺🇸 US</Link>
+                <Link href="/asx" className="px-4 py-2 rounded-lg text-sm font-bold text-white" style={{ background: "#003087" }}>🇦🇺 ASX</Link>
+                <Link href="/vietnam" className="px-4 py-2 rounded-lg text-sm font-bold text-white" style={{ background: "#c8102e" }}>🇻🇳 HOSE</Link>
               </div>
             </div>
           </div>

@@ -11,8 +11,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { UNIVERSE_ALL } from "@/lib/universe";
-import { getTickerSnapshots, getLatestAnalysisWithAgentContent, lookupStock, getCachedTaSignal } from "@/lib/db";
+import { getTickerSnapshots, getLatestAnalysisWithAgentContent, lookupStock, getCachedTaSignal, getActiveStocks } from "@/lib/db";
 import { fetchPrices } from "@/lib/price";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
@@ -31,10 +30,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { symbol } = await params;
   const sym = decodeURIComponent(symbol).toUpperCase();
-  const ticker = UNIVERSE_ALL.find((t) => t.symbol === sym);
+  const dirEntry = await lookupStock(sym);
   return {
     title: `${sym} AI analysis — TinyFish × DataP.ai`,
-    description: `Real-time AI technical signal, chart vision and fundamental analysis for ${ticker?.name ?? sym}.`,
+    description: `Real-time AI technical signal, chart vision and fundamental analysis for ${dirEntry?.name ?? sym}.`,
   };
 }
 
@@ -52,11 +51,9 @@ export default async function IntelPage({
   const lang = await getLang();
   const labels = await loadTranslations(lang);
 
-  const ticker = UNIVERSE_ALL.find((tk) => tk.symbol === sym);
-  // Always look up from DB so we get sector for Market Intel (even for UNIVERSE_ALL tickers)
-  const dirEntry = await lookupStock(sym);
-  const exchangeLabel = (ticker?.exchange ?? dirEntry?.exchange ?? "NASDAQ") as string;
-  const companyName = ticker?.name ?? dirEntry?.name ?? sym;
+  const dirEntry = await lookupStock(sym, lang);
+  const exchangeLabel = (dirEntry?.exchange ?? "NASDAQ") as string;
+  const companyName = dirEntry?.name ?? sym;
 
   const [snapshots, signalSource, cachedTaSignal, prices] = await Promise.all([
     getTickerSnapshots(sym, 1),
@@ -238,24 +235,38 @@ export default async function IntelPage({
         </div>
 
         {/* Bottom nav between stocks */}
-        <div className="max-w-5xl mx-auto px-8 pb-16">
-          <div className="border-t border-gray-200 pt-8">
-            <p className="text-gray-400 text-sm mb-4">{t(labels,"stock_other")}</p>
-            <div className="flex flex-wrap gap-2">
-              {UNIVERSE_ALL.filter((tk) => tk.symbol !== sym).slice(0, 18).map((tk) => (
-                <Link
-                  key={tk.symbol}
-                  href={`/ticker/${tk.symbol}/intel`}
-                  className="px-3 py-1 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5"
-                  style={tk.exchange === "ASX"
-                    ? { background: "rgba(59,130,246,0.1)", color: "#2563eb", border: "1px solid rgba(59,130,246,0.25)" }
-                    : { background: "rgba(46,139,87,0.1)", color: "#166534", border: "1px solid rgba(46,139,87,0.25)" }}
-                >
-                  {tk.symbol}
-                </Link>
-              ))}
-            </div>
-          </div>
+        <BottomStockNav sym={sym} lang={lang} labels={labels} />
+      </div>
+    </div>
+  );
+}
+
+/** Server component: loads other stocks from DB for bottom navigation */
+async function BottomStockNav({ sym, lang, labels }: { sym: string; lang: string; labels: Record<string, string> }) {
+  const [nasdaq, nyse, asx] = await Promise.all([
+    getActiveStocks("NASDAQ", lang, 10),
+    getActiveStocks("NYSE", lang, 10),
+    getActiveStocks("ASX", lang, 10),
+  ]);
+  const otherStocks = [...nasdaq, ...nyse, ...asx].filter((tk) => tk.symbol !== sym).slice(0, 18);
+
+  return (
+    <div className="max-w-5xl mx-auto px-8 pb-16">
+      <div className="border-t border-gray-200 pt-8">
+        <p className="text-gray-400 text-sm mb-4">{t(labels,"stock_other")}</p>
+        <div className="flex flex-wrap gap-2">
+          {otherStocks.map((tk) => (
+            <Link
+              key={tk.symbol}
+              href={`/ticker/${tk.symbol}/intel`}
+              className="px-3 py-1 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5"
+              style={tk.exchange === "ASX"
+                ? { background: "rgba(59,130,246,0.1)", color: "#2563eb", border: "1px solid rgba(59,130,246,0.25)" }
+                : { background: "rgba(46,139,87,0.1)", color: "#166534", border: "1px solid rgba(46,139,87,0.25)" }}
+            >
+              {tk.symbol}
+            </Link>
+          ))}
         </div>
       </div>
     </div>

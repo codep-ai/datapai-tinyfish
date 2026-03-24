@@ -15,7 +15,6 @@
  */
 
 import { Pool, PoolClient } from "pg";
-import { UNIVERSE_ALL } from "./universe";
 
 // ─── Connection pool ───────────────────────────────────────────────────────
 
@@ -56,33 +55,14 @@ async function exec(sql: string, params?: unknown[]): Promise<void> {
 export function getDb(): Pool { return getPool(); }
 
 // ─── Seed companies on first use ──────────────────────────────────────────
-// Lazy-seeded once per process via a flag (avoids running on every import)
+// Legacy: previously seeded from hardcoded UNIVERSE_ALL arrays.
+// Now companies live in ticker_universe + stock_directory tables (DB-driven).
+// Kept as a no-op for backward compatibility of callers.
 let _seeded = false;
 export async function seedCompaniesOnce(): Promise<void> {
   if (_seeded) return;
   _seeded = true;
-  await seedCompanies();
-}
-
-async function seedCompanies(): Promise<void> {
-  const client: PoolClient = await getPool().connect();
-  try {
-    await client.query("BEGIN");
-    for (const t of UNIVERSE_ALL) {
-      await client.query(
-        `INSERT INTO datapai.companies (ticker, name, website_root, page_urls_json)
-         VALUES ($1, $2, $3, $4)
-         ON CONFLICT (ticker) DO NOTHING`,
-        [t.symbol, t.name, new URL(t.url).origin, JSON.stringify([t.url])]
-      );
-    }
-    await client.query("COMMIT");
-  } catch (e) {
-    await client.query("ROLLBACK");
-    throw e;
-  } finally {
-    client.release();
-  }
+  // No-op: stocks are now managed via ticker_universe + stock_directory tables.
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────
@@ -592,6 +572,45 @@ export async function getLocalizedNames(symbols: string[], exchange: string, lan
   const map: Record<string, string> = {};
   for (const r of rows) map[r.symbol] = r.name;
   return map;
+}
+
+/**
+ * Load active stocks from DB for a given exchange + language.
+ * Replaces hardcoded UNIVERSE / ASX_UNIVERSE / VN_UNIVERSE arrays.
+ * Joins ticker_universe (for active/yf_symbol) with stock_directory (for localized name).
+ */
+export interface ActiveStock {
+  symbol: string;
+  name: string;
+  exchange: string;
+  sector: string | null;
+  yf_symbol: string;
+}
+
+export async function getActiveStocks(exchange: string, lang = "en", limit = 50): Promise<ActiveStock[]> {
+  return q<ActiveStock>(
+    `SELECT tu.ticker AS symbol,
+            COALESCE(sd.name, tu.company_name, tu.ticker) AS name,
+            tu.exchange,
+            COALESCE(sd.sector, tu.sector) AS sector,
+            tu.yf_symbol
+     FROM datapai.ticker_universe tu
+     LEFT JOIN datapai.stock_directory sd
+       ON sd.symbol = tu.ticker AND sd.exchange = tu.exchange AND sd.lang = $2
+     WHERE tu.exchange = $1 AND tu.is_active = TRUE
+     ORDER BY tu.ticker
+     LIMIT $3`,
+    [exchange, lang, limit]
+  );
+}
+
+/** Get total count of active stocks for an exchange. */
+export async function countActiveStocks(exchange: string): Promise<number> {
+  const rows = await q<{ cnt: string }>(
+    `SELECT COUNT(*) as cnt FROM datapai.ticker_universe WHERE exchange=$1 AND is_active=TRUE`,
+    [exchange]
+  );
+  return parseInt(rows[0]?.cnt ?? "0");
 }
 
 // ─── Users & Sessions ─────────────────────────────────────────────────────

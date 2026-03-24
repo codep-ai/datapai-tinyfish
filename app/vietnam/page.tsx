@@ -4,8 +4,7 @@
  */
 
 import Link from "next/link";
-import { VN_UNIVERSE } from "@/lib/universe";
-import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getLatestPricesForWatchlist, countStockDirectory, getLocalizedNames } from "@/lib/db";
+import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getLatestPricesForWatchlist, getActiveStocks, countActiveStocks } from "@/lib/db";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
 import { t } from "@/lib/translations";
@@ -22,18 +21,17 @@ function fmtVND(value: number): string {
 
 export default async function VietnamPage() {
   const lang = await getLang();
-  const [labels, alertMap, scannedSet, recentRuns, priceMap, totalVn, nameMap] = await Promise.all([
+  const stocks = await getActiveStocks("HOSE", lang, 30);
+  const [labels, alertMap, scannedSet, recentRuns, priceMap, totalVn] = await Promise.all([
     loadTranslations(lang),
     getAlertSummaryMap(),
     getScannedTickerSet(),
     getRecentRuns(3),
-    getLatestPricesForWatchlist(VN_UNIVERSE.map((tk) => ({ symbol: tk.symbol, exchange: "HOSE" }))),
-    countStockDirectory("HOSE"),
-    getLocalizedNames(VN_UNIVERSE.map((tk) => tk.symbol), "HOSE", lang),
+    getLatestPricesForWatchlist(stocks.map((s) => ({ symbol: s.symbol, exchange: "HOSE" }))),
+    countActiveStocks("HOSE"),
   ]);
-  const localizedUniverse = VN_UNIVERSE.map((tk) => ({ ...tk, name: nameMap[tk.symbol] ?? tk.name }));
   const lastRun = recentRuns[0] ?? null;
-  const vnAlertCount = localizedUniverse.filter((tk) => !!alertMap[tk.symbol]).length;
+  const vnAlertCount = stocks.filter((s) => !!alertMap[s.symbol]).length;
 
   return (
     <div>
@@ -114,7 +112,7 @@ export default async function VietnamPage() {
           </div>
 
           {(() => {
-            const sorted = [...localizedUniverse].sort((a, b) => {
+            const sorted = [...stocks].sort((a, b) => {
               const pctA = priceMap[a.symbol] ? Number(priceMap[a.symbol].change_pct) : -Infinity;
               const pctB = priceMap[b.symbol] ? Number(priceMap[b.symbol].change_pct) : -Infinity;
               return (isNaN(pctB) ? -Infinity : pctB) - (isNaN(pctA) ? -Infinity : pctA);

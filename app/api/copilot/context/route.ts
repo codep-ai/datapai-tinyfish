@@ -6,7 +6,6 @@
  */
 
 import { getAuthUser } from "@/lib/auth";
-import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
 import {
   getWatchlist,
   getAlertSummaryMap,
@@ -16,6 +15,9 @@ import {
   getLatestAnalysisWithAgentContent,
   getStockSynthesisFlexible,
   getRecentRuns,
+  getActiveStocks,
+  countActiveStocks,
+  lookupStock,
 } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -86,18 +88,21 @@ export async function GET(req: Request) {
   try {
     // ── US homepage ──────────────────────────────────────────────────────
     if (page === "/") {
-      const [alertMap, recentRuns] = await Promise.all([
+      const [alertMap, recentRuns, usStocksNasdaq, usStocksNyse] = await Promise.all([
         getAlertSummaryMap(),
         getRecentRuns(1),
+        getActiveStocks("NASDAQ", "en", 500),
+        getActiveStocks("NYSE", "en", 500),
       ]);
-      const usAlerts = UNIVERSE.filter((t) => !!alertMap[t.symbol]);
+      const usStocks = [...usStocksNasdaq, ...usStocksNyse];
+      const usAlerts = usStocks.filter((t) => !!alertMap[t.symbol]);
       return Response.json({
         ok: true,
         data: {
           page_type: "us_homepage",
-          description: "US Stock Market homepage showing monitored US blue-chip stocks with website change intelligence.",
-          stock_count: UNIVERSE.length,
-          stocks: UNIVERSE.map((t) => `${t.symbol} (${t.name})`).join(", "),
+          description: "US Stock Market homepage showing monitored US stocks with website change intelligence.",
+          stock_count: usStocks.length,
+          stocks: usStocks.map((t) => `${t.symbol} (${t.name})`).join(", "),
           alerts_count: usAlerts.length,
           alerts_tickers: usAlerts.map((t) => t.symbol).join(", "),
           last_scan: recentRuns[0]
@@ -109,15 +114,18 @@ export async function GET(req: Request) {
 
     // ── ASX page ─────────────────────────────────────────────────────────
     if (page === "/asx") {
-      const alertMap = await getAlertSummaryMap();
-      const asxAlerts = ASX_UNIVERSE.filter((t) => !!alertMap[t.symbol]);
+      const [alertMap, asxStocks] = await Promise.all([
+        getAlertSummaryMap(),
+        getActiveStocks("ASX", "en", 500),
+      ]);
+      const asxAlerts = asxStocks.filter((t) => !!alertMap[t.symbol]);
       return Response.json({
         ok: true,
         data: {
           page_type: "asx_homepage",
-          description: "ASX (Australian Securities Exchange) page showing monitored Australian blue-chip stocks.",
-          stock_count: ASX_UNIVERSE.length,
-          stocks: ASX_UNIVERSE.map((t) => `${t.symbol} (${t.name})`).join(", "),
+          description: "ASX (Australian Securities Exchange) page showing monitored Australian stocks.",
+          stock_count: asxStocks.length,
+          stocks: asxStocks.map((t) => `${t.symbol} (${t.name})`).join(", "),
           alerts_count: asxAlerts.length,
           alerts_tickers: asxAlerts.map((t) => t.symbol).join(", "),
         },
@@ -219,8 +227,8 @@ export async function GET(req: Request) {
     const tickerMatch = page.match(/^\/ticker\/([A-Z0-9.]+)/i);
     if (tickerMatch) {
       const sym = tickerMatch[1].toUpperCase();
-      const tickerInfo = UNIVERSE_ALL.find((t) => t.symbol === sym);
-      const exchange = tickerInfo?.exchange ?? "US";
+      const tickerDir = await lookupStock(sym);
+      const exchange = tickerDir?.exchange ?? "US";
 
       const [analysis, taSignal, synthesis] = await Promise.all([
         getLatestAnalysisWithAgentContent(sym).catch(() => null),
@@ -230,9 +238,9 @@ export async function GET(req: Request) {
 
       const ctx: Record<string, unknown> = {
         page_type: page.includes("/intel") ? "ticker_intel" : "ticker_detail",
-        description: `Viewing ${sym} (${tickerInfo?.name ?? sym}) on ${exchange}. ${page.includes("/intel") ? "AI analysis page with TA/FA/MA/CA tools." : "Stock detail page with IR snapshots and alerts."}`,
+        description: `Viewing ${sym} (${tickerDir?.name ?? sym}) on ${exchange}. ${page.includes("/intel") ? "AI analysis page with TA/FA/MA/CA tools." : "Stock detail page with IR snapshots and alerts."}`,
         symbol: sym,
-        company: tickerInfo?.name ?? sym,
+        company: tickerDir?.name ?? sym,
         exchange,
       };
 
@@ -282,12 +290,16 @@ export async function GET(req: Request) {
     }
 
     // ── Default / unknown page ───────────────────────────────────────────
-    const generalHighlights = await fetchScreenerHighlights();
+    const [generalHighlights, usCount, asxCount] = await Promise.all([
+      fetchScreenerHighlights(),
+      countActiveStocks("NASDAQ").then(async (n) => n + await countActiveStocks("NYSE")),
+      countActiveStocks("ASX"),
+    ]);
     return Response.json({
       ok: true,
       data: {
         page_type: "general",
-        description: `DataP.ai website change intelligence platform. Page: ${page}. Covers ${UNIVERSE.length} US stocks and ${ASX_UNIVERSE.length} ASX stocks. Screener covers 8,500+ tickers with full TA.`,
+        description: `DataP.ai website change intelligence platform. Page: ${page}. Covers ${usCount} US stocks and ${asxCount} ASX stocks. Screener covers 8,500+ tickers with full TA.`,
         screener_highlights: generalHighlights,
         market_index_summary: await fetchMarketIndexSummary(),
       },

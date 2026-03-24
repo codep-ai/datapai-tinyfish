@@ -1,8 +1,12 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
-import type { TickerInfo } from "@/lib/universe";
+
+interface TickerInfo {
+  symbol: string;
+  name: string;
+  exchange: string;
+}
 
 type TickerStatus = "pending" | "scanning" | "completed" | "failed";
 
@@ -61,40 +65,46 @@ export default function LiveScanProgress({
   watchlist?: boolean;
   heroButton?: boolean; // solid orange CTA style, for inline placement alongside other buttons
 }) {
-  // For watchlist mode we fetch the universe dynamically from the API
-  const [watchlistUniverse, setWatchlistUniverse] = useState<TickerInfo[]>([]);
-  const [watchlistLoaded, setWatchlistLoaded] = useState(false);
+  // Fetch universe dynamically from the API (watchlist or active stocks by exchange)
+  const [dynamicUniverse, setDynamicUniverse] = useState<TickerInfo[]>([]);
+  const [universeLoaded, setUniverseLoaded] = useState(false);
 
   useEffect(() => {
-    if (!watchlist) return;
-    fetch("/api/watchlist")
-      .then((r) => r.json())
-      .then((data) => {
-        const items: WatchlistApiItem[] = data.items ?? [];
-        const tickers: TickerInfo[] = items.map((item) => {
-          const known = UNIVERSE_ALL.find((t) => t.symbol === item.symbol);
-          return (
-            known ?? {
-              symbol: item.symbol,
-              name: item.name ?? item.symbol,
-              url: "",
-              exchange: item.exchange as TickerInfo["exchange"],
-            }
-          );
-        });
-        setWatchlistUniverse(tickers);
-        setWatchlistLoaded(true);
-      })
-      .catch(() => setWatchlistLoaded(true));
-  }, [watchlist]);
+    if (watchlist) {
+      // Fetch watchlist stocks
+      fetch("/api/watchlist")
+        .then((r) => r.json())
+        .then((data) => {
+          const items: WatchlistApiItem[] = data.items ?? [];
+          const tickers: TickerInfo[] = items.map((item) => ({
+            symbol: item.symbol,
+            name: item.name ?? item.symbol,
+            exchange: item.exchange,
+          }));
+          setDynamicUniverse(tickers);
+          setUniverseLoaded(true);
+        })
+        .catch(() => setUniverseLoaded(true));
+    } else {
+      // Fetch active stocks from DB via the stocks API
+      const exchangeParam = exchange ? `&exchange=${exchange}` : "";
+      fetch(`/api/stocks/active?limit=500${exchangeParam}`)
+        .then((r) => r.json())
+        .then((data) => {
+          const stocks: TickerInfo[] = (data.stocks ?? []).map((s: Record<string, string>) => ({
+            symbol: s.symbol,
+            name: s.name ?? s.symbol,
+            exchange: s.exchange ?? "US",
+          }));
+          setDynamicUniverse(stocks);
+          setUniverseLoaded(true);
+        })
+        .catch(() => setUniverseLoaded(true));
+    }
+  }, [watchlist, exchange]);
 
-  const staticUniverse =
-    exchange === "ASX" ? ASX_UNIVERSE
-    : exchange === "US"  ? UNIVERSE
-    : UNIVERSE_ALL;
-
-  const universe = watchlist ? watchlistUniverse : staticUniverse;
-  const isReady = !watchlist || watchlistLoaded;
+  const universe = dynamicUniverse;
+  const isReady = universeLoaded;
 
   const [phase, setPhase] = useState<"idle" | "running" | "done">("idle");
   const [runId, setRunId] = useState<string | null>(null);
@@ -169,11 +179,12 @@ export default function LiveScanProgress({
         const r = await fetch("/api/watchlist");
         const data = await r.json();
         const items: WatchlistApiItem[] = data.items ?? [];
-        scanUniverse = items.map((item) => {
-          const known = UNIVERSE_ALL.find((t) => t.symbol === item.symbol);
-          return known ?? { symbol: item.symbol, name: item.name ?? item.symbol, url: "", exchange: item.exchange as TickerInfo["exchange"] };
-        });
-        setWatchlistUniverse(scanUniverse);
+        scanUniverse = items.map((item) => ({
+          symbol: item.symbol,
+          name: item.name ?? item.symbol,
+          exchange: item.exchange,
+        }));
+        setDynamicUniverse(scanUniverse);
       } catch { /* use existing */ }
     }
 
@@ -229,7 +240,7 @@ export default function LiveScanProgress({
       {/* Trigger button */}
       {phase === "idle" && (
         <>
-          {watchlist && !watchlistLoaded ? (
+          {watchlist && !universeLoaded ? (
             <button disabled className="px-6 py-3 rounded-lg font-semibold text-white/50 cursor-wait"
               style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.3)" }}>
               ⟳ Loading watchlist...

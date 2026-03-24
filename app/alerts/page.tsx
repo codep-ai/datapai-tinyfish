@@ -1,5 +1,4 @@
-import { getLatestAnalysesBySignalType, getWatchlist } from "@/lib/db";
-import { UNIVERSE_ALL } from "@/lib/universe";
+import { getLatestAnalysesBySignalType, getWatchlist, lookupStock } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 import AlertsClient from "./AlertsClient";
 
@@ -15,7 +14,16 @@ export default async function AlertsPage({
 
   const contentOnly = await getLatestAnalysesBySignalType("CONTENT_CHANGE", 100);
   const allSignals = await getLatestAnalysesBySignalType(null, 100);
-  const universe = Object.fromEntries(UNIVERSE_ALL.map((t) => [t.symbol, t.name]));
+
+  // Build name map from DB for all unique tickers in results
+  const allTickers = new Set([...contentOnly.map((a) => a.ticker), ...allSignals.map((a) => a.ticker)]);
+  const nameEntries = await Promise.all(
+    [...allTickers].map(async (sym) => {
+      const entry = await lookupStock(sym);
+      return [sym, entry?.name ?? sym] as [string, string];
+    })
+  );
+  const universe = Object.fromEntries(nameEntries);
 
   // Filter to user's watchlist symbols if ?watchlist=true
   let filteredContent = contentOnly;

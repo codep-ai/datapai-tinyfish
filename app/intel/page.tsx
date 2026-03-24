@@ -5,8 +5,7 @@
  */
 
 import Link from "next/link";
-import { UNIVERSE_ALL } from "@/lib/universe";
-import { getCachedTaSignal } from "@/lib/db";
+import { getCachedTaSignal, getActiveStocks } from "@/lib/db";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
 import { t } from "@/lib/translations";
@@ -33,10 +32,20 @@ export default async function IntelLandingPage() {
   const lang = await getLang();
   const labels = await loadTranslations(lang);
 
+  // Load all active stocks from DB (across exchanges)
+  const [nasdaqStocks, nyseStocks, asxStocks, vnStocksHose, vnStocksHnx] = await Promise.all([
+    getActiveStocks("NASDAQ", lang, 500),
+    getActiveStocks("NYSE", lang, 500),
+    getActiveStocks("ASX", lang, 500),
+    getActiveStocks("HOSE", lang, 500),
+    getActiveStocks("HNX", lang, 500),
+  ]);
+  const allStocks = [...nasdaqStocks, ...nyseStocks, ...asxStocks, ...vnStocksHose, ...vnStocksHnx];
+
   // Pre-load any cached TA signals for the monitored universe
   const signals = await Promise.all(
-    UNIVERSE_ALL.map(async (tk) => ({
-      ticker: tk,
+    allStocks.map(async (tk) => ({
+      ticker: { symbol: tk.symbol, name: tk.name, exchange: tk.exchange },
       signal: await getCachedTaSignal(tk.symbol, 24), // show up to 24h old signals
     }))
   );

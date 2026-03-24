@@ -17,17 +17,18 @@
 
 import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { UNIVERSE, ASX_UNIVERSE, UNIVERSE_ALL } from "@/lib/universe";
-import type { TickerInfo } from "@/lib/universe";
 import { scanTicker, AGENT_ENABLED, resolveTickerUrl } from "@/lib/scan-pipeline";
-import { insertRun, startRun, finishRun, failRun, getWatchlist, getAllWatchlistTickers } from "@/lib/db";
+import { insertRun, startRun, finishRun, failRun, getWatchlist, getAllWatchlistTickers, getActiveStocks, lookupStock } from "@/lib/db";
+import type { ActiveStock } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
 
 export const maxDuration = 300;
 
 // ─── Background scan ─────────────────────────────────────────────────────────
 
-async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
+interface ScanTicker { symbol: string; name: string; url: string; exchange: string; }
+
+async function runScanAsync(runId: string, universe: ScanTicker[]): Promise<void> {
   try {
     await startRun(runId);
 
@@ -39,7 +40,7 @@ async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
       while (queue.length > 0) {
         const ticker = queue.shift();
         if (!ticker) break;
-        const result = await scanTicker(ticker, runId);
+        const result = await scanTicker(ticker as Parameters<typeof scanTicker>[0], runId);
         scanned++;
         if (result.changed) changed++;
         if (result.alerted) alerted++;
@@ -69,13 +70,21 @@ async function runScanAsync(runId: string, universe: typeof UNIVERSE_ALL) {
 export async function POST(req: NextRequest) {
   const exchange = req.nextUrl.searchParams.get("exchange") ?? null;
 
-  let universe: TickerInfo[];
+  let universe: ScanTicker[];
 
-  // Start with the hardcoded universe for the exchange
-  const baseUniverse =
-    exchange === "ASX" ? ASX_UNIVERSE
-    : exchange === "US"  ? UNIVERSE
-    : UNIVERSE_ALL;
+  // Load active stocks from DB for the requested exchange(s)
+  const exchanges = exchange === "ASX" ? ["ASX"]
+    : exchange === "US" ? ["NASDAQ", "NYSE"]
+    : ["NASDAQ", "NYSE", "ASX", "HOSE", "HNX"];
+  const dbStocks = (await Promise.all(
+    exchanges.map((ex) => getActiveStocks(ex, "en", 500))
+  )).flat();
+  const baseUniverse: ScanTicker[] = dbStocks.map((s) => ({
+    symbol: s.symbol,
+    name: s.name,
+    url: resolveTickerUrl(s.symbol, s.exchange),
+    exchange: s.exchange,
+  }));
 
   // Always merge watchlist stocks into the scan — no separate mode needed.
   // This ensures watchlist stocks get scanned alongside the base universe.
@@ -87,14 +96,12 @@ export async function POST(req: NextRequest) {
       return itemExch === exchange;
     })
     .map((item) => {
-      const known = UNIVERSE_ALL.find((t) => t.symbol === item.symbol);
-      if (known) return known;
       const exch = item.exchange ?? "US";
       return {
         symbol: item.symbol,
         name: item.name ?? item.symbol,
         url: resolveTickerUrl(item.symbol, exch),
-        exchange: exch as TickerInfo["exchange"],
+        exchange: exch,
       };
     });
 

@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs } from "@/lib/db";
+import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, lookupStock } from "@/lib/db";
 import { fetchPrices } from "@/lib/price";
-import { UNIVERSE_ALL } from "@/lib/universe";
 
 export const dynamic = "force-dynamic";
 
@@ -10,18 +9,24 @@ export async function GET(
   { params }: { params: Promise<{ symbol: string }> }
 ) {
   const { symbol } = await params;
-  const ticker = UNIVERSE_ALL.find((t) => t.symbol === symbol.toUpperCase());
+  const sym = symbol.toUpperCase();
+  const dirEntry = await lookupStock(sym);
 
-  if (!ticker) {
+  if (!dirEntry) {
     return NextResponse.json({ error: "Ticker not found" }, { status: 404 });
   }
 
-  const sym = symbol.toUpperCase();
+  const ticker = {
+    symbol: dirEntry.symbol,
+    name: dirEntry.name,
+    exchange: dirEntry.exchange,
+  };
+
   const [snapshots, analyses, diffs, prices] = await Promise.all([
     getTickerSnapshots(sym, 5),
     getTickerAnalyses(sym, 5),
     getTickerDiffs(sym, 5),
-    fetchPrices(sym, 30, ticker?.exchange),
+    fetchPrices(sym, 30, dirEntry.exchange),
   ]);
 
   return NextResponse.json({ ticker, snapshots, analyses, diffs, prices });

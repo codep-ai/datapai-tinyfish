@@ -14,7 +14,6 @@
 
 import crypto from "crypto";
 import { NextResponse } from "next/server";
-import { UNIVERSE_ALL } from "@/lib/universe";
 import { scanTicker, resolveTickerUrl, AGENT_ENABLED } from "@/lib/scan-pipeline";
 import { insertRun, startRun, finishRun, failRun, lookupStock, getTickerSnapshots, logUserScan } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
@@ -142,20 +141,11 @@ export async function POST(
     bodyUrl = typeof body?.url === "string" ? body.url.trim() : undefined;
   } catch {}
 
-  // ── 1. Resolve ticker info ─────────────────────────────────────────────────
-  const known = UNIVERSE_ALL.find((t) => t.symbol === symbol);
-  let name = known?.name ?? "";
-  let exchange = known?.exchange ?? "NASDAQ";
-  let resolvedUrl = bodyUrl ?? known?.url ?? "";
-
-  // Fall back to stock directory for name + exchange
-  if (!known) {
-    const dir = await lookupStock(symbol);
-    if (dir) {
-      name = dir.name;
-      exchange = dir.exchange as typeof exchange;
-    }
-  }
+  // ── 1. Resolve ticker info from DB ────────────────────────────────────────
+  const dir = await lookupStock(symbol);
+  let name = dir?.name ?? "";
+  let exchange: string = dir?.exchange ?? "NASDAQ";
+  let resolvedUrl = bodyUrl ?? "";
 
   // Derive URL if still missing
   if (!resolvedUrl) {

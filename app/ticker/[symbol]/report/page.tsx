@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { UNIVERSE_ALL } from "@/lib/universe";
 import { getTickerSnapshots, getTickerAnalyses, getTickerDiffs, getLatestAnalysisWithAgentContent, getTickerScanCount, lookupStock } from "@/lib/db";
 import { agentSignalLabel, validationLabel } from "@/lib/agent";
 import { PRIVATE_LLM_ENABLED } from "@/lib/llm";
@@ -34,15 +33,14 @@ export default async function TickerReportPage({
   const { symbol } = await params;
   const sym = symbol.toUpperCase();
 
-  // Support all monitored tickers (US + ASX) and any previously-scanned custom ticker
-  const known = UNIVERSE_ALL.find((t) => t.symbol === sym);
-  const dirEntry = known ? null : await lookupStock(sym);
-  const snapsForCheck = known ? null : await getTickerSnapshots(sym, 1);
+  // Look up stock from DB; fall back to scan history for unknown tickers
+  const dirEntry = await lookupStock(sym);
+  const snapsForCheck = !dirEntry ? await getTickerSnapshots(sym, 1) : null;
 
   // 404 only if completely unknown with no scan history
-  if (!known && !dirEntry && (!snapsForCheck || snapsForCheck.length === 0)) notFound();
+  if (!dirEntry && (!snapsForCheck || snapsForCheck.length === 0)) notFound();
 
-  const ticker = known ?? {
+  const ticker = {
     symbol: sym,
     name: dirEntry?.name ?? sym,
     exchange: (dirEntry?.exchange ?? "NASDAQ") as "NASDAQ" | "NYSE" | "ASX",

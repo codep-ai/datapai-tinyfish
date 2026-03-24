@@ -7,9 +7,7 @@
  */
 
 import { NextResponse } from "next/server";
-import { lookupStock, searchStocks, countStockDirectory } from "@/lib/db";
-import { UNIVERSE_ALL } from "@/lib/universe";
-import { getPool } from "@/lib/db";
+import { lookupStock, searchStocks, countStockDirectory, getPool } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
@@ -65,17 +63,9 @@ export async function GET(req: Request) {
 
   // ── Prefix search (autocomplete) ──────────────────────────────────────────
   if (query && query.length >= 1) {
-    const total = await countStockDirectory();
-    if (total > 0) {
-      const raw = await searchStocks(query, exchange || undefined, lang);
-      const results = await enrichWithPrices(raw as StockResult[]);
-      return NextResponse.json({ results, source: "db" });
-    }
-    // Fallback: search UNIVERSE_ALL
-    const results = UNIVERSE_ALL.filter(
-      (t) => t.symbol.startsWith(query) && (!exchange || t.exchange === exchange)
-    ).map((t) => ({ symbol: t.symbol, name: t.name, exchange: t.exchange ?? "US", sector: null }));
-    return NextResponse.json({ results: await enrichWithPrices(results as StockResult[]), source: "universe" });
+    const raw = await searchStocks(query, exchange || undefined, lang);
+    const results = await enrichWithPrices(raw as StockResult[]);
+    return NextResponse.json({ results, source: "db" });
   }
 
   // ── Exact symbol lookup ────────────────────────────────────────────────────
@@ -83,25 +73,10 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Provide ?symbol=XXX or ?q=prefix" }, { status: 400 });
   }
 
-  const total = await countStockDirectory();
-  if (total > 0) {
-    const result = await lookupStock(symbol, lang);
-    if (result) {
-      const enriched = await enrichWithPrices([result as StockResult]);
-      return NextResponse.json({ ...enriched[0], source: "db" });
-    }
-  }
-
-  // Fallback: check UNIVERSE_ALL
-  const known = UNIVERSE_ALL.find((t) => t.symbol === symbol);
-  if (known) {
-    return NextResponse.json({
-      symbol: known.symbol,
-      name: known.name,
-      exchange: known.exchange ?? "US",
-      sector: null,
-      source: "universe",
-    });
+  const result = await lookupStock(symbol, lang);
+  if (result) {
+    const enriched = await enrichWithPrices([result as StockResult]);
+    return NextResponse.json({ ...enriched[0], source: "db" });
   }
 
   return NextResponse.json(null);
