@@ -14,6 +14,7 @@ import TickerScanButton from "../../components/TickerScanButton";
 import WatchlistButton from "../../components/WatchlistButton";
 import TechAnalyticsPanel from "../../components/TechAnalyticsPanel";
 import StockSnapshot from "../../components/StockSnapshot";
+import ReportExportButton from "../../components/ReportExport";
 
 export const dynamic = "force-dynamic";
 
@@ -542,6 +543,34 @@ export default async function TickerPage({
               <span className="text-base text-gray-400">
                 {hasAgentSignal ? t(labels, "ticker_detected_powered") : t(labels, "ticker_monitored_no_signal")}
               </span>
+              <ReportExportButton
+                data={{
+                  symbol: sym,
+                  companyName: ticker.name,
+                  exchange: exchangeLabel,
+                  price: prices.length > 0 ? Number(prices[prices.length - 1]?.close) : undefined,
+                  changePct: prices.length >= 2 ? ((Number(prices[prices.length - 1]?.close) - Number(prices[prices.length - 2]?.close)) / Number(prices[prices.length - 2]?.close)) * 100 : undefined,
+                  marketCap: fundamentals?.market_cap ? (Number(fundamentals.market_cap) >= 1e9 ? `${(Number(fundamentals.market_cap) / 1e9).toFixed(1)}B` : `${(Number(fundamentals.market_cap) / 1e6).toFixed(0)}M`) : undefined,
+                  peTtm: fundamentals?.pe_ttm ? Number(fundamentals.pe_ttm).toFixed(2) : undefined,
+                  peForward: fundamentals?.pe_forward ? Number(fundamentals.pe_forward).toFixed(2) : undefined,
+                  pbRatio: fundamentals?.pb_ratio ? Number(fundamentals.pb_ratio).toFixed(2) : undefined,
+                  beta: fundamentals?.beta ? Number(fundamentals.beta).toFixed(3) : undefined,
+                  dividendYield: fundamentals?.dividend_yield ? `${(Number(fundamentals.dividend_yield) * 100).toFixed(2)}%` : undefined,
+                  week52High: fundamentals?.fifty_two_week_high ? Number(fundamentals.fifty_two_week_high).toFixed(2) : undefined,
+                  week52Low: fundamentals?.fifty_two_week_low ? Number(fundamentals.fifty_two_week_low).toFixed(2) : undefined,
+                  sector: fundamentals?.sector ?? undefined,
+                  industry: fundamentals?.industry ?? undefined,
+                  profitMargin: fundamentals?.profit_margin ? `${(Number(fundamentals.profit_margin) * 100).toFixed(1)}%` : undefined,
+                  roe: fundamentals?.return_on_equity ? `${(Number(fundamentals.return_on_equity) * 100).toFixed(1)}%` : undefined,
+                  taSignal: signalSource?.agent_signal_type ?? undefined,
+                  taConfidence: signalSource?.confidence ? Number(signalSource.confidence) : undefined,
+                  taWhatChanged: tx("agent_what_changed") || undefined,
+                  taRelevance: tx("agent_financial_relevance") || undefined,
+                  lastScanDate: latestSnap?.fetched_at?.slice(0, 10) ?? undefined,
+                  totalScans: totalScans,
+                }}
+                labels={labels}
+              />
             </div>
           </div>
           <div className="px-8 py-8 grid grid-cols-2 md:grid-cols-4 gap-8">
