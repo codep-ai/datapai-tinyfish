@@ -130,6 +130,8 @@ export default async function WatchlistPage() {
 
         {/* AI Watchlist Overview — aggregated synthesis */}
         {items.length > 0 && (() => {
+          const exchangeMap: Record<string, string> = {};
+          for (const i of items) exchangeMap[i.symbol] = i.exchange ?? "US";
           const synthList = Object.entries(synthMap);
           const totalWithSynth = synthList.length;
           if (totalWithSynth === 0) return null;
@@ -188,7 +190,7 @@ export default async function WatchlistPage() {
                         <div className="text-2xl font-bold text-green-700">{buyCount}</div>
                         <div className="text-xs text-green-600 font-medium">{dirLabel("BUY", labels)}</div>
                         {buyStocks.length > 0 && (
-                          <div className="text-[10px] text-green-500 mt-1 leading-tight">{buyStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-green-800 mr-1">{s}</Link>)}</div>
+                          <div className="text-[10px] text-green-500 mt-1 leading-tight">{buyStocks.map((s) => <Link key={s} href={`/ticker/${s}?exchange=${exchangeMap[s] ?? "US"}`} className="underline hover:text-green-800 mr-1">{s}</Link>)}</div>
                         )}
                       </div>
                       <div className="text-center p-3 rounded-xl bg-gray-50 border border-gray-100 cursor-default"
@@ -196,7 +198,7 @@ export default async function WatchlistPage() {
                         <div className="text-2xl font-bold text-gray-600">{holdCount}</div>
                         <div className="text-xs text-gray-500 font-medium">{dirLabel("HOLD", labels)}</div>
                         {holdStocks.length > 0 && (
-                          <div className="text-[10px] text-gray-400 mt-1 leading-tight">{holdStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-gray-700 mr-1">{s}</Link>)}</div>
+                          <div className="text-[10px] text-gray-400 mt-1 leading-tight">{holdStocks.map((s) => <Link key={s} href={`/ticker/${s}?exchange=${exchangeMap[s] ?? "US"}`} className="underline hover:text-gray-700 mr-1">{s}</Link>)}</div>
                         )}
                       </div>
                       <div className="text-center p-3 rounded-xl bg-red-50 border border-red-100 cursor-default"
@@ -204,7 +206,7 @@ export default async function WatchlistPage() {
                         <div className="text-2xl font-bold text-red-700">{sellCount}</div>
                         <div className="text-xs text-red-600 font-medium">{dirLabel("SELL", labels)}</div>
                         {sellStocks.length > 0 && (
-                          <div className="text-[10px] text-red-500 mt-1 leading-tight">{sellStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-red-800 mr-1">{s}</Link>)}</div>
+                          <div className="text-[10px] text-red-500 mt-1 leading-tight">{sellStocks.map((s) => <Link key={s} href={`/ticker/${s}?exchange=${exchangeMap[s] ?? "US"}`} className="underline hover:text-red-800 mr-1">{s}</Link>)}</div>
                         )}
                       </div>
                       <div className="text-center p-3 rounded-xl bg-blue-50 border border-blue-100">
@@ -218,7 +220,7 @@ export default async function WatchlistPage() {
                         <div className="text-2xl font-bold" style={{ color: newsAlertCount > 0 ? "#dc2626" : "#9ca3af" }}>{newsAlertCount}</div>
                         <div className="text-xs font-medium" style={{ color: newsAlertCount > 0 ? "#dc2626" : "#9ca3af" }}>{t(labels, "wl_news_alerts")}</div>
                         {newsStocks.length > 0 && (
-                          <div className="text-[10px] mt-1 leading-tight" style={{ color: "#dc2626" }}>{newsStocks.map((s) => <Link key={s} href={`/ticker/${s}`} className="underline hover:text-red-800 mr-1">{s}</Link>)}</div>
+                          <div className="text-[10px] mt-1 leading-tight" style={{ color: "#dc2626" }}>{newsStocks.map((s) => <Link key={s} href={`/ticker/${s}?exchange=${exchangeMap[s] ?? "US"}`} className="underline hover:text-red-800 mr-1">{s}</Link>)}</div>
                         )}
                       </div>
                     </div>
@@ -233,7 +235,7 @@ export default async function WatchlistPage() {
                       {criticalNews.map(([sym], i) => (
                         <span key={sym}>
                           {i > 0 && ", "}
-                          <Link href={`/ticker/${sym}`} className="underline hover:text-red-600">{sym}</Link>
+                          <Link href={`/ticker/${sym}?exchange=${exchangeMap[sym] ?? "US"}`} className="underline hover:text-red-600">{sym}</Link>
                         </span>
                       ))}
                       {" "}— check breaking news immediately
@@ -247,7 +249,7 @@ export default async function WatchlistPage() {
                     <div>
                       <div className="text-xs font-bold text-red-700 uppercase tracking-wider mb-2">⚠️ {t(labels, "wl_top_sell")}</div>
                       {topSells.map(([sym, s]) => (
-                        <Link key={sym} href={`/ticker/${sym}`}
+                        <Link key={sym} href={`/ticker/${sym}?exchange=${exchangeMap[sym] ?? "US"}`}
                           className="flex items-start gap-2 mb-2 p-2 rounded-lg hover:bg-red-50 transition-colors cursor-pointer">
                           <span className="text-xs font-bold text-red-600 min-w-[48px] underline">{sym}</span>
                           <span className="text-xs text-gray-600 line-clamp-2">{s.what_bears_say || s.key_risk || s.thesis}</span>
@@ -260,7 +262,7 @@ export default async function WatchlistPage() {
                     <div>
                       <div className="text-xs font-bold text-green-700 uppercase tracking-wider mb-2">🟢 {t(labels, "wl_top_buy")}</div>
                       {topBuys.map(([sym, s]) => (
-                        <Link key={sym} href={`/ticker/${sym}`}
+                        <Link key={sym} href={`/ticker/${sym}?exchange=${exchangeMap[sym] ?? "US"}`}
                           className="flex items-start gap-2 mb-2 p-2 rounded-lg hover:bg-green-50 transition-colors cursor-pointer">
                           <span className="text-xs font-bold text-green-600 min-w-[48px] underline">{sym}</span>
                           <span className="text-xs text-gray-600 line-clamp-2">{s.what_bulls_say || s.thesis}</span>
@@ -349,7 +351,7 @@ export default async function WatchlistPage() {
                             {isAsx ? "AU" : "US"}
                           </span>
                         </div>
-                        <Link href={`/ticker/${item.symbol}`} className="block group">
+                        <Link href={`/ticker/${item.symbol}?exchange=${item.exchange ?? "US"}`} className="block group">
                           <div className="font-bold text-base text-brand group-hover:opacity-80">{item.symbol}</div>
                           <div className="text-gray-400 text-xs mt-0.5 truncate">{item.name ?? item.symbol}</div>
                         </Link>
@@ -434,7 +436,7 @@ export default async function WatchlistPage() {
                           <tr key={item.symbol} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors" style={{ background: rowBg, borderLeft: hasCritical ? "3px solid #ef4444" : undefined }}>
                             <td className="px-4 py-3 text-gray-400 text-xs">{idx + 1}</td>
                             <td className="px-4 py-3">
-                              <Link href={`/ticker/${item.symbol}`} className="font-bold text-brand hover:opacity-80">{item.symbol}</Link>
+                              <Link href={`/ticker/${item.symbol}?exchange=${item.exchange ?? "US"}`} className="font-bold text-brand hover:opacity-80">{item.symbol}</Link>
                             </td>
                             <td className="px-4 py-3 text-gray-500 truncate max-w-[180px]">{item.name ?? item.symbol}</td>
                             <td className="px-4 py-3 text-center">

@@ -145,7 +145,7 @@ export default async function Home() {
                       <div className="absolute top-1.5 right-1.5 z-10">
                         <WatchlistButton compact symbol={tk.symbol} exchange="US" name={tk.name} />
                       </div>
-                      <Link href={`/ticker/${tk.symbol}`} className="block pr-6">
+                      <Link href={`/ticker/${tk.symbol}?exchange=${tk.exchange}`} className="block pr-6">
                         <div className="font-bold text-base text-brand group-hover:opacity-80">{tk.symbol}</div>
                         <div className="text-gray-400 text-xs mt-0.5 truncate">{tk.name}</div>
                         <div className="mt-2 space-y-0.5">
@@ -209,7 +209,7 @@ export default async function Home() {
                         <tr key={tk.symbol} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors" style={{ background: rowBg }}>
                           <td className="px-4 py-3 text-gray-400 text-xs">{idx + 1}</td>
                           <td className="px-4 py-3">
-                            <Link href={`/ticker/${tk.symbol}`} className="font-bold text-brand hover:opacity-80">{tk.symbol}</Link>
+                            <Link href={`/ticker/${tk.symbol}?exchange=${tk.exchange}`} className="font-bold text-brand hover:opacity-80">{tk.symbol}</Link>
                           </td>
                           <td className="px-4 py-3 text-gray-500 truncate max-w-[200px]">{tk.name}</td>
                           <td className="px-4 py-3 text-right font-semibold text-gray-700">

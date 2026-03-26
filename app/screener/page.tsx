@@ -806,7 +806,7 @@ function TechnicalTab({ labels }: { labels: Labels }) {
                         <WatchlistButton symbol={r.ticker} exchange={r.exchange} compact />
                       </td>
                       <td className="px-3 py-2">
-                        <Link href={`/ticker/${r.ticker}/intel`}
+                        <Link href={`/ticker/${r.ticker}/intel?exchange=${r.exchange}`}
                           className="font-bold text-[#2e8b57] hover:text-[#1a6e3e] hover:underline text-sm">
                           {r.ticker}
                         </Link>
@@ -1125,7 +1125,7 @@ function FundamentalTab({ labels }: { labels: Labels }) {
                   <tr key={r.ticker} className="border-b border-gray-50 hover:bg-[#f0f7f1]"
                     style={idx % 2 ? { background: "#fafafa" } : {}}>
                     <td className="px-3 py-2">
-                      <Link href={`/ticker/${r.ticker}/intel`}
+                      <Link href={`/ticker/${r.ticker}/intel?exchange=${r.exchange}`}
                         className="font-bold text-[#2e8b57] hover:underline text-sm">{r.ticker}</Link>
                     </td>
                     <td className="px-3 py-2 text-gray-700 max-w-[160px] truncate">{r.company_name ?? "—"}</td>

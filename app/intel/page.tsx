@@ -103,7 +103,7 @@ export default async function IntelLandingPage() {
                 return (
                   <Link
                     key={ticker.symbol}
-                    href={`/ticker/${ticker.symbol}/intel`}
+                    href={`/ticker/${ticker.symbol}/intel?exchange=${ticker.exchange}`}
                     className="bg-white border border-gray-200 rounded-xl px-4 py-4 shadow-sm hover:-translate-y-0.5 transition-all group"
                   >
                     <div className="flex items-center justify-between mb-2">
@@ -149,7 +149,7 @@ export default async function IntelLandingPage() {
             {withoutSignal.map(({ ticker }) => (
               <Link
                 key={ticker.symbol}
-                href={`/ticker/${ticker.symbol}/intel`}
+                href={`/ticker/${ticker.symbol}/intel?exchange=${ticker.exchange}`}
                 className="bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm hover:-translate-y-0.5 transition-all group"
               >
                 <div className="font-bold text-sm text-[#2e8b57] group-hover:opacity-80">

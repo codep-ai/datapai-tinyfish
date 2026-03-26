@@ -472,19 +472,23 @@ export async function getCachedPrices(ticker: string, limit = 30): Promise<{ dat
 
 // ─── Stock directory ──────────────────────────────────────────────────────
 
-export async function lookupStock(symbol: string, lang = "en"): Promise<StockDirectoryEntry | null> {
+export async function lookupStock(symbol: string, lang = "en", exchange?: string): Promise<StockDirectoryEntry | null> {
   const upper = symbol.toUpperCase();
-  // Check stock_directory first — filter by lang, fallback to 'en'
+  // Check stock_directory — filter by lang + optional exchange, fallback to 'en'
+  const exFilter = exchange ? "AND exchange=$3" : "";
+  const exParams = exchange ? [upper, lang, exchange.toUpperCase()] : [upper, lang];
+
   let rows = await q<StockDirectoryEntry>(
     `SELECT symbol, name, exchange, sector FROM datapai.stock_directory
-     WHERE symbol=$1 AND lang=$2 ORDER BY exchange LIMIT 1`,
-    [upper, lang]
+     WHERE symbol=$1 AND lang=$2 ${exFilter} ORDER BY exchange LIMIT 1`,
+    exParams
   );
   if (!rows[0] && lang !== "en") {
+    const enParams = exchange ? [upper, "en", exchange.toUpperCase()] : [upper, "en"];
     rows = await q<StockDirectoryEntry>(
       `SELECT symbol, name, exchange, sector FROM datapai.stock_directory
-       WHERE symbol=$1 AND lang='en' ORDER BY exchange LIMIT 1`,
-      [upper]
+       WHERE symbol=$1 AND lang=$2 ${exFilter} ORDER BY exchange LIMIT 1`,
+      enParams
     );
   }
   if (rows[0]) return rows[0];

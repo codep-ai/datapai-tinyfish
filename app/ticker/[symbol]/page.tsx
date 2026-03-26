@@ -78,16 +78,22 @@ function SeverityBadge({ severity }: { severity: string | null }) {
 
 export default async function TickerPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ symbol: string }>;
+  searchParams: Promise<{ exchange?: string }>;
 }) {
   const { symbol } = await params;
+  const { exchange: qsExchange } = await searchParams;
   const sym = decodeURIComponent(symbol).toUpperCase();
   const lang = await getLang();
   const labels = await loadTranslations(lang);
 
   // Resolve display info from DB (single source of truth)
-  const dirEntry = await lookupStock(sym, lang);
+  // Pass exchange from query string to disambiguate (e.g., AMD on US vs ASX)
+  let dirEntry = qsExchange
+    ? await lookupStock(sym, lang, qsExchange)
+    : await lookupStock(sym, lang);
   const exchangeLabel = (dirEntry?.exchange ?? "US") as string;
   const companyName = dirEntry?.name ?? sym;
   const defaultUrl = resolveTickerUrl(sym, exchangeLabel);
@@ -365,7 +371,7 @@ export default async function TickerPage({
               addLabel={t(labels, "btn_add_watchlist")}
             />
             <Link
-              href={`/ticker/${sym}/report`}
+              href={`/ticker/${sym}/report?exchange=${exchangeLabel}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
@@ -373,33 +379,33 @@ export default async function TickerPage({
             >
               📋 {t(labels, "ticker_ir_report")} →
             </Link>
-            <TickerScanButton symbol={sym} isMonitored={true} resolvedUrl={ticker.url} rescanLabel={t(labels, "btn_rescan")} />
+            <TickerScanButton symbol={sym} isMonitored={true} resolvedUrl={ticker.url} rescanLabel={t(labels, "btn_rescan")} exchange={exchangeLabel} />
           </div>
           {/* Analysis type quick-access row */}
           <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr", justifyItems: "start" }}>
             <Link
-              href={`/ticker/${sym}/intel?run=ta`}
+              href={`/ticker/${sym}/intel?run=ta&exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
               📈 {t(labels, "ticker_ta_btn")}
             </Link>
             <Link
-              href={`/ticker/${sym}/intel?run=fa`}
+              href={`/ticker/${sym}/intel?run=fa&exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
               📊 {t(labels, "ticker_fa_btn")}
             </Link>
             <Link
-              href={`/ticker/${sym}/intel?run=ma`}
+              href={`/ticker/${sym}/intel?run=ma&exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
               🌐 {t(labels, "ticker_ma_btn")}
             </Link>
             <Link
-              href={`/ticker/${sym}/intel?run=ca`}
+              href={`/ticker/${sym}/intel?run=ca&exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
@@ -429,6 +435,7 @@ export default async function TickerPage({
             scanDates={snapshots.map((s) => s.fetched_at.slice(0, 10))}
             exchange={exchangeLabel}
             symbol={sym}
+            labels={labels}
           />
           {prices.length > 0 && (() => {
             const sorted = [...prices].sort((a, b) => a.date.localeCompare(b.date));

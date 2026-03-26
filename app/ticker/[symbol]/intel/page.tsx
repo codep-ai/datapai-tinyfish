@@ -51,7 +51,10 @@ export default async function IntelPage({
   const lang = await getLang();
   const labels = await loadTranslations(lang);
 
-  const dirEntry = await lookupStock(sym, lang);
+  const sp_exchange = sp?.exchange ?? null;
+  const dirEntry = sp_exchange
+    ? await lookupStock(sym, lang, sp_exchange)
+    : await lookupStock(sym, lang);
   const exchangeLabel = (dirEntry?.exchange ?? "NASDAQ") as string;
   const companyName = dirEntry?.name ?? sym;
 
@@ -82,7 +85,7 @@ export default async function IntelPage({
             </Link>
             <span className="text-white/40">›</span>
             <Link
-              href={`/ticker/${sym}`}
+              href={`/ticker/${sym}?exchange=${exchangeLabel}`}
               className="text-white/70 hover:text-white transition-colors font-medium"
             >
               {sym}
@@ -130,14 +133,14 @@ export default async function IntelPage({
           <div className="flex items-center gap-3 flex-wrap pt-1">
             <WatchlistButton symbol={sym} exchange={exchangeLabel} name={companyName} />
             <Link
-              href={`/ticker/${sym}`}
+              href={`/ticker/${sym}?exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               style={{ color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.1)" }}
             >
               {t(labels,"stock_cta_ir")}
             </Link>
             <Link
-              href={`/ticker/${sym}/report`}
+              href={`/ticker/${sym}/report?exchange=${exchangeLabel}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:brightness-110"
@@ -149,28 +152,28 @@ export default async function IntelPage({
           {/* Analysis type quick-access row */}
           <div className="grid gap-3" style={{ gridTemplateColumns: "1fr 1fr", justifyItems: "start" }}>
             <Link
-              href={`/ticker/${sym}/intel?run=ta`}
+              href={`/ticker/${sym}/intel?run=ta&exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
               📈 Technical Analysis (TA)
             </Link>
             <Link
-              href={`/ticker/${sym}/intel?run=fa`}
+              href={`/ticker/${sym}/intel?run=fa&exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
               📊 Fundamental Analysis (FA)
             </Link>
             <Link
-              href={`/ticker/${sym}/intel?run=ma`}
+              href={`/ticker/${sym}/intel?run=ma&exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
               🌐 Market Analysis (MA)
             </Link>
             <Link
-              href={`/ticker/${sym}/intel?run=ca`}
+              href={`/ticker/${sym}/intel?run=ca&exchange=${exchangeLabel}`}
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-white uppercase tracking-wide text-sm shadow-md transition-all hover:brightness-110 hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >
@@ -258,7 +261,7 @@ async function BottomStockNav({ sym, lang, labels }: { sym: string; lang: string
           {otherStocks.map((tk) => (
             <Link
               key={tk.symbol}
-              href={`/ticker/${tk.symbol}/intel`}
+              href={`/ticker/${tk.symbol}/intel?exchange=${tk.exchange}`}
               className="px-3 py-1 rounded-full text-xs font-bold transition-all hover:-translate-y-0.5"
               style={tk.exchange === "ASX"
                 ? { background: "rgba(59,130,246,0.1)", color: "#2563eb", border: "1px solid rgba(59,130,246,0.25)" }

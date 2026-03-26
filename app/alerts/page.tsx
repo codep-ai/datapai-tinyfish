@@ -17,15 +17,16 @@ export default async function AlertsPage({
   const contentOnly = await getLatestAnalysesBySignalType("CONTENT_CHANGE", 100);
   const allSignals = await getLatestAnalysesBySignalType(null, 100);
 
-  // Build name map from DB for all unique tickers in results (localized)
+  // Build name + exchange maps from DB for all unique tickers in results (localized)
   const allTickers = new Set([...contentOnly.map((a) => a.ticker), ...allSignals.map((a) => a.ticker)]);
-  const nameEntries = await Promise.all(
+  const lookupEntries = await Promise.all(
     [...allTickers].map(async (sym) => {
       const entry = await lookupStock(sym, lang);
-      return [sym, entry?.name ?? sym] as [string, string];
+      return [sym, entry] as [string, typeof entry];
     })
   );
-  const universe = Object.fromEntries(nameEntries);
+  const universe = Object.fromEntries(lookupEntries.map(([sym, e]) => [sym, e?.name ?? sym]));
+  const exchangeMap = Object.fromEntries(lookupEntries.map(([sym, e]) => [sym, e?.exchange ?? "US"]));
 
   // Filter to user's watchlist symbols if ?watchlist=true
   let filteredContent = contentOnly;
@@ -45,6 +46,7 @@ export default async function AlertsPage({
       contentOnly={filteredContent}
       allSignals={filteredAll}
       universe={universe}
+      exchangeMap={exchangeMap}
       watchlistOnly={watchlistOnly}
     />
   );

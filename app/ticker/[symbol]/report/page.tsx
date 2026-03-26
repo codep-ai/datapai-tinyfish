@@ -28,15 +28,21 @@ function ValidationBadge({ status }: { status: string | null }) {
 
 export default async function TickerReportPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ symbol: string }>;
+  searchParams?: Promise<Record<string, string>>;
 }) {
   const { symbol } = await params;
+  const sp = await searchParams;
+  const qsExchange = sp?.exchange ?? null;
   const sym = symbol.toUpperCase();
   const lang = await getLang();
 
   // Look up stock from DB; fall back to scan history for unknown tickers
-  const dirEntry = await lookupStock(sym, lang);
+  const dirEntry = qsExchange
+    ? await lookupStock(sym, lang, qsExchange)
+    : await lookupStock(sym, lang);
   const snapsForCheck = !dirEntry ? await getTickerSnapshots(sym, 1) : null;
 
   // 404 only if completely unknown with no scan history
@@ -95,7 +101,7 @@ export default async function TickerReportPage({
               Stocks
             </Link>
             <span className="text-white/40">›</span>
-            <Link href={`/ticker/${sym}`} className="text-white/70 hover:text-white transition-colors font-medium">
+            <Link href={`/ticker/${sym}?exchange=${ticker.exchange}`} className="text-white/70 hover:text-white transition-colors font-medium">
               {sym}
             </Link>
             <span className="text-white/40">›</span>
@@ -142,14 +148,14 @@ export default async function TickerReportPage({
           {/* CTAs */}
           <div className="flex items-center gap-3 flex-wrap pt-1">
             <Link
-              href={`/ticker/${sym}`}
+              href={`/ticker/${sym}?exchange=${ticker.exchange}`}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               style={{ color: "rgba(255,255,255,0.8)", border: "1px solid rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.1)" }}
             >
               ← Back to {sym}
             </Link>
             <Link
-              href={`/ticker/${sym}/intel`}
+              href={`/ticker/${sym}/intel?exchange=${ticker.exchange}`}
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:brightness-110"
               style={{ background: "#fd8412", color: "#fff" }}
             >
@@ -426,7 +432,7 @@ export default async function TickerReportPage({
       {/* ── Back link ──────────────────────────────────────────────────────── */}
       <div className="pt-4">
         <Link
-          href={`/ticker/${sym}`}
+          href={`/ticker/${sym}?exchange=${ticker.exchange}`}
           className="text-base text-brand hover:underline font-medium"
         >
           ← Back to {sym} overview

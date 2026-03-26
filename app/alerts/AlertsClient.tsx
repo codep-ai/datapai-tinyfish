@@ -27,6 +27,7 @@ interface Props {
   contentOnly: Analysis[];
   allSignals: Analysis[];
   universe: Record<string, string>;
+  exchangeMap: Record<string, string>;
   watchlistOnly?: boolean;
 }
 
@@ -148,7 +149,7 @@ function validationBadge(status: string | null) {
   );
 }
 
-export default function AlertsClient({ contentOnly, allSignals, universe, watchlistOnly }: Props) {
+export default function AlertsClient({ contentOnly, allSignals, universe, exchangeMap, watchlistOnly }: Props) {
   const [showAll, setShowAll] = useState(false);
   const analyses = showAll ? allSignals : contentOnly;
   const changed = analyses.filter((a) => a.alert_score !== 0).length;
@@ -296,7 +297,7 @@ export default function AlertsClient({ contentOnly, allSignals, universe, watchl
                     {/* Ticker */}
                     <td className="py-5 px-6">
                       <Link
-                        href={`/ticker/${a.ticker}`}
+                        href={`/ticker/${a.ticker}?exchange=${exchangeMap[a.ticker] ?? "US"}`}
                         className="text-brand text-lg font-bold hover:text-brand-light"
                       >
                         {a.ticker}

@@ -10,5 +10,5 @@ export default async function AsxSymbolPage({
   params: Promise<{ symbol: string }>;
 }) {
   const { symbol } = await params;
-  redirect(`/ticker/${symbol.toUpperCase()}`);
+  redirect(`/ticker/${symbol.toUpperCase()}?exchange=ASX`);
 }

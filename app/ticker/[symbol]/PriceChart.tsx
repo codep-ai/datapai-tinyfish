@@ -40,6 +40,7 @@ interface Props {
   scanDates?: string[];
   exchange?: string;
   symbol?: string;
+  labels?: Record<string, string>;
 }
 
 // ── Currency helpers ─────────────────────────────────────────────────────────
@@ -58,18 +59,18 @@ function fmtVolume(v: number): string {
 
 // ── Period config ────────────────────────────────────────────────────────────
 
-const PERIOD_CONFIG: Record<Period, { label: string; days: number; isIntraday: boolean }> = {
-  "1D": { label: "Intraday", days: 1, isIntraday: true },
-  "1W": { label: "1 Week", days: 7, isIntraday: false },
-  "1M": { label: "1 Month", days: 30, isIntraday: false },
-  "3M": { label: "3 Months", days: 90, isIntraday: false },
-  "YTD": { label: "YTD", days: 0, isIntraday: false }, // computed
-  "1Y": { label: "1 Year", days: 365, isIntraday: false },
+const PERIOD_DEFAULTS: Record<Period, { label: string; labelKey: string; days: number; isIntraday: boolean }> = {
+  "1D": { label: "Intraday", labelKey: "chart_intraday", days: 1, isIntraday: true },
+  "1W": { label: "1 Week", labelKey: "chart_1w", days: 7, isIntraday: false },
+  "1M": { label: "1 Month", labelKey: "chart_1m", days: 30, isIntraday: false },
+  "3M": { label: "3 Months", labelKey: "chart_3m", days: 90, isIntraday: false },
+  "YTD": { label: "YTD", labelKey: "chart_ytd", days: 0, isIntraday: false },
+  "1Y": { label: "1 Year", labelKey: "chart_1y", days: 365, isIntraday: false },
 };
 
 // ── Main Component ───────────────────────────────────────────────────────────
 
-export default function PriceChart({ data, scanDates = [], exchange = "US", symbol }: Props) {
+export default function PriceChart({ data, scanDates = [], exchange = "US", symbol, labels = {} }: Props) {
   const [period, setPeriod] = useState<Period>("1M");
   const [intradayData, setIntradayData] = useState<IntradayPoint[] | null>(null);
   const [loadingIntraday, setLoadingIntraday] = useState(false);
@@ -140,7 +141,7 @@ export default function PriceChart({ data, scanDates = [], exchange = "US", symb
       const yearStart = new Date().getFullYear() + "-01-01";
       filtered = sorted.filter((d) => d.date >= yearStart);
     } else {
-      const cfg = PERIOD_CONFIG[period];
+      const cfg = PERIOD_DEFAULTS[period];
       if (cfg.days > 0 && sorted.length > cfg.days) {
         filtered = sorted.slice(-cfg.days);
       }
@@ -185,19 +186,22 @@ export default function PriceChart({ data, scanDates = [], exchange = "US", symb
       {/* ── Period Tabs + Price Summary ── */}
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex gap-1">
-          {(Object.keys(PERIOD_CONFIG) as Period[]).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPeriod(p)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${
-                period === p
-                  ? "bg-brand text-white shadow-sm"
-                  : "bg-gray-100 text-gray-500 hover:bg-gray-200"
-              }`}
-            >
-              {PERIOD_CONFIG[p].label}
-            </button>
-          ))}
+          {(Object.keys(PERIOD_DEFAULTS) as Period[]).map((p) => {
+            const cfg = PERIOD_DEFAULTS[p];
+            return (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`px-3 py-1.5 text-xs font-semibold rounded-full transition-all ${
+                  period === p
+                    ? "bg-brand text-white shadow-sm"
+                    : "bg-gray-100 text-gray-500 hover:bg-gray-200"
+                }`}
+              >
+                {labels[cfg.labelKey] || cfg.label}
+              </button>
+            );
+          })}
         </div>
 
         {chartData.length > 0 && (

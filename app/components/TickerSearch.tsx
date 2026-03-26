@@ -120,10 +120,10 @@ export default function TickerSearch({
     const exchangeRoutes: Record<string, string> = { ASX: "asx", HKEX: "hongkong", SET: "thailand", KLSE: "malaysia", IDX: "indonesia", HOSE: "vietnam" };
     const path =
       intelMode
-        ? `/ticker/${r.symbol}/intel`
+        ? `/ticker/${r.symbol}/intel?exchange=${r.exchange}`
         : exchangeRoutes[r.exchange]
         ? `/${exchangeRoutes[r.exchange]}/${cleanSym}`
-        : `/ticker/${r.symbol}`;
+        : `/ticker/${r.symbol}?exchange=${r.exchange}`;
     setIsOpen(false);
     setQuery("");
     router.push(path);
@@ -139,10 +139,10 @@ export default function TickerSearch({
     if (!clean) return;
     const path =
       intelMode
-        ? `/ticker/${clean}/intel`
+        ? `/ticker/${clean}/intel?exchange=${market}`
         : market === "ASX"
         ? `/asx/${clean}`
-        : `/ticker/${clean}`;
+        : `/ticker/${clean}?exchange=${market}`;
     setIsOpen(false);
     setQuery("");
     router.push(path);

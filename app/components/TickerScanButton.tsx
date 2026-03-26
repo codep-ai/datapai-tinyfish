@@ -32,9 +32,11 @@ interface Props {
   resolvedUrl?: string;
   rescanLabel?: string;
   scanLabel?: string;
+  /** Exchange for linking back to ticker page with disambiguation */
+  exchange?: string;
 }
 
-export default function TickerScanButton({ symbol, isMonitored = false, resolvedUrl, rescanLabel, scanLabel }: Props) {
+export default function TickerScanButton({ symbol, isMonitored = false, resolvedUrl, rescanLabel, scanLabel, exchange }: Props) {
   const [phase, setPhase] = useState<"idle" | "running" | "done" | "error">("idle");
   const [runId, setRunId] = useState<string | null>(null);
   const [steps, setSteps] = useState<{ step: string; status: string; message?: string }[]>([]);
@@ -183,7 +185,7 @@ export default function TickerScanButton({ symbol, isMonitored = false, resolved
         <div className="flex gap-2 flex-wrap pt-1">
           {phase === "done" && (
             <button
-              onClick={() => { window.location.href = `/ticker/${symbol}`; }}
+              onClick={() => { window.location.href = `/ticker/${symbol}${exchange ? `?exchange=${exchange}` : ""}`; }}
               className="px-4 py-2 rounded-lg text-sm font-bold text-white transition-all hover:-translate-y-0.5"
               style={{ background: "#fd8412" }}
             >

@@ -207,7 +207,7 @@ export default function IndexesPage() {
                       {g.indexes.map((idx) => (
                         <tr key={idx.ticker} className="border-t border-gray-100 hover:bg-blue-50/40 transition-colors">
                           <td className="px-4 py-2.5">
-                            <Link href={`/ticker/${encodeURIComponent(idx.ticker)}`}
+                            <Link href={`/ticker/${encodeURIComponent(idx.ticker)}?exchange=INDEX`}
                               className="font-semibold text-blue-700 hover:underline">
                               {idx.name}
                             </Link>
