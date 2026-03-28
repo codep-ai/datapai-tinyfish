@@ -784,6 +784,7 @@ export async function getLatestPricesForWatchlist(
     if (item.exchange === "SET") candidates.push(`${item.symbol}.BK`);
     if (item.exchange === "KLSE") candidates.push(`${item.symbol}.KL`);
     if (item.exchange === "IDX") candidates.push(`${item.symbol}.JK`);
+    if (item.exchange === "LSE") candidates.push(`${item.symbol}.L`);
     symbolToTickers[item.symbol] = candidates;
     allTickers.push(...candidates);
   }
@@ -975,6 +976,7 @@ export async function getMaterialEventsForTickers(
     if (t.exchange === "SET") candidates.push(`${t.symbol}.BK`);
     if (t.exchange === "KLSE") candidates.push(`${t.symbol}.KL`);
     if (t.exchange === "IDX") candidates.push(`${t.symbol}.JK`);
+    if (t.exchange === "LSE") candidates.push(`${t.symbol}.L`);
     symbolToTickers[t.symbol] = candidates;
     allTickers.push(...candidates);
   }
@@ -1041,7 +1043,7 @@ export async function getStockSynthesisFlexible(symbol: string, exchange: string
   if (result) return result;
   // Try with exchange-specific yfinance suffix
   const suffixMap: Record<string, string> = {
-    ASX: ".AX", HOSE: ".VN", HKEX: ".HK", SET: ".BK", KLSE: ".KL", IDX: ".JK", SSE: ".SS", SZSE: ".SZ",
+    ASX: ".AX", HOSE: ".VN", HKEX: ".HK", SET: ".BK", KLSE: ".KL", IDX: ".JK", SSE: ".SS", SZSE: ".SZ", LSE: ".L",
   };
   const suffix = suffixMap[exchange];
   if (suffix) {
@@ -1079,7 +1081,7 @@ export interface IntradayBar {
 }
 
 export async function getIntradayBars(ticker: string, exchange: string, days: number = 1): Promise<IntradayBar[]> {
-  const suffixMap: Record<string, string> = { ASX: ".AX", HOSE: ".VN", HKEX: ".HK", SET: ".BK", KLSE: ".KL", IDX: ".JK" };
+  const suffixMap: Record<string, string> = { ASX: ".AX", HOSE: ".VN", HKEX: ".HK", SET: ".BK", KLSE: ".KL", IDX: ".JK", SSE: ".SS", SZSE: ".SZ", LSE: ".L" };
   const candidates = [ticker];
   const suffix = suffixMap[exchange];
   if (suffix) candidates.push(ticker.replace(suffix, ""));
@@ -1129,7 +1131,7 @@ export interface StockFundamentals {
 }
 
 export async function getStockFundamentals(ticker: string, exchange: string): Promise<StockFundamentals | null> {
-  const suffixMap: Record<string, string> = { ASX: ".AX", HOSE: ".VN", HKEX: ".HK", SET: ".BK", KLSE: ".KL", IDX: ".JK" };
+  const suffixMap: Record<string, string> = { ASX: ".AX", HOSE: ".VN", HKEX: ".HK", SET: ".BK", KLSE: ".KL", IDX: ".JK", SSE: ".SS", SZSE: ".SZ", LSE: ".L" };
   const candidates = [ticker];
   const suffix = suffixMap[exchange];
   if (suffix) candidates.push(ticker.replace(suffix, ""));
