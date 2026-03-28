@@ -13,6 +13,7 @@ import LangToggle from "./components/LangToggle";
 import ProfileBadge from "./components/ProfileBadge";
 import EarlySupporterBadge from "./components/EarlySupporterBadge";
 import OnboardingBanner from "./components/OnboardingBanner";
+import MarketDropdown from "./components/MarketDropdown";
 import GlobalCopilot from "./components/GlobalCopilot";
 
 const poppins = Poppins({
@@ -67,24 +68,19 @@ export default async function RootLayout({
 
             {/* Centre: page nav */}
             <nav className="flex items-center gap-0.5 flex-1 justify-center">
-              <a href="/" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_usStocks")}</a>
-              <a href="/asx" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_asx")}</a>
-              <a href="/vietnam" className="text-gray-500 hover:text-[#c8102e] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_vietnam")}</a>
-              <a href="/hongkong" className="text-gray-500 hover:text-[#d32f2f] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_hongkong")}</a>
-              <a href="/thailand" className="text-gray-500 hover:text-[#1a237e] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_thailand")}</a>
-              <a href="/malaysia" className="text-gray-500 hover:text-[#0c4da2] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_malaysia")}</a>
-              <a href="/indonesia" className="text-gray-500 hover:text-[#e53935] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_indonesia")}</a>
-              <a href="/china" className="text-gray-500 hover:text-[#dc2626] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_china")}</a>
-              <a href="/alerts" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_alerts")}</a>
+              <MarketDropdown
+                buttonLabel={t(labels, "nav_markets")}
+                markets={[
+                  { href: "/", label: t(labels, "nav_usStocks"), flag: "🇺🇸" },
+                  { href: "/asx", label: t(labels, "nav_asx"), flag: "🇦🇺" },
+                  { href: "/china", label: t(labels, "nav_china"), flag: "🇨🇳" },
+                  { href: "/hongkong", label: t(labels, "nav_hongkong"), flag: "🇭🇰" },
+                  { href: "/vietnam", label: t(labels, "nav_vietnam"), flag: "🇻🇳" },
+                  { href: "/thailand", label: t(labels, "nav_thailand"), flag: "🇹🇭" },
+                  { href: "/malaysia", label: t(labels, "nav_malaysia"), flag: "🇲🇾" },
+                  { href: "/indonesia", label: t(labels, "nav_indonesia"), flag: "🇮🇩" },
+                ]}
+              />
               <a href="/watchlist" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>{t(labels, "nav_watchlist")}</a>
               <a href="/intel" className="text-gray-500 hover:text-[#6366f1] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
@@ -93,10 +89,10 @@ export default async function RootLayout({
                 style={{ fontSize: "0.92rem" }}>{t(labels, "nav_screener")}</a>
               <a href="/studio" className="text-gray-500 hover:text-[#6366f1] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>{t(labels, "nav_studio")}</a>
-              <a href="/indexes" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
-                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_indexes")}</a>
               <a href="/performance" className="text-gray-500 hover:text-[#6366f1] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>{t(labels, "nav_performance")}</a>
+              <a href="/indexes" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
+                style={{ fontSize: "0.92rem" }}>{t(labels, "nav_indexes")}</a>
               <a href="/portfolio" className="text-gray-500 hover:text-[#6366f1] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>{t(labels, "nav_portfolio")}</a>
               <a href="/pricing" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
