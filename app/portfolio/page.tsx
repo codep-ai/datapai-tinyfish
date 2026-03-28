@@ -16,7 +16,7 @@ function useLabels(): Labels {
   useEffect(() => {
     const lang = getLangFromCookie();
     if (lang === "en") return;
-    fetch(`/api/i18n/labels?lang=${lang}&category=portfolio,common`)
+    fetch(`/api/i18n/labels?lang=${lang}&category=portfolio,common,market`)
       .then((r) => r.json())
       .then(setLabels)
       .catch(() => {});
@@ -240,29 +240,23 @@ export default function PortfolioPage() {
               {showForm && (
                 <div className="px-5 py-3 border-b bg-emerald-50/50 flex flex-wrap gap-3 items-end">
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">Ticker</label>
+                    <label className="text-xs text-gray-500 block mb-1">{ll(labels, "pf_ticker", "Ticker")}</label>
                     <input className="border rounded px-2 py-1 text-sm w-24" value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} placeholder="AAPL" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">Exchange</label>
+                    <label className="text-xs text-gray-500 block mb-1">{ll(labels, "pf_exchange", "Exchange")}</label>
                     <select className="border rounded px-2 py-1 text-sm" value={exchange} onChange={(e) => setExchange(e.target.value)}>
-                      <option>US</option>
-                      <option>ASX</option>
-                      <option>HKEX</option>
-                      <option>SET</option>
-                      <option>KLSE</option>
-                      <option>IDX</option>
-                      <option>HOSE</option>
-                      <option>SSE</option>
-                      <option>SZSE</option>
+                      {[["US","mkt_US"],["ASX","mkt_ASX"],["HKEX","mkt_HKEX"],["SET","mkt_SET"],["KLSE","mkt_KLSE"],["IDX","mkt_IDX"],["HOSE","mkt_HOSE"],["SSE","mkt_SSE"],["SZSE","mkt_SZSE"],["LSE","mkt_LSE"]].map(([v,k]) => (
+                        <option key={v} value={v}>{ll(labels, k, v)}</option>
+                      ))}
                     </select>
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">Shares</label>
+                    <label className="text-xs text-gray-500 block mb-1">{ll(labels, "pf_shares", "Shares")}</label>
                     <input className="border rounded px-2 py-1 text-sm w-20" type="number" value={shares} onChange={(e) => setShares(e.target.value)} placeholder="100" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 block mb-1">Avg Cost</label>
+                    <label className="text-xs text-gray-500 block mb-1">{ll(labels, "pf_avg_price", "Avg Price")}</label>
                     <input className="border rounded px-2 py-1 text-sm w-24" type="number" step="0.01" value={avgCost} onChange={(e) => setAvgCost(e.target.value)} placeholder="150.00" />
                   </div>
                   <button onClick={addHolding} className="text-xs font-semibold px-4 py-1.5 rounded-lg bg-[#2e8b57] text-white hover:bg-[#267348]">

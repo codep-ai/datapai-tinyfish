@@ -20,7 +20,7 @@ export async function GET() {
     const holdingsRes = await pool.query(
       `SELECT h.id, h.ticker, h.exchange, h.shares, h.avg_cost, h.added_at, h.notes,
               p.close AS current_price,
-              ROUND((p.close - h.avg_cost::float) / NULLIF(h.avg_cost::float, 0) * 100, 2) AS pnl_pct,
+              ROUND(((p.close - h.avg_cost::float) / NULLIF(h.avg_cost::float, 0) * 100)::numeric, 2) AS pnl_pct,
               ROUND((p.close * h.shares::float - h.avg_cost::float * h.shares::float)::numeric, 2) AS pnl_value
        FROM datapai.usr_holdings h
        LEFT JOIN LATERAL (

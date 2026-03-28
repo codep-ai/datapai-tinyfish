@@ -16,7 +16,7 @@ function useLabels(): Labels {
   useEffect(() => {
     const lang = getLangFromCookie();
     if (lang === "en") return;
-    fetch(`/api/i18n/labels?lang=${lang}&category=performance,common`)
+    fetch(`/api/i18n/labels?lang=${lang}&category=performance,common,signal,market`)
       .then((r) => r.json())
       .then(setLabels)
       .catch(() => {});
@@ -74,9 +74,11 @@ function pctColor(val: number | null): string {
   return val >= 0 ? "text-emerald-600" : "text-red-500";
 }
 
-function fmtPct(val: number | null): string {
+function fmtPct(val: number | string | null): string {
   if (val == null) return "--";
-  return `${val >= 0 ? "+" : ""}${val.toFixed(1)}%`;
+  const n = Number(val);
+  if (isNaN(n)) return "--";
+  return `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
 }
 
 function dirBadge(dir: string): string {
@@ -88,6 +90,11 @@ function dirBadge(dir: string): string {
     case "STRONG_SELL": return "bg-red-600 text-white";
     default: return "bg-gray-100 text-gray-600";
   }
+}
+
+function dirLabel(dir: string, labels: Labels): string {
+  const key = "sig_" + dir.toLowerCase();
+  return ll(labels, key, dir);
 }
 
 export default function PerformancePage() {
@@ -182,7 +189,7 @@ export default function PerformancePage() {
                       <tr key={d.signal_direction} className="border-b hover:bg-gray-50">
                         <td className="px-5 py-2">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded ${dirBadge(d.signal_direction)}`}>
-                            {d.signal_direction}
+                            {dirLabel(d.signal_direction, labels)}
                           </span>
                         </td>
                         <td className="px-5 py-2 text-right">{d.total}</td>
@@ -214,7 +221,7 @@ export default function PerformancePage() {
                   <tbody>
                     {byEx.map((e) => (
                       <tr key={e.exchange} className="border-b hover:bg-gray-50">
-                        <td className="px-5 py-2 font-medium">{e.exchange}</td>
+                        <td className="px-5 py-2 font-medium">{ll(labels, "mkt_" + e.exchange, e.exchange)}</td>
                         <td className="px-5 py-2 text-right">{e.total}</td>
                         <td className="px-5 py-2 text-right font-medium">{e.win_rate}%</td>
                         <td className={`px-5 py-2 text-right font-medium ${pctColor(e.avg_return_30d)}`}>{fmtPct(e.avg_return_30d)}</td>
@@ -235,11 +242,11 @@ export default function PerformancePage() {
                   onChange={(e) => setFilter(e.target.value)}
                 >
                   <option value="">{ll(labels, "perf_all", "All Directions")}</option>
-                  <option value="BUY">BUY</option>
-                  <option value="STRONG_BUY">STRONG BUY</option>
-                  <option value="SELL">SELL</option>
-                  <option value="STRONG_SELL">STRONG SELL</option>
-                  <option value="HOLD">HOLD</option>
+                  <option value="BUY">{dirLabel("BUY", labels)}</option>
+                  <option value="STRONG_BUY">{dirLabel("STRONG_BUY", labels)}</option>
+                  <option value="SELL">{dirLabel("SELL", labels)}</option>
+                  <option value="STRONG_SELL">{dirLabel("STRONG_SELL", labels)}</option>
+                  <option value="HOLD">{dirLabel("HOLD", labels)}</option>
                 </select>
               </div>
               <div className="overflow-x-auto">
@@ -266,14 +273,14 @@ export default function PerformancePage() {
                             {s.ticker}
                           </Link>
                         </td>
-                        <td className="px-4 py-2 text-gray-500 text-xs">{s.exchange}</td>
+                        <td className="px-4 py-2 text-gray-500 text-xs">{ll(labels, "mkt_" + s.exchange, s.exchange)}</td>
                         <td className="px-4 py-2">
                           <span className={`text-xs font-semibold px-2 py-0.5 rounded ${dirBadge(s.signal_direction)}`}>
-                            {s.signal_direction}
+                            {dirLabel(s.signal_direction, labels)}
                           </span>
                         </td>
                         <td className="px-4 py-2 text-gray-500 text-xs">{s.signal_date}</td>
-                        <td className="px-4 py-2 text-right">${s.signal_price?.toFixed(2) ?? "--"}</td>
+                        <td className="px-4 py-2 text-right">${s.signal_price != null ? Number(s.signal_price).toFixed(2) : "--"}</td>
                         <td className={`px-4 py-2 text-right ${pctColor(s.return_7d)}`}>{fmtPct(s.return_7d)}</td>
                         <td className={`px-4 py-2 text-right ${pctColor(s.return_30d)}`}>{fmtPct(s.return_30d)}</td>
                         <td className={`px-4 py-2 text-right ${pctColor(s.return_90d)}`}>{fmtPct(s.return_90d)}</td>
