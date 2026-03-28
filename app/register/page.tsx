@@ -1,38 +1,48 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
+// ── i18n helper ─────────────────────────────────────────────────────────────
+
+function t(labels: Record<string, string>, key: string, fallback?: string): string {
+  return labels[key] || fallback || key;
+}
+
 // ── Password strength ─────────────────────────────────────────────────────────
 
-interface PasswordRule { label: string; test: (p: string) => boolean }
+function makeRules(labels: Record<string, string>) {
+  return [
+    { key: "pwd_min_length",  label: t(labels, "pwd_min_length", "At least 8 characters"),        test: (p: string) => p.length >= 8 },
+    { key: "pwd_uppercase",   label: t(labels, "pwd_uppercase", "Uppercase letter (A–Z)"),         test: (p: string) => /[A-Z]/.test(p) },
+    { key: "pwd_lowercase",   label: t(labels, "pwd_lowercase", "Lowercase letter (a–z)"),         test: (p: string) => /[a-z]/.test(p) },
+    { key: "pwd_number",      label: t(labels, "pwd_number", "Number (0–9)"),                      test: (p: string) => /[0-9]/.test(p) },
+    { key: "pwd_special",     label: t(labels, "pwd_special", "Special character (!@#$%^&*…)"),    test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  ];
+}
 
-const PASSWORD_RULES: PasswordRule[] = [
-  { label: "At least 8 characters",          test: (p) => p.length >= 8 },
-  { label: "Uppercase letter (A–Z)",           test: (p) => /[A-Z]/.test(p) },
-  { label: "Lowercase letter (a–z)",           test: (p) => /[a-z]/.test(p) },
-  { label: "Number (0–9)",                     test: (p) => /[0-9]/.test(p) },
-  { label: "Special character (!@#$%^&*…)",   test: (p) => /[^A-Za-z0-9]/.test(p) },
-];
-
-function passwordStrength(p: string): 0 | 1 | 2 | 3 {
-  const passed = PASSWORD_RULES.filter((r) => r.test(p)).length;
+function passwordStrength(p: string, rules: ReturnType<typeof makeRules>): 0 | 1 | 2 | 3 {
+  const passed = rules.filter((r) => r.test(p)).length;
   if (passed <= 1) return 0;
   if (passed <= 2) return 1;
   if (passed <= 3) return 2;
   return 3;
 }
 
-const STRENGTH_LABELS = ["Too weak", "Weak", "Fair", "Strong"];
 const STRENGTH_COLORS = ["#e74c3c", "#fd8412", "#f1c40f", "#2e8b57"];
 
-function StrengthMeter({ password }: { password: string }) {
-  const score = passwordStrength(password);
-  const allPassed = PASSWORD_RULES.every((r) => r.test(password));
+function StrengthMeter({ password, labels, rules }: { password: string; labels: Record<string, string>; rules: ReturnType<typeof makeRules> }) {
+  const score = passwordStrength(password, rules);
+  const allPassed = rules.every((r) => r.test(password));
+  const strengthLabels = [
+    t(labels, "pwd_strength_weak", "Too weak"),
+    t(labels, "pwd_strength_weak", "Weak"),
+    t(labels, "pwd_strength_fair", "Fair"),
+    t(labels, "pwd_strength_strong", "Strong"),
+  ];
   return (
     <div className="space-y-2 mt-1">
-      {/* Bar */}
       <div className="flex gap-1">
         {[0, 1, 2, 3].map((i) => (
           <div
@@ -44,16 +54,15 @@ function StrengthMeter({ password }: { password: string }) {
       </div>
       {password.length > 0 && (
         <p className="text-xs font-medium" style={{ color: STRENGTH_COLORS[score] }}>
-          {STRENGTH_LABELS[score]}
+          {strengthLabels[score]}
         </p>
       )}
-      {/* Rules checklist */}
       {password.length > 0 && !allPassed && (
         <ul className="space-y-1">
-          {PASSWORD_RULES.map((r) => {
+          {rules.map((r) => {
             const ok = r.test(password);
             return (
-              <li key={r.label} className={`text-xs flex items-center gap-1.5 ${ok ? "text-emerald-600" : "text-red-400"}`}>
+              <li key={r.key} className={`text-xs flex items-center gap-1.5 ${ok ? "text-emerald-600" : "text-red-400"}`}>
                 <span>{ok ? "✓" : "✗"}</span>
                 {r.label}
               </li>
@@ -74,11 +83,22 @@ export default function RegisterPage() {
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [agreedTerms, setAgreedTerms] = useState(false);
+  const [labels, setLabels]     = useState<Record<string, string>>({});
   const router = useRouter();
 
+  // Fetch i18n labels on mount
+  useEffect(() => {
+    fetch("/api/i18n")
+      .then(r => r.json())
+      .then(data => setLabels(data.labels || {}))
+      .catch(() => {});
+  }, []);
+
+  const rules = useMemo(() => makeRules(labels), [labels]);
+
   const passwordValid = useMemo(
-    () => PASSWORD_RULES.every((r) => r.test(password)),
-    [password]
+    () => rules.every((r) => r.test(password)),
+    [password, rules]
   );
 
   async function handleSubmit(e: React.FormEvent) {
@@ -86,15 +106,15 @@ export default function RegisterPage() {
     setError("");
 
     if (!agreedTerms) {
-      setError("You must agree to the Terms of Service and Privacy Policy to create an account");
+      setError(t(labels, "reg_error_terms", "You must agree to the Terms of Service and Privacy Policy to create an account"));
       return;
     }
     if (!passwordValid) {
-      setError("Please meet all password requirements");
+      setError(t(labels, "reg_error_pwd", "Please meet all password requirements"));
       return;
     }
     if (password !== confirm) {
-      setError("Passwords do not match");
+      setError(t(labels, "reg_error_mismatch", "Passwords do not match"));
       return;
     }
 
@@ -107,13 +127,13 @@ export default function RegisterPage() {
       });
       const data = await res.json() as { error?: string };
       if (!res.ok) {
-        setError(data.error ?? "Registration failed");
+        setError(data.error ?? t(labels, "reg_error_failed", "Registration failed"));
       } else {
         router.push("/profile/onboarding");
         router.refresh();
       }
     } catch {
-      setError("Network error — please try again");
+      setError(t(labels, "reg_error_network", "Network error — please try again"));
     } finally {
       setLoading(false);
     }
@@ -125,8 +145,8 @@ export default function RegisterPage() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="text-5xl mb-3">⭐</div>
-          <h1 className="text-3xl font-bold text-[#252525]">Create account</h1>
-          <p className="text-gray-500 mt-2">Set up your investor profile in 60 seconds</p>
+          <h1 className="text-3xl font-bold text-[#252525]">{t(labels, "reg_title", "Create account")}</h1>
+          <p className="text-gray-500 mt-2">{t(labels, "reg_subtitle", "Set up your investor profile in 60 seconds")}</p>
         </div>
 
         {/* Form */}
@@ -139,7 +159,7 @@ export default function RegisterPage() {
 
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-gray-700" htmlFor="email">
-              Email address
+              {t(labels, "reg_email", "Email address")}
             </label>
             <input
               id="email"
@@ -155,7 +175,7 @@ export default function RegisterPage() {
 
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-gray-700" htmlFor="password">
-              Password
+              {t(labels, "reg_password", "Password")}
             </label>
             <input
               id="password"
@@ -164,15 +184,15 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               autoComplete="new-password"
-              placeholder="••••••••••"
+              placeholder="••••••••"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
-            <StrengthMeter password={password} />
+            <StrengthMeter password={password} labels={labels} rules={rules} />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-sm font-semibold text-gray-700" htmlFor="confirm">
-              Confirm password
+              {t(labels, "reg_confirm", "Confirm password")}
             </label>
             <input
               id="confirm"
@@ -181,12 +201,14 @@ export default function RegisterPage() {
               onChange={(e) => setConfirm(e.target.value)}
               required
               autoComplete="new-password"
-              placeholder="••••••••••"
+              placeholder="••••••••"
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
             {confirm.length > 0 && (
               <p className={`text-xs font-medium ${confirm === password ? "text-emerald-600" : "text-red-500"}`}>
-                {confirm === password ? "✓ Passwords match" : "✗ Passwords do not match"}
+                {confirm === password
+                  ? `✓ ${t(labels, "reg_pwd_match", "Passwords match")}`
+                  : `✗ ${t(labels, "reg_pwd_mismatch", "Passwords do not match")}`}
               </p>
             )}
           </div>
@@ -201,12 +223,11 @@ export default function RegisterPage() {
               className="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
             />
             <label htmlFor="terms" className="text-xs text-gray-500 leading-relaxed cursor-pointer">
-              I have read and agree to the{" "}
-              <a href="/terms" target="_blank" className="text-indigo-600 hover:underline font-medium">Terms of Service</a>
-              {" "}and{" "}
-              <a href="/privacy" target="_blank" className="text-indigo-600 hover:underline font-medium">Privacy Policy</a>.
-              I understand that DataP.ai provides AI-generated market intelligence for informational and educational purposes only,
-              and does not constitute financial advice.
+              {t(labels, "reg_agree_prefix", "I have read and agree to the")}{" "}
+              <a href="/terms" target="_blank" className="text-indigo-600 hover:underline font-medium">{t(labels, "reg_terms_link", "Terms of Service")}</a>
+              {" "}{t(labels, "reg_agree_and", "and")}{" "}
+              <a href="/privacy" target="_blank" className="text-indigo-600 hover:underline font-medium">{t(labels, "reg_privacy_link", "Privacy Policy")}</a>.
+              {" "}{t(labels, "reg_disclaimer", "I understand that DataP.ai provides AI-generated market intelligence for informational and educational purposes only, and does not constitute financial advice.")}
             </label>
           </div>
 
@@ -216,18 +237,18 @@ export default function RegisterPage() {
             className="w-full py-3 rounded-xl font-bold text-white text-base transition-all hover:brightness-110 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ background: "#6366f1" }}
           >
-            {loading ? "Creating account…" : "Create account"}
+            {loading ? t(labels, "reg_creating", "Creating account…") : t(labels, "reg_submit", "Create account")}
           </button>
 
           <div className="text-center pt-2 text-sm text-gray-500">
-            Already have an account?{" "}
+            {t(labels, "reg_have_account", "Already have an account?")}{" "}
             <Link href="/login" className="font-semibold" style={{ color: "#2e8b57" }}>
-              Sign in
+              {t(labels, "reg_login_link", "Sign in")}
             </Link>
           </div>
           <div className="text-center text-sm text-gray-500">
             <Link href="/forgot-password" className="hover:underline" style={{ color: "#6366f1" }}>
-              Forgot your password?
+              {t(labels, "reg_forgot_pwd", "Forgot your password?")}
             </Link>
           </div>
         </form>
