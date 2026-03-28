@@ -9,7 +9,7 @@ import Link from "next/link";
 interface PasswordRule { label: string; test: (p: string) => boolean }
 
 const PASSWORD_RULES: PasswordRule[] = [
-  { label: "At least 10 characters",          test: (p) => p.length >= 10 },
+  { label: "At least 8 characters",          test: (p) => p.length >= 8 },
   { label: "Uppercase letter (A–Z)",           test: (p) => /[A-Z]/.test(p) },
   { label: "Lowercase letter (a–z)",           test: (p) => /[a-z]/.test(p) },
   { label: "Number (0–9)",                     test: (p) => /[0-9]/.test(p) },

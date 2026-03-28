@@ -48,8 +48,8 @@ export async function POST(req: NextRequest) {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json({ error: "Valid email is required" }, { status: 400 });
   }
-  if (password.length < 10) {
-    return NextResponse.json({ error: "Password must be at least 10 characters" }, { status: 400 });
+  if (password.length < 8) {
+    return NextResponse.json({ error: "Password must be at least 8 characters" }, { status: 400 });
   }
   if (!/[A-Z]/.test(password)) {
     return NextResponse.json({ error: "Password must contain at least one uppercase letter" }, { status: 400 });
