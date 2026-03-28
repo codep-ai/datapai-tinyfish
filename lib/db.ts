@@ -609,12 +609,12 @@ export async function getActiveStocks(exchange: string, lang = "en", limit = 50,
        ON sd.symbol = tu.ticker AND sd.exchange = tu.exchange AND sd.lang = $2
      LEFT JOIN LATERAL (
        SELECT close, trade_date FROM datapai.prices
-       WHERE ticker = tu.ticker AND exchange = tu.exchange
+       WHERE (ticker = tu.ticker OR ticker = tu.yf_symbol) AND exchange = tu.exchange
        ORDER BY trade_date DESC LIMIT 1
      ) p ON true
      LEFT JOIN LATERAL (
        SELECT close FROM datapai.prices
-       WHERE ticker = tu.ticker AND exchange = tu.exchange AND trade_date < p.trade_date
+       WHERE (ticker = tu.ticker OR ticker = tu.yf_symbol) AND exchange = tu.exchange AND trade_date < p.trade_date
        ORDER BY trade_date DESC LIMIT 1
      ) prev ON true
      WHERE tu.exchange = $1 AND tu.is_active = TRUE ${featuredClause}
