@@ -346,6 +346,7 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
       </div>
 
       {/* Main chart */}
+      <style>{`[class*="tv-lightweight-charts"] a[href*="tradingview"] { display: none !important; }`}</style>
       <div ref={mainRef} />
 
       {/* RSI sub-panel */}
