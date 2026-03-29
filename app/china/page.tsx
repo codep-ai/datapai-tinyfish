@@ -5,7 +5,7 @@
  */
 
 import Link from "next/link";
-import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getLatestPricesForWatchlist, getActiveStocks, countActiveStocks } from "@/lib/db";
+import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getActiveStocks, countActiveStocks } from "@/lib/db";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
 import { t } from "@/lib/translations";
@@ -29,23 +29,20 @@ export default async function ChinaPage() {
   ]);
   const allStocks = [...sseStocks, ...szseStocks];
 
-  const [labels, alertMap, scannedSet, recentRuns, priceMapSSE, priceMapSZSE, totalSSE, totalSZSE] = await Promise.all([
+  const [labels, alertMap, scannedSet, recentRuns, totalSSE, totalSZSE] = await Promise.all([
     loadTranslations(lang),
     getAlertSummaryMap(),
     getScannedTickerSet(),
     getRecentRuns(3),
-    getLatestPricesForWatchlist(sseStocks.map((s) => ({ symbol: s.symbol, exchange: "SSE" }))),
-    getLatestPricesForWatchlist(szseStocks.map((s) => ({ symbol: s.symbol, exchange: "SZSE" }))),
     countActiveStocks("SSE"),
     countActiveStocks("SZSE"),
   ]);
-  const priceMap = { ...priceMapSSE, ...priceMapSZSE };
   const lastRun = recentRuns[0] ?? null;
 
   function renderStockGrid(stocks: typeof sseStocks, exchange: string) {
     const sorted = [...stocks].sort((a, b) => {
-      const pctA = priceMap[a.symbol] ? Number(priceMap[a.symbol].change_pct) : -Infinity;
-      const pctB = priceMap[b.symbol] ? Number(priceMap[b.symbol].change_pct) : -Infinity;
+      const pctA = (a as any).change_1d_pct ?? -Infinity;
+      const pctB = (b as any).change_1d_pct ?? -Infinity;
       return (isNaN(pctB) ? -Infinity : pctB) - (isNaN(pctA) ? -Infinity : pctA);
     });
 
@@ -56,9 +53,8 @@ export default async function ChinaPage() {
           const hasAlert = !!analysis;
           const hasSnapshot = scannedSet.has(tk.symbol);
           const confidence = analysis?.confidence ?? 0;
-          const price = priceMap[tk.symbol];
-          const closeNum = price ? Number(price.close) : null;
-          const changePct = price ? Number(price.change_pct) : null;
+          const closeNum = (tk as any).price ? Number((tk as any).price) : null;
+          const changePct = (tk as any).change_1d_pct != null ? Number((tk as any).change_1d_pct) : null;
           const isUp = changePct !== null && !isNaN(changePct) && changePct >= 0;
           const cardStyle = changePct !== null && !isNaN(changePct) && changePct < 0
             ? { background: "#fef2f2", border: "1.5px solid #fca5a5" }
@@ -79,13 +75,12 @@ export default async function ChinaPage() {
                 <div className="font-bold text-base group-hover:opacity-80" style={{ color: "#2e8b57" }}>{tk.symbol}</div>
                 <div className="text-gray-400 text-xs mt-0.5 truncate">{tk.name}</div>
                 <div className="mt-2 space-y-0.5">
-                  {price && closeNum !== null && !isNaN(closeNum) ? (
+                  {closeNum !== null && !isNaN(closeNum) ? (
                     <>
                       <div className="text-sm font-semibold text-gray-700">&yen;{fmtCNY(closeNum)}</div>
                       <div className="text-xs font-medium" style={{ color: isUp ? "#16a34a" : "#dc2626" }}>
                         {changePct !== null && !isNaN(changePct) ? `${isUp ? "+" : ""}${changePct.toFixed(2)}%` : ""}
                       </div>
-                      <div className="text-[10px] text-gray-300">{price.trade_date}</div>
                     </>
                   ) : (
                     <div className="text-xs text-gray-300 mt-1">{t(labels, "no_price_data")}</div>
