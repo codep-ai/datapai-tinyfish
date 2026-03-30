@@ -223,7 +223,7 @@ export default function LiveScanProgress({
   const completedCount = Object.values(tickers).filter(
     (t) => t.status === "completed" || t.status === "failed"
   ).length;
-  const total = run?.planned_count || universe.length;
+  const total = watchlist ? universe.length : (run?.planned_count || universe.length);
   const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
   const isDone = phase === "done";
 
