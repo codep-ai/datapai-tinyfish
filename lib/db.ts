@@ -783,28 +783,36 @@ export async function getLatestPricesForWatchlist(
 ): Promise<Record<string, TickerPrice>> {
   if (!items.length) return {};
   const symbols = items.map(i => i.symbol);
-  // Get latest close + previous close to compute real change_pct.
-  // Uses the two most recent intraday bars per ticker (refreshed every 5-30min).
-  // Falls back to market_demo_stocks.change_1d_pct if only one bar exists.
+  // Get latest intraday close + previous day's EOD close to compute real change_pct.
+  // Compares today's intraday vs yesterday's close from datapai.prices (not vs previous bar).
+  // Falls back to screener_metrics.change_1d_pct if no EOD data.
   const rows = await q<TickerPrice>(
-    `WITH ranked AS (
-       SELECT ticker, close, ts,
-              ROW_NUMBER() OVER (PARTITION BY ticker ORDER BY ts DESC) AS rn
+    `WITH latest_intraday AS (
+       SELECT DISTINCT ON (ticker)
+              ticker, close, ts
        FROM datapai.ohlcv_intraday
        WHERE ticker = ANY($1)
+       ORDER BY ticker, ts DESC
+     ),
+     prev_eod AS (
+       SELECT DISTINCT ON (ticker)
+              ticker, close
+       FROM datapai.prices
+       WHERE ticker = ANY($1)
+         AND trade_date < CURRENT_DATE
+       ORDER BY ticker, trade_date DESC
      )
-     SELECT r1.ticker,
-            r1.close,
-            COALESCE(r2.close, r1.close) AS prev_close,
-            CASE WHEN r2.close IS NOT NULL AND r2.close <> 0
-                 THEN ROUND(((r1.close - r2.close) / r2.close * 100)::numeric, 2)
-                 ELSE COALESCE(d.change_1d_pct, 0)
+     SELECT li.ticker,
+            li.close,
+            COALESCE(pe.close, li.close) AS prev_close,
+            CASE WHEN pe.close IS NOT NULL AND pe.close <> 0
+                 THEN ROUND(((li.close - pe.close) / pe.close * 100)::numeric, 2)
+                 ELSE COALESCE(sm.change_1d_pct, 0)
             END AS change_pct,
-            r1.ts::text AS trade_date
-     FROM ranked r1
-     LEFT JOIN ranked r2 ON r2.ticker = r1.ticker AND r2.rn = 2
-     LEFT JOIN datapai.market_demo_stocks d ON d.ticker = r1.ticker
-     WHERE r1.rn = 1`,
+            li.ts::text AS trade_date
+     FROM latest_intraday li
+     LEFT JOIN prev_eod pe ON pe.ticker = li.ticker
+     LEFT JOIN datapai.screener_metrics sm ON sm.ticker = li.ticker`,
     [symbols]
   );
   const result: Record<string, TickerPrice> = {};
