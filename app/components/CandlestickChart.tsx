@@ -249,19 +249,25 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
       return sub;
     }
 
+    // ── Helper: build time array once for sub-panel alignment ──────
+    // All sub-panels use the FULL time array from data[] so their logical
+    // indices stay aligned with the main chart — prevents x-axis mismatch.
+    const allTimes = data.map((d) => toTime(d));
+    function filterValid(vals: (number | null)[]): { time: any; value: number }[] {
+      return vals
+        .map((v, i) => v != null ? { time: allTimes[i], value: v } : null)
+        .filter(Boolean) as { time: any; value: number }[];
+    }
+
     // ── RSI panel ─────────────────────────────────────────────────────
     if (showRSI && rsiRef.current) {
       const isLast = !showMACD && !showKDJ;
       const rsiChart = createSubChart(rsiRef.current, 100, isLast);
       const rsiVals = computeRSI(closes);
-      const rsiData = rsiVals
-        .map((v, i) => v != null ? { time: toTime(data[i]), value: v } : null)
-        .filter(Boolean) as { time: any; value: number }[];
       const rsiSeries = rsiChart.addSeries(LineSeries, {
         color: "#8b5cf6", lineWidth: 1.5, priceLineVisible: false, lastValueVisible: true,
       });
-      rsiSeries.setData(rsiData);
-      // Overbought/oversold lines
+      rsiSeries.setData(filterValid(rsiVals));
       rsiSeries.createPriceLine({ price: 70, color: "#ef4444", lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
       rsiSeries.createPriceLine({ price: 30, color: "#10b981", lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
     }
@@ -272,16 +278,16 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
       const macdChart = createSubChart(macdRef.current, 100, isLast);
       const { macd, signal, hist } = computeMACD(closes);
 
-      const macdData = macd.map((v, i) => v != null ? { time: toTime(data[i]), value: v } : null).filter(Boolean) as any[];
-      const sigData = signal.map((v, i) => v != null ? { time: toTime(data[i]), value: v } : null).filter(Boolean) as any[];
-      const histData = hist.map((v, i) => v != null ? { time: toTime(data[i]), value: v, color: v >= 0 ? "rgba(16, 185, 129, 0.5)" : "rgba(239, 68, 68, 0.5)" } : null).filter(Boolean) as any[];
+      const histData = hist
+        .map((v, i) => v != null ? { time: allTimes[i], value: v, color: v >= 0 ? "rgba(16, 185, 129, 0.5)" : "rgba(239, 68, 68, 0.5)" } : null)
+        .filter(Boolean) as any[];
 
       const histSeries = macdChart.addSeries(HistogramSeries, { priceLineVisible: false, lastValueVisible: false });
       histSeries.setData(histData);
       const macdSeries = macdChart.addSeries(LineSeries, { color: "#3b82f6", lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false });
-      macdSeries.setData(macdData);
+      macdSeries.setData(filterValid(macd));
       const sigSeries = macdChart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-      sigSeries.setData(sigData);
+      sigSeries.setData(filterValid(signal));
     }
 
     // ── KDJ panel ─────────────────────────────────────────────────────
@@ -289,16 +295,12 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
       const kdjChart = createSubChart(kdjRef.current, 100, true);
       const { k, d, j } = computeKDJ(data);
 
-      const kData = k.map((v, i) => v != null ? { time: toTime(data[i]), value: v } : null).filter(Boolean) as any[];
-      const dData = d.map((v, i) => v != null ? { time: toTime(data[i]), value: v } : null).filter(Boolean) as any[];
-      const jData = j.map((v, i) => v != null ? { time: toTime(data[i]), value: v } : null).filter(Boolean) as any[];
-
       const kSeries = kdjChart.addSeries(LineSeries, { color: "#3b82f6", lineWidth: 1.5, priceLineVisible: false, lastValueVisible: false });
-      kSeries.setData(kData);
+      kSeries.setData(filterValid(k));
       const dSeries = kdjChart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-      dSeries.setData(dData);
+      dSeries.setData(filterValid(d));
       const jSeries = kdjChart.addSeries(LineSeries, { color: "#8b5cf6", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-      jSeries.setData(jData);
+      jSeries.setData(filterValid(j));
       kSeries.createPriceLine({ price: 80, color: "#ef4444", lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
       kSeries.createPriceLine({ price: 20, color: "#10b981", lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
     }

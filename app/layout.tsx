@@ -136,6 +136,9 @@ export default async function RootLayout({
                   <ProfileBadge
                     riskTolerance={investorProfile?.risk_tolerance ?? null}
                     onboardingDone={investorProfile?.onboarding_completed ?? false}
+                    profileLabel={t(labels, "nav_profile")}
+                    setupLabel={t(labels, "nav_setup_profile")}
+                    tourLabel={t(labels, "nav_take_tour")}
                   />
                   <span className="text-sm text-gray-400 max-w-[140px] truncate hidden sm:block" title={user.email}>
                     {user.email}
