@@ -159,9 +159,11 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
     if (!mainRef.current || data.length === 0) return;
 
     const isDaily = !!(data[0]?.date && data[0].date.length === 10);
+    // For intraday: timestamps are market-local (no timezone), treat as UTC
+    // so lightweight-charts displays the local market time on the x-axis
     const toTime = (d: Bar) => isDaily
       ? (d.date as string) as any
-      : (Math.floor(new Date(d.ts || d.date || "").getTime() / 1000) as any);
+      : (Math.floor(new Date((d.ts || d.date || "") + "Z").getTime() / 1000) as any);
 
     const closes = data.map((d) => d.close);
 
