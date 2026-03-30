@@ -799,7 +799,7 @@ export async function getLatestPricesForWatchlist(
               ticker, close
        FROM datapai.prices
        WHERE ticker = ANY($1)
-         AND trade_date < CURRENT_DATE
+         AND trade_date::date < CURRENT_DATE
        ORDER BY ticker, trade_date DESC
      )
      SELECT li.ticker,
