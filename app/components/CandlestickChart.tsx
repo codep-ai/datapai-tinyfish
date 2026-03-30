@@ -249,7 +249,6 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
       // Overbought/oversold lines
       rsiSeries.createPriceLine({ price: 70, color: "#ef4444", lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
       rsiSeries.createPriceLine({ price: 30, color: "#10b981", lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
-      rsiChart.timeScale().fitContent();
     }
 
     // ── MACD panel ────────────────────────────────────────────────────
@@ -268,7 +267,6 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
       macdSeries.setData(macdData);
       const sigSeries = macdChart.addSeries(LineSeries, { color: "#f59e0b", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
       sigSeries.setData(sigData);
-      macdChart.timeScale().fitContent();
     }
 
     // ── KDJ panel ─────────────────────────────────────────────────────
@@ -286,14 +284,23 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
       dSeries.setData(dData);
       const jSeries = kdjChart.addSeries(LineSeries, { color: "#8b5cf6", lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
       jSeries.setData(jData);
-      // Overbought/oversold
       kSeries.createPriceLine({ price: 80, color: "#ef4444", lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
       kSeries.createPriceLine({ price: 20, color: "#10b981", lineWidth: 1, lineStyle: 2, axisLabelVisible: false });
-      kdjChart.timeScale().fitContent();
     }
 
-    // ── Sync time scales across all charts ────────────────────────────
+    // ── Sync time scales: main chart is the master ───────────────────
     const allCharts = [mainChart, ...subCharts];
+
+    // Fit main chart first, then force sub-charts to match
+    mainChart.timeScale().fitContent();
+    const mainRange = mainChart.timeScale().getVisibleLogicalRange();
+    if (mainRange) {
+      for (const sub of subCharts) {
+        sub.timeScale().setVisibleLogicalRange(mainRange);
+      }
+    }
+
+    // Keep them synced on pan/zoom
     let syncing = false;
     for (const c of allCharts) {
       c.timeScale().subscribeVisibleLogicalRangeChange((range) => {
