@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { createChart, CandlestickSeries, HistogramSeries, LineSeries, type IChartApi } from "lightweight-charts";
+import { createChart, CandlestickSeries, HistogramSeries, LineSeries, AreaSeries, type IChartApi } from "lightweight-charts";
 
 interface Bar {
   ts?: string;    // intraday: ISO timestamp
@@ -146,6 +146,7 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
   const kdjRef = useRef<HTMLDivElement>(null);
   const chartsRef = useRef<IChartApi[]>([]);
 
+  const [chartType, setChartType] = useState<"line" | "candle">("line");
   const [showMA, setShowMA] = useState(true);
   const [showRSI, setShowRSI] = useState(true);
   const [showMACD, setShowMACD] = useState(false);
@@ -184,13 +185,27 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
     });
     chartsRef.current.push(mainChart);
 
-    const candleData = data.map((d) => ({ time: toTime(d), open: d.open, high: d.high, low: d.low, close: d.close }));
-    const candleSeries = mainChart.addSeries(CandlestickSeries, {
-      upColor: "#10b981", downColor: "#ef4444",
-      borderDownColor: "#ef4444", borderUpColor: "#10b981",
-      wickDownColor: "#ef4444", wickUpColor: "#10b981",
-    });
-    candleSeries.setData(candleData);
+    // Price series: line or candle
+    if (chartType === "candle") {
+      const candleData = data.map((d) => ({ time: toTime(d), open: d.open, high: d.high, low: d.low, close: d.close }));
+      const candleSeries = mainChart.addSeries(CandlestickSeries, {
+        upColor: "#10b981", downColor: "#ef4444",
+        borderDownColor: "#ef4444", borderUpColor: "#10b981",
+        wickDownColor: "#ef4444", wickUpColor: "#10b981",
+      });
+      candleSeries.setData(candleData);
+    } else {
+      const lineData = data.map((d) => ({ time: toTime(d), value: d.close }));
+      const isUp = data.length >= 2 && data[data.length - 1].close >= data[0].close;
+      const color = isUp ? "#10b981" : "#ef4444";
+      const areaSeries = mainChart.addSeries(AreaSeries, {
+        lineColor: color, lineWidth: 2,
+        topColor: isUp ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)",
+        bottomColor: isUp ? "rgba(16, 185, 129, 0.02)" : "rgba(239, 68, 68, 0.02)",
+        priceLineVisible: true, lastValueVisible: true,
+      });
+      areaSeries.setData(lineData);
+    }
 
     // Volume
     const volumeSeries = mainChart.addSeries(HistogramSeries, {
@@ -327,7 +342,7 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
       for (const c of chartsRef.current) { try { c.remove(); } catch {} }
       chartsRef.current = [];
     };
-  }, [data, currency, height, showMA, showRSI, showMACD, showKDJ]);
+  }, [data, currency, height, chartType, showMA, showRSI, showMACD, showKDJ]);
 
   if (data.length === 0) {
     return (
@@ -339,8 +354,11 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
 
   return (
     <div>
-      {/* Indicator toggles */}
+      {/* Chart type + Indicator toggles */}
       <div className="flex gap-1.5 mb-2">
+        <ToggleBtn label="Line" active={chartType === "line"} onClick={() => setChartType("line")} />
+        <ToggleBtn label="Candle" active={chartType === "candle"} onClick={() => setChartType("candle")} />
+        <span className="w-px bg-gray-200 mx-1" />
         <ToggleBtn label="MA" active={showMA} onClick={() => setShowMA(!showMA)} />
         <ToggleBtn label="RSI" active={showRSI} onClick={() => setShowRSI(!showRSI)} />
         <ToggleBtn label="MACD" active={showMACD} onClick={() => setShowMACD(!showMACD)} />

@@ -8,6 +8,7 @@ import LiveScanProgress from "./components/LiveScanProgress";
 import TickerSearch from "./components/TickerSearch";
 import WatchlistButton from "./components/WatchlistButton";
 import StockViewToggle from "./components/StockViewToggle";
+import ScreenshotImport from "./components/ScreenshotImport";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +50,7 @@ export default async function Home() {
 
           <TickerSearch placeholder={t(labels, "intel_search")} analyseLabel={t(labels, "analyse_btn")} lang={lang} />
 
-          <div className="flex gap-3 items-center flex-wrap">
+          <div className="flex gap-3 items-center flex-wrap relative">
             {alertCount > 0 && (
               <Link
                 href="/alerts"
@@ -60,6 +61,17 @@ export default async function Home() {
               </Link>
             )}
             <LiveScanProgress heroButton />
+            <details className="group">
+              <summary
+                className="px-6 py-2.5 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5 cursor-pointer list-none inline-flex items-center gap-2"
+                style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff" }}
+              >
+                {t(labels, "import_title")}
+              </summary>
+              <div className="absolute left-0 right-0 mt-3 bg-white/95 rounded-xl p-5 backdrop-blur-sm z-50 shadow-lg">
+                <ScreenshotImport mode="watchlist" labels={labels} />
+              </div>
+            </details>
           </div>
         </div>
       </div>
