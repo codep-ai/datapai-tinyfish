@@ -356,9 +356,9 @@ export default function PortfolioPage() {
         {/* Screenshot Import */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden mt-8">
           <div className="px-5 py-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3">📸 Import from Screenshot</h3>
-            <p className="text-xs text-gray-400 mb-3">Upload a screenshot from your broker app to quickly add holdings.</p>
-            <ScreenshotImport mode="portfolio" onComplete={load} />
+            <h3 className="text-sm font-semibold text-gray-700 mb-3">📸 {ll(labels, "import_title", "Import from Screenshot")}</h3>
+            <p className="text-xs text-gray-400 mb-3">{ll(labels, "import_desc", "Upload a screenshot from your broker app to quickly add holdings.")}</p>
+            <ScreenshotImport mode="portfolio" onComplete={load} labels={labels} />
           </div>
         </div>
       </div>

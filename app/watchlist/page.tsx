@@ -115,9 +115,9 @@ export default async function WatchlistPage() {
 
         {/* Screenshot Import */}
         <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-          <h3 className="text-lg font-bold text-gray-700 mb-3">📸 Import from Screenshot</h3>
-          <p className="text-sm text-gray-400 mb-4">Upload a screenshot from your broker app to quickly add stocks to your watchlist.</p>
-          <ScreenshotImport mode="watchlist" />
+          <h3 className="text-lg font-bold text-gray-700 mb-3">📸 {t(labels, "import_title")}</h3>
+          <p className="text-sm text-gray-400 mb-4">{t(labels, "import_desc")}</p>
+          <ScreenshotImport mode="watchlist" labels={labels} />
         </div>
 
         {/* Empty state */}

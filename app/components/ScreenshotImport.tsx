@@ -15,13 +15,18 @@ interface Holding {
 interface Props {
   mode: "watchlist" | "portfolio";
   onComplete?: () => void;
+  labels?: Record<string, string>;
+}
+
+function L(labels: Record<string, string> | undefined, key: string, fallback: string): string {
+  return labels?.[key] ?? fallback;
 }
 
 const EXCHANGES = ["US", "ASX", "HKEX", "SSE", "SZSE", "SET", "KLSE", "IDX", "HOSE", "LSE"];
 
 type Phase = "idle" | "uploading" | "preview" | "saving" | "done";
 
-export default function ScreenshotImport({ mode, onComplete }: Props) {
+export default function ScreenshotImport({ mode, onComplete, labels }: Props) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -51,7 +56,7 @@ export default function ScreenshotImport({ mode, onComplete }: Props) {
       const data = await res.json();
 
       if (!data.ok || !data.holdings?.length) {
-        setError(data.error || "No stocks found in this image. Try a clearer screenshot.");
+        setError(data.error || L(labels, "import_no_stocks", "No stocks found in this image. Try a clearer screenshot."));
         setPhase("idle");
         return;
       }
@@ -124,10 +129,10 @@ export default function ScreenshotImport({ mode, onComplete }: Props) {
         >
           <div className="text-4xl mb-2">📸</div>
           <p className="text-sm font-semibold text-gray-600">
-            Drop a screenshot here, or click to upload
+            {L(labels, "import_drop", "Drop a screenshot here, or click to upload")}
           </p>
           <p className="text-xs text-gray-400 mt-1">
-            Supports CommSec, Tiger, moomoo, Interactive Brokers, and more
+            {L(labels, "import_formats", "Supports CommSec, Tiger, moomoo, Interactive Brokers, and more")}
           </p>
           <input
             ref={fileRef}
@@ -155,7 +160,7 @@ export default function ScreenshotImport({ mode, onComplete }: Props) {
           <img src={preview} alt="Screenshot" className="max-h-32 mx-auto rounded-lg shadow-sm opacity-50" />
         )}
         <div className="animate-spin text-3xl">⟳</div>
-        <p className="text-sm text-gray-500">Analyzing screenshot with AI...</p>
+        <p className="text-sm text-gray-500">{L(labels, "import_analyzing", "Analyzing screenshot with AI...")}</p>
       </div>
     );
   }
@@ -169,7 +174,7 @@ export default function ScreenshotImport({ mode, onComplete }: Props) {
           <img src={preview} alt="Screenshot" className="max-h-24 mx-auto rounded-lg shadow-sm" />
         )}
         <p className="text-sm text-gray-500 text-center">
-          Found <strong>{holdings.length}</strong> stocks. Review and edit before adding.
+          <strong>{holdings.length}</strong> {L(labels, "import_found", "stocks. Review and edit before adding.")}
         </p>
 
         <div className="overflow-x-auto">
@@ -249,13 +254,13 @@ export default function ScreenshotImport({ mode, onComplete }: Props) {
             className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-all disabled:opacity-40"
             style={{ background: "#2e8b57" }}
           >
-            Add {selectedCount} to {mode === "watchlist" ? "Watchlist" : "Portfolio"}
+            {selectedCount} → {mode === "watchlist" ? L(labels, "import_add_watchlist", "Add to Watchlist") : L(labels, "import_add_portfolio", "Add to Portfolio")}
           </button>
           <button
             onClick={() => { setPhase("idle"); setHoldings([]); setPreview(null); setError(null); }}
             className="px-5 py-2 rounded-lg text-sm font-semibold text-gray-500 border border-gray-300 hover:bg-gray-50"
           >
-            Cancel
+            {L(labels, "import_cancel", "Cancel")}
           </button>
         </div>
       </div>
@@ -277,13 +282,13 @@ export default function ScreenshotImport({ mode, onComplete }: Props) {
     <div className="text-center py-8 space-y-4">
       <div className="text-4xl">✓</div>
       <p className="text-sm font-semibold text-[#2e8b57]">
-        Added {savedCount} stocks to your {mode}!
+        {savedCount} {L(labels, "import_done", "stocks added!")}
       </p>
       <button
         onClick={() => { setPhase("idle"); setHoldings([]); setPreview(null); setSavedCount(0); }}
         className="px-4 py-2 rounded-lg text-sm text-gray-500 border border-gray-300 hover:bg-gray-50"
       >
-        Import another screenshot
+        {L(labels, "import_again", "Import another screenshot")}
       </button>
     </div>
   );
