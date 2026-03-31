@@ -323,17 +323,18 @@ export default function CandlestickChart({ data, currency = "$", height = 320, e
     // ── Sync time scales: main chart is the master ───────────────────
     const allCharts = [mainChart, ...subCharts];
 
-    // For intraday: set visible range to full market hours (e.g. 10:00–16:00)
+    // For intraday with known exchange: pad right side to show full market hours
     // For daily: just fit to data
     mainChart.timeScale().fitContent();
 
-    if (!isDaily && exchange && MARKET_HOURS[exchange]) {
+    if (!isDaily && exchange && MARKET_HOURS[exchange] && data.length > 0) {
       const mkt = MARKET_HOURS[exchange];
-      // Get today's date from the first data point
-      const dateStr = data[0]?.ts?.substring(0, 10) || new Date().toISOString().substring(0, 10);
-      const openTs = Math.floor(new Date(`${dateStr}T${String(mkt.open[0]).padStart(2, "0")}:${String(mkt.open[1]).padStart(2, "0")}:00`).getTime() / 1000) as any;
-      const closeTs = Math.floor(new Date(`${dateStr}T${String(mkt.close[0]).padStart(2, "0")}:${String(mkt.close[1]).padStart(2, "0")}:00`).getTime() / 1000) as any;
-      mainChart.timeScale().setVisibleRange({ from: openTs, to: closeTs });
+      // Calculate total market minutes and how many 5-min bars that is
+      const totalMinutes = (mkt.close[0] * 60 + mkt.close[1]) - (mkt.open[0] * 60 + mkt.open[1]);
+      const totalBars = Math.ceil(totalMinutes / 5);
+      // Right offset = remaining bars after current data
+      const rightPadding = Math.max(totalBars - data.length, 0);
+      mainChart.timeScale().applyOptions({ rightOffset: rightPadding });
     }
 
     const mainRange = mainChart.timeScale().getVisibleLogicalRange();
