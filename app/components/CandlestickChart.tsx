@@ -325,7 +325,23 @@ export default function CandlestickChart({ data, currency = "$", height = 320, e
 
     mainChart.timeScale().fitContent();
 
-    // TODO: full market hours range — needs proper price scale ratio fix first
+    // Intraday: pad right side to show full market hours using rightOffset
+    // rightOffset = number of empty bar slots after the last data point
+    // Calculated from: (market close - last bar) / 5 min interval
+    if (!isDaily && exchange && MARKET_HOURS[exchange] && data.length > 0) {
+      const mkt = MARKET_HOURS[exchange];
+      const lastBar = data[data.length - 1];
+      const lastTs = lastBar.ts ?? lastBar.date ?? "";
+      // Extract hours:minutes from last bar timestamp
+      const timePart = lastTs.substring(11, 16); // "HH:MM"
+      const [lastH, lastM] = timePart.split(":").map(Number);
+      const lastMinutes = lastH * 60 + lastM;
+      const closeMinutes = mkt.close[0] * 60 + mkt.close[1];
+      const remainingBars = Math.max(0, Math.ceil((closeMinutes - lastMinutes) / 5));
+      if (remainingBars > 0) {
+        mainChart.timeScale().applyOptions({ rightOffset: remainingBars });
+      }
+    }
 
     const mainRange = mainChart.timeScale().getVisibleLogicalRange();
     if (mainRange) {
