@@ -57,7 +57,7 @@ export default async function RootLayout({
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between gap-6">
 
             {/* Left: DataP.ai logo */}
-            <a href="https://www.datap.ai" target="_blank" rel="noopener noreferrer" title="DataP.ai"
+            <a href="/" title="DataP.ai"
               className="flex-shrink-0 transition-opacity hover:opacity-80">
               <Image
                 src="/logos/datapai.png"
