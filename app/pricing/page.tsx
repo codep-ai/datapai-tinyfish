@@ -239,7 +239,7 @@ export default async function PricingPage() {
                   <p className="text-gray-400 text-sm mt-1">{TIER_I18N[tier.id]?.tagline ?? tier.tagline}</p>
                 </div>
 
-                {/* Price — from DB regional pricing */}
+                {/* Price — Asia launch sale: 50% off */}
                 <div className="mb-6">
                   {(() => {
                     const dbP = priceMap[tier.id];
@@ -247,23 +247,40 @@ export default async function PricingPage() {
                     const ap = dbP?.annual_price ?? tier.price.annual;
                     const cs = dbP?.currency_symbol ?? "$";
                     if (mp === 0) return <div className="text-5xl font-bold text-[#252525]">{t(labels, "pricing_free")}</div>;
-                    const savePct = Math.round((1 - ap / (mp * 12)) * 100);
+                    const salePrice = Math.round(mp / 2);
+                    const saleAnnual = Math.round(ap / 2);
+                    const savePct = Math.round((1 - saleAnnual / (salePrice * 12)) * 100);
                     return (
                       <>
-                        <div className="flex items-end gap-1">
-                          <span className="text-5xl font-bold text-[#252525]">
+                        {/* Sale badge */}
+                        <div className="inline-block px-2.5 py-0.5 rounded-full text-xs font-bold text-white mb-2"
+                          style={{ background: "#ef4444" }}>
+                          {t(labels, "pricing_sale_badge") || "Asia Launch — 50% OFF"}
+                        </div>
+                        <div className="flex items-end gap-2">
+                          {/* Original price — crossed out */}
+                          <span className="text-2xl font-bold text-gray-300 line-through">
                             {cs}{fmtPrice(mp)}
+                          </span>
+                          {/* Sale price */}
+                          <span className="text-5xl font-bold text-[#ef4444]">
+                            {cs}{fmtPrice(salePrice)}
                           </span>
                           <span className="text-gray-400 text-base mb-1.5">{t(labels, "pricing_per_mo")}</span>
                         </div>
                         <div className="text-sm text-gray-400 mt-1">
                           {t(labels, "pricing_or")}{" "}
-                          <span className="font-semibold text-[#2e8b57]">
-                            {cs}{fmtPrice(ap)}{t(labels, "pricing_per_yr")}
-                          </span>{" "}
-                          <span className="text-xs">
-                            ({t(labels, "pricing_save")} {savePct}%)
+                          <span className="text-gray-300 line-through mr-1">
+                            {cs}{fmtPrice(ap)}
                           </span>
+                          <span className="font-semibold text-[#ef4444]">
+                            {cs}{fmtPrice(saleAnnual)}{t(labels, "pricing_per_yr")}
+                          </span>{" "}
+                          {savePct > 0 && (
+                            <span className="text-xs">
+                              ({t(labels, "pricing_save")} {savePct}%)
+                            </span>
+                          )}
                         </div>
                       </>
                     );
