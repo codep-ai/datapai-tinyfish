@@ -292,7 +292,7 @@ export default function MarketsPage() {
       <div
         className="w-full flex flex-col justify-center"
         style={{
-          background: "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)",
+          background: "linear-gradient(45deg, seagreen, darkseagreen)",
           paddingTop: "28px",
           paddingBottom: "28px",
         }}
