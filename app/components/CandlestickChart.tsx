@@ -326,15 +326,27 @@ export default function CandlestickChart({ data, currency = "$", height = 320, e
     mainChart.timeScale().fitContent();
 
     // Intraday: fix x-axis to full market hours (e.g. 10:00–16:00 for ASX)
-    // Matches how toTime() encodes: local time string + "Z" → UTC seconds
+    // Add invisible anchor points at market open and close so the chart
+    // always spans the full trading session, even with partial data.
     if (!isDaily && exchange && MARKET_HOURS[exchange] && data.length > 0) {
       const mkt = MARKET_HOURS[exchange];
       const lastBar = data[data.length - 1];
       const dateStr = (lastBar.ts ?? lastBar.date ?? "").substring(0, 10);
       const pad = (n: number) => String(n).padStart(2, "0");
-      const fromTs = Math.floor(new Date(`${dateStr}T${pad(mkt.open[0])}:${pad(mkt.open[1])}:00Z`).getTime() / 1000);
-      const toTs = Math.floor(new Date(`${dateStr}T${pad(mkt.close[0])}:${pad(mkt.close[1])}:00Z`).getTime() / 1000);
-      mainChart.timeScale().setVisibleRange({ from: fromTs as any, to: toTs as any });
+      const openTs = Math.floor(new Date(`${dateStr}T${pad(mkt.open[0])}:${pad(mkt.open[1])}:00Z`).getTime() / 1000);
+      const closeTs = Math.floor(new Date(`${dateStr}T${pad(mkt.close[0])}:${pad(mkt.close[1])}:00Z`).getTime() / 1000);
+
+      // Invisible line series with anchor points at market open and close
+      const anchor = mainChart.addSeries(LineSeries, {
+        color: "transparent", lineWidth: 0,
+        priceLineVisible: false, lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      });
+      const lastClose = data[data.length - 1].close;
+      anchor.setData([
+        { time: openTs as any, value: lastClose },
+        { time: closeTs as any, value: lastClose },
+      ]);
     }
 
     const mainRange = mainChart.timeScale().getVisibleLogicalRange();
