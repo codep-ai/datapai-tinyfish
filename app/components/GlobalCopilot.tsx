@@ -294,7 +294,21 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
               );
             }
           } else if (event.type === "error") {
-            throw new Error(event.message ?? "Stream error");
+            // Rate limit / registration prompt — show as assistant message with action
+            const errMsg = event.message ?? "Stream error";
+            const action = event.action ?? "";
+            const actionTag = action === "REGISTER" ? "\n[ACTION:REGISTER]"
+                            : action === "UPGRADE"  ? "\n[ACTION:UPGRADE]"
+                            : "";
+            setMessages((prev) =>
+              prev.map((m, i) =>
+                i === prev.length - 1
+                  ? { role: "assistant", content: errMsg + actionTag, pending: false }
+                  : m
+              )
+            );
+            setLoading(false);
+            return;
           }
         }
       }
@@ -507,7 +521,39 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
               ) : msg.role === "user" ? (
                 <span className="text-sm">{msg.content}</span>
               ) : (
-                <SimpleMarkdown className="text-sm">{msg.content}</SimpleMarkdown>
+                <>
+                  <SimpleMarkdown className="text-sm">
+                    {msg.content.replace(/\[ACTION:[^\]]+\]/g, "")}
+                  </SimpleMarkdown>
+                  {/* Smart action buttons from AI response */}
+                  {msg.content.includes("[ACTION:ADD_WATCHLIST:") && (() => {
+                    const match = msg.content.match(/\[ACTION:ADD_WATCHLIST:([^:]+):([^\]]+)\]/);
+                    if (!match) return null;
+                    const [, actionTicker, actionExchange] = match;
+                    return (
+                      <button
+                        onClick={() => fetch("/api/watchlist", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ symbol: actionTicker, exchange: actionExchange }) }).then(() => window.location.reload())}
+                        className="mt-2 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:brightness-110"
+                        style={{ background: "#2e8b57" }}>
+                        + Add {actionTicker} to watchlist
+                      </button>
+                    );
+                  })()}
+                  {msg.content.includes("[ACTION:REGISTER]") && (
+                    <a href="/register"
+                      className="mt-2 inline-block px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:brightness-110"
+                      style={{ background: "#fd8412" }}>
+                      Create free account →
+                    </a>
+                  )}
+                  {msg.content.includes("[ACTION:UPGRADE]") && (
+                    <a href="/pricing"
+                      className="mt-2 inline-block px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all hover:brightness-110"
+                      style={{ background: "#fd8412" }}>
+                      View plans →
+                    </a>
+                  )}
+                </>
               )}
               {msg.model && !msg.pending && (
                 <div className="mt-1 text-[10px] text-gray-300 text-right">{msg.model}</div>
