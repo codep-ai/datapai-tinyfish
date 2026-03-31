@@ -40,6 +40,7 @@ const EXCHANGE_OPTIONS = [
   { value: "HKEX", label: "🇭🇰 Hong Kong",    desc: "HKEX — Tencent, AIA, HSBC…" },
   { value: "TWSE", label: "🇹🇼 Taiwan",       desc: "TWSE — TSMC, Hon Hai, MediaTek…" },
   { value: "SGX",  label: "🇸🇬 Singapore",    desc: "SGX — DBS, OCBC, Singtel…" },
+  { value: "TSE",  label: "🇯🇵 Japan",        desc: "TSE — Toyota, Sony, Nintendo…" },
   { value: "SSE",  label: "🇨🇳 China (SSE)",  desc: "Shanghai — Moutai, PetroChina…" },
   { value: "SZSE", label: "🇨🇳 China (SZSE)", desc: "Shenzhen — BYD, Midea…" },
   { value: "HOSE", label: "🇻🇳 Vietnam",      desc: "HOSE — Vingroup, Vietcombank…" },

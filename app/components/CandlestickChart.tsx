@@ -34,6 +34,7 @@ const MARKET_HOURS: Record<string, { open: [number, number]; close: [number, num
   LSE:  { open: [8, 0],   close: [16, 30] },
   TWSE: { open: [9, 0],   close: [13, 30] },
   SGX:  { open: [9, 0],   close: [17, 0] },
+  TSE:  { open: [9, 0],   close: [15, 0] },
 };
 
 // ── TA computation helpers ───────────────────────────────────────────────

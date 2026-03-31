@@ -79,6 +79,7 @@ export default async function RootLayout({
                   { href: "/hongkong", label: t(labels, "nav_hongkong"), flag: "🇭🇰" },
                   { href: "/taiwan", label: t(labels, "nav_taiwan"), flag: "🇹🇼" },
                   { href: "/singapore", label: t(labels, "nav_singapore"), flag: "🇸🇬" },
+                  { href: "/japan", label: t(labels, "nav_japan"), flag: "🇯🇵" },
                   { href: "/vietnam", label: t(labels, "nav_vietnam"), flag: "🇻🇳" },
                   { href: "/thailand", label: t(labels, "nav_thailand"), flag: "🇹🇭" },
                   { href: "/malaysia", label: t(labels, "nav_malaysia"), flag: "🇲🇾" },

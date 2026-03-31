@@ -19,7 +19,7 @@ export interface PricePoint {
 // Suffix map: prices table stores tickers with exchange suffix
 const SUFFIX_MAP: Record<string, string> = {
   ASX: ".AX", HKEX: ".HK", HOSE: ".VN", SET: ".BK",
-  KLSE: ".KL", IDX: ".JK", LSE: ".L", SSE: ".SS", SZSE: ".SZ", TWSE: ".TW", SGX: ".SI",
+  KLSE: ".KL", IDX: ".JK", LSE: ".L", SSE: ".SS", SZSE: ".SZ", TWSE: ".TW", SGX: ".SI", TSE: ".T",
 };
 
 function dbTicker(ticker: string, exchange?: string): string {
