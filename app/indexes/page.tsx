@@ -234,9 +234,12 @@ function formatPrice(val: number, decimals?: number): string {
 }
 
 function formatFxRate(rate: number, currency: string): string {
-  // VND/IDR are large numbers, no decimals needed
-  if (["VND", "IDR"].includes(currency)) return rate.toLocaleString(undefined, { maximumFractionDigits: 0 });
-  if (["GBX"].includes(currency)) return rate.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  // Now showing XXX/USD (inverted from DB's USD/XXX)
+  // VND/USD, IDR/USD are very small numbers — show more decimals
+  if (rate === 0) return "—";
+  if (rate < 0.001) return rate.toExponential(2);
+  if (rate < 0.01) return rate.toFixed(6);
+  if (rate < 1) return rate.toFixed(4);
   return rate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 });
 }
 
@@ -396,15 +399,15 @@ export default function MarketsPage() {
                       className="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4 flex items-center justify-between hover:shadow-md transition-shadow"
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-xl">{FX_FLAGS[fx.quote_currency] || "\u{1F4B5}"}</span>
+                        <span className="text-xl">{FX_FLAGS[fx.quote_currency] || ""}</span>
                         <div>
-                          <div className="text-xs text-gray-400 font-medium">USD / {fx.quote_currency}</div>
+                          <div className="text-xs text-gray-400 font-medium">{fx.quote_currency} / USD</div>
                           <div className="text-[11px] text-gray-400">{FX_NAMES[fx.quote_currency] ?? fx.quote_currency}</div>
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="text-base font-bold tabular-nums text-gray-900">
-                          {formatFxRate(fx.rate, fx.quote_currency)}
+                          {formatFxRate(fx.rate > 0 ? 1 / fx.rate : 0, fx.quote_currency)}
                         </div>
                         <ChgBadge val={fx.change_pct} />
                       </div>
