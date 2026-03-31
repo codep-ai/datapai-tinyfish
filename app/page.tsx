@@ -1,300 +1,364 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getAlertSummaryMap, getRecentRuns, getScannedTickerSet, getLatestPricesForWatchlist, getActiveStocks } from "@/lib/db";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
 import { t } from "@/lib/translations";
-import LiveScanProgress from "./components/LiveScanProgress";
-import TickerSearch from "./components/TickerSearch";
-import WatchlistButton from "./components/WatchlistButton";
-import StockViewToggle from "./components/StockViewToggle";
-import ScreenshotImport from "./components/ScreenshotImport";
 
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
+const MARKETS = [
+  { href: "/us",        flag: "🇺🇸", key: "nav_usStocks",  stocks: "9,000+" },
+  { href: "/asx",       flag: "🇦🇺", key: "nav_asx",       stocks: "2,000+" },
+  { href: "/hongkong",  flag: "🇭🇰", key: "nav_hongkong",  stocks: "3,000+" },
+  { href: "/taiwan",    flag: "🇹🇼", key: "nav_taiwan",    stocks: "1,900+" },
+  { href: "/singapore", flag: "🇸🇬", key: "nav_singapore", stocks: "700+" },
+  { href: "/japan",     flag: "🇯🇵", key: "nav_japan",     stocks: "3,800+" },
+  { href: "/china",     flag: "🇨🇳", key: "nav_china",     stocks: "9,000+" },
+  { href: "/vietnam",   flag: "🇻🇳", key: "nav_vietnam",   stocks: "400+" },
+  { href: "/thailand",  flag: "🇹🇭", key: "nav_thailand",  stocks: "450+" },
+  { href: "/malaysia",  flag: "🇲🇾", key: "nav_malaysia",  stocks: "1,000+" },
+  { href: "/indonesia", flag: "🇮🇩", key: "nav_indonesia", stocks: "800+" },
+  { href: "/uk",        flag: "🇬🇧", key: "nav_uk",        stocks: "2,600+" },
+];
+
+const FEATURES = [
+  {
+    icon: "🔍",
+    titleKey: "home_feat_tinyfish_title",
+    descKey: "home_feat_tinyfish_desc",
+    fallbackTitle: "Website Intelligence",
+    fallbackDesc: "Real browser agents visit company IR pages before announcements hit the exchange. Detect guidance changes, risk disclosures, and tone shifts — hours before the market reacts.",
+  },
+  {
+    icon: "🤖",
+    titleKey: "home_feat_multiagent_title",
+    descKey: "home_feat_multiagent_desc",
+    fallbackTitle: "Multi-Agent AI Debate",
+    fallbackDesc: "Not one AI — a team. Multiple agents analyse independently, debate each other, and cross-validate. Only the consensus survives. Like a room of analysts arguing your trade.",
+  },
+  {
+    icon: "💬",
+    titleKey: "home_feat_copilot_title",
+    descKey: "home_feat_copilot_desc",
+    fallbackTitle: "AI Copilot",
+    fallbackDesc: "Ask anything about any stock, in your language. Context-aware — knows what page you're on, what stocks you hold, and your risk profile.",
+  },
+  {
+    icon: "📊",
+    titleKey: "home_feat_screener_title",
+    descKey: "home_feat_screener_desc",
+    fallbackTitle: "AI Screener",
+    fallbackDesc: "50,000+ stocks scored daily. BUY/SELL signals across 4 timeframes. Technical + fundamental + website intelligence combined into one score.",
+  },
+  {
+    icon: "🧪",
+    titleKey: "home_feat_studio_title",
+    descKey: "home_feat_studio_desc",
+    fallbackTitle: "Custom AI Studio",
+    fallbackDesc: "Build your own AI strategy. Define rules, backtest with 5 years of data, let AI run it automatically. Your strategy, your edge.",
+  },
+  {
+    icon: "✅",
+    titleKey: "home_feat_verify_title",
+    descKey: "home_feat_verify_desc",
+    fallbackTitle: "Multi-Source Verification",
+    fallbackDesc: "Every signal cross-validated across company websites, exchange filings, press releases, and news. Confidence scores, not guesses.",
+  },
+];
+
+const AGENT_STEPS = [
+  { icon: "🌐", labelKey: "home_agent_step1", fallback: "Company Website" },
+  { icon: "🤖", labelKey: "home_agent_step2", fallback: "TinyFish Browser Agent" },
+  { icon: "⚡", labelKey: "home_agent_step3", fallback: "Content Change Detected" },
+  { icon: "🔍", labelKey: "home_agent_step4", fallback: "3 Signal Agents Analyse in Parallel" },
+  { icon: "⚖️", labelKey: "home_agent_step5", fallback: "Cross-Validation Agent" },
+  { icon: "📊", labelKey: "home_agent_step6", fallback: "Noise-Aware Confidence Score" },
+  { icon: "📱", labelKey: "home_agent_step7", fallback: "Alert Delivered" },
+];
+
+const LANGS = [
+  { code: "en",    flag: "🇬🇧", label: "English" },
+  { code: "zh",    flag: "🇨🇳", label: "简体中文" },
+  { code: "zh-TW", flag: "🇹🇼", label: "繁體中文" },
+  { code: "ja",    flag: "🇯🇵", label: "日本語" },
+  { code: "ko",    flag: "🇰🇷", label: "한국어" },
+  { code: "vi",    flag: "🇻🇳", label: "Tiếng Việt" },
+  { code: "th",    flag: "🇹🇭", label: "ภาษาไทย" },
+  { code: "ms",    flag: "🇲🇾", label: "Bahasa Melayu" },
+];
+
+function tl(labels: Record<string, string>, key: string, fallback: string): string {
+  return labels[key] || fallback;
+}
+
+export default async function HomePage() {
   const lang = await getLang();
   const labels = await loadTranslations(lang);
-  const stocks = await getActiveStocks("US", lang, 30, true);
-  const [alertMap, scannedSet, recentRuns, priceMap] = await Promise.all([
-    getAlertSummaryMap(),
-    getScannedTickerSet(),
-    getRecentRuns(3),
-    getLatestPricesForWatchlist(stocks.map((s) => ({ symbol: s.symbol, exchange: "US" }))),
-  ]);
-  const alertCount = Object.keys(alertMap).length;
-  const lastRun = recentRuns[0] ?? null;
+
   return (
     <div>
-      {/* ── Full-width hero ── */}
-      <div
-        className="w-full flex flex-col justify-center"
-        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "28px", paddingBottom: "28px" }}
+      {/* ═══════════════════════════════════════════════════════════════════
+          HERO
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section
+        className="w-full"
+        style={{ background: "linear-gradient(135deg, #1a3a2a 0%, #2e8b57 50%, #3cb371 100%)", paddingTop: "60px", paddingBottom: "60px" }}
       >
-        <div className="max-w-6xl mx-auto px-6 space-y-3">
-
-          <h1 className="text-2xl font-bold text-white">
-            {t(labels, "hero_title_us")}
+        <div className="max-w-5xl mx-auto px-6 text-center space-y-6">
+          <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
+            {tl(labels, "home_hero_headline", "AI-Powered Stock Intelligence Across Asia-Pacific")}
           </h1>
-
-          <p className="text-white/80 text-sm font-medium">
-            {t(labels, "hero_spot_shifts")} —{" "}
-            <span className="text-white font-bold">9,000+ {t(labels, "hero_stocks_covered")}</span>{" "}
-            {t(labels, "hero_covered_label")}{" "}
-            <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer"
-              className="text-white font-bold underline underline-offset-2 hover:text-white/80 transition-colors">
-              TinyFish
-            </a>{" "}
-            {t(labels, "hero_realBrowser_agents")}
+          <p className="text-lg md:text-xl text-white/80 max-w-3xl mx-auto">
+            {tl(labels, "home_hero_sub", "12 markets. 50,000+ stocks. 8 languages. Powered by AI agents that never sleep.")}
           </p>
 
-          <div data-tour="search-bar">
-            <TickerSearch placeholder={t(labels, "intel_search")} analyseLabel={t(labels, "analyse_btn")} lang={lang} />
-          </div>
-
-          <div className="flex gap-3 items-center flex-wrap relative">
-            {alertCount > 0 && (
-              <Link
-                href="/alerts"
-                className="px-6 py-2.5 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5"
-                style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff" }}
-              >
-                ⚡ {t(labels, "hero_view_n_alerts")} {alertCount} {t(labels, "hero_alerts_suffix")} →
-              </Link>
-            )}
-            <LiveScanProgress heroButton labels={labels} />
-            <details className="group">
-              <summary
-                className="px-6 py-2.5 rounded-lg font-bold uppercase tracking-wide transition-all hover:-translate-y-0.5 cursor-pointer list-none inline-flex items-center gap-2"
-                style={{ fontSize: "0.9rem", background: "#fd8412", color: "#fff" }}
-              >
-                {t(labels, "import_title")}
-              </summary>
-              <div className="absolute left-0 right-0 mt-3 bg-white/95 rounded-xl p-5 backdrop-blur-sm z-50 shadow-lg">
-                <ScreenshotImport mode="watchlist" labels={labels} />
-              </div>
-            </details>
-          </div>
-        </div>
-      </div>
-
-      {/* ── Main content ── */}
-      <div className="max-w-6xl mx-auto px-6 py-10 space-y-12">
-
-        {/* Last scan summary — Feature 12 */}
-        {lastRun && (
-          <div className="flex items-center gap-4 text-sm text-gray-500 border border-gray-100 rounded-lg px-4 py-3 bg-white shadow-sm">
-            <span
-              className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-              style={{ background: lastRun.status === "SUCCESS" ? "#2e8b57" : lastRun.status === "RUNNING" ? "#fd8412" : "#ef4444" }}
-            />
-            <span>{t(labels, "last_scan_label")} <strong>{new Date(lastRun.started_at).toLocaleString()}</strong></span>
-            <span className="text-gray-300">·</span>
-            <span><strong>{lastRun.scanned_count}</strong> {t(labels, "scanned")}</span>
-            <span className="text-gray-300">·</span>
-            <span style={{ color: "#f97316" }}><strong>{lastRun.changed_count}</strong> {t(labels, "changed")}</span>
-            {lastRun.failed_count > 0 && (
-              <>
-                <span className="text-gray-300">·</span>
-                <span
-                  style={{ color: "#ef4444", cursor: "help" }}
-                  title={`${lastRun.failed_count} IR pages were unreachable this scan — typically login-gated, paywalled, or temporarily down. These are retried automatically next run and do not affect signal quality for the stocks that completed successfully.`}
-                >
-                  <strong>{lastRun.failed_count}</strong> {t(labels, "failed")} ⓘ
-                </span>
-              </>
-            )}
-            <Link href={`/run/${lastRun.id}`} className="ml-auto text-gray-400 hover:text-gray-700 underline underline-offset-2 text-xs">
-              {t(labels, "view_run_detail")} →
+          <div className="flex items-center justify-center gap-4 flex-wrap">
+            <Link href="/register"
+              className="px-8 py-3.5 rounded-xl font-bold text-white text-base transition-all hover:brightness-110 hover:-translate-y-0.5 shadow-lg"
+              style={{ background: "#fd8412" }}>
+              {tl(labels, "home_cta_start", "Get Started Free")} →
+            </Link>
+            <Link href="/us"
+              className="px-8 py-3.5 rounded-xl font-bold text-white/90 text-base border-2 border-white/30 hover:bg-white/10 transition-all hover:-translate-y-0.5">
+              {tl(labels, "home_cta_explore", "Explore Markets")}
             </Link>
           </div>
-        )}
 
-        {/* Monitored universe */}
-        <div>
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="text-3xl font-bold text-[#252525]">{t(labels, "section_top_stocks")} <span className="text-lg font-normal text-gray-400 ml-1">🇺🇸 {t(labels, "section_us_market")}</span></h2>
-            <div className="flex items-center gap-4 text-sm text-gray-400">
-              {alertCount > 0 && (
-                <span className="flex items-center gap-1">
-                  <span className="inline-block w-3 h-3 rounded-sm" style={{ background: "#4ade80" }} />
-                  = {t(labels, "change_detected")}
-                </span>
-              )}
-              <Link href="/asx" className="text-brand hover:underline font-medium">🇦🇺 {t(labels, "nav_asx_short")} →</Link>
-              <Link href="/alerts" className="text-brand hover:underline">{t(labels, "hero_view_alerts")} →</Link>
-            </div>
+          {/* Market flags band */}
+          <div className="flex items-center justify-center gap-3 text-2xl pt-4">
+            {MARKETS.map((m) => (
+              <Link key={m.href} href={m.href} title={t(labels, m.key)} className="hover:scale-125 transition-transform">
+                {m.flag}
+              </Link>
+            ))}
           </div>
+        </div>
+      </section>
 
-          {(() => {
-            const sorted = [...stocks].sort((a, b) => {
-              const pctA = priceMap[a.symbol] ? Number(priceMap[a.symbol].change_pct) : -Infinity;
-              const pctB = priceMap[b.symbol] ? Number(priceMap[b.symbol].change_pct) : -Infinity;
-              return (isNaN(pctB) ? -Infinity : pctB) - (isNaN(pctA) ? -Infinity : pctA);
-            });
-
-            const gridView = (
-              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                {sorted.map((tk, idx) => {
-                  const analysis = alertMap[tk.symbol];
-                  const hasAlert = !!analysis;
-                  const hasSnapshot = scannedSet.has(tk.symbol);
-                  const confidence = analysis?.confidence ?? 0;
-                  const price = priceMap[tk.symbol];
-                  const closeNum = price ? Number(price.close) : null;
-                  const changePct = price ? Number(price.change_pct) : null;
-                  const isUp = changePct !== null && !isNaN(changePct) && changePct >= 0;
-                  const cardStyle = changePct !== null && !isNaN(changePct) && changePct < 0
-                    ? { background: "#fef2f2", border: "1.5px solid #fca5a5" }
-                    : changePct !== null && !isNaN(changePct) && changePct >= 0
-                    ? { background: "#f0fdf4", border: "1.5px solid #86efac" }
-                    : { background: "#ffffff", border: "1px solid #e5e7eb" };
-                  return (
-                    <div key={tk.symbol} className="relative rounded-xl px-4 pt-6 pb-4 transition-all duration-200 group shadow-sm hover:-translate-y-0.5" style={cardStyle}>
-                      {hasAlert && (
-                        <span className="absolute -top-2.5 -right-2.5 text-xs font-bold px-2 py-0.5 rounded-full shadow" style={{ background: "#2e8b57", color: "#fff" }}>
-                          {analysis.alert_score > 0 ? "+" : ""}{analysis.alert_score.toFixed(1)}
-                        </span>
-                      )}
-                      <div className="absolute top-1.5 right-1.5 z-10" {...(idx === 0 ? { "data-tour": "watchlist-star" } : {})}>
-                        <WatchlistButton compact symbol={tk.symbol} exchange="US" name={tk.name} />
-                      </div>
-                      <Link href={`/ticker/${tk.symbol}?exchange=${tk.exchange}`} className="block pr-6">
-                        <div className="font-bold text-base text-brand group-hover:opacity-80">{tk.symbol}</div>
-                        <div className="text-gray-400 text-xs mt-0.5 truncate">{tk.name}</div>
-                        <div className="mt-2 space-y-0.5">
-                          {price && closeNum !== null && !isNaN(closeNum) ? (
-                            <>
-                              <div className="text-sm font-semibold text-gray-700">${closeNum.toFixed(2)}</div>
-                              <div className="text-xs font-medium" style={{ color: isUp ? "#16a34a" : "#dc2626" }}>
-                                {changePct !== null && !isNaN(changePct) ? `${isUp ? "+" : ""}${changePct.toFixed(2)}%` : ""}
-                              </div>
-                              <div className="text-[10px] text-gray-300">{price.trade_date}</div>
-                            </>
-                          ) : (
-                            <div className="text-xs text-gray-300 mt-1">{t(labels, "no_price_data")}</div>
-                          )}
-                        </div>
-                        {hasAlert && (
-                          <div className="mt-1.5 pt-1.5 border-t border-gray-100 space-y-0.5">
-                            <div className="text-xs font-medium" style={{ color: "#166534" }}
-                              title={analysis.changed_pct != null && analysis.changed_pct > 90 ? "Large baseline diff — page content significantly changed vs. initial snapshot" : undefined}>
-                              {analysis.changed_pct != null ? (analysis.changed_pct > 90 ? t(labels, "significant_change") : `${analysis.changed_pct.toFixed(1)}% ${t(labels, "changed")}`) : "—"}
-                            </div>
-                            <div className="text-xs text-gray-400">conf {Math.round(confidence * 100)}%</div>
-                          </div>
-                        )}
-                        {!hasAlert && hasSnapshot && (
-                          <div className="mt-1.5 pt-1.5 border-t border-gray-100">
-                            <span className="text-xs text-gray-400">✓ {t(labels, "baseline_saved")}</span>
-                          </div>
-                        )}
-                      </Link>
-                    </div>
-                  );
-                })}
-              </div>
-            );
-
-            const listView = (
-              <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50 text-left text-xs text-gray-500 uppercase tracking-wider">
-                      <th className="px-4 py-3 font-semibold">#</th>
-                      <th className="px-4 py-3 font-semibold">{t(labels, "ticker_label")}</th>
-                      <th className="px-4 py-3 font-semibold">{t(labels, "name_label")}</th>
-                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "price")}</th>
-                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "change_pct_label")}</th>
-                      <th className="px-4 py-3 font-semibold text-right">{t(labels, "date_label")}</th>
-                      <th className="px-4 py-3 font-semibold text-center">{t(labels, "scan_label")}</th>
-                      <th className="px-4 py-3 font-semibold text-center"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {sorted.map((tk, idx) => {
-                      const price = priceMap[tk.symbol];
-                      const closeNum = price ? Number(price.close) : null;
-                      const changePct = price ? Number(price.change_pct) : null;
-                      const isUp = changePct !== null && !isNaN(changePct) && changePct >= 0;
-                      const analysis = alertMap[tk.symbol];
-                      const rowBg = changePct !== null && !isNaN(changePct) && changePct < 0 ? "#fef2f2" : changePct !== null && !isNaN(changePct) && changePct >= 0 ? "#f0fdf4" : "#fff";
-                      return (
-                        <tr key={tk.symbol} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors" style={{ background: rowBg }}>
-                          <td className="px-4 py-3 text-gray-400 text-xs">{idx + 1}</td>
-                          <td className="px-4 py-3">
-                            <Link href={`/ticker/${tk.symbol}?exchange=${tk.exchange}`} className="font-bold text-brand hover:opacity-80">{tk.symbol}</Link>
-                          </td>
-                          <td className="px-4 py-3 text-gray-500 truncate max-w-[200px]">{tk.name}</td>
-                          <td className="px-4 py-3 text-right font-semibold text-gray-700">
-                            {closeNum !== null && !isNaN(closeNum) ? `$${closeNum.toFixed(2)}` : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold" style={{ color: isUp ? "#16a34a" : "#dc2626" }}>
-                            {changePct !== null && !isNaN(changePct) ? `${isUp ? "+" : ""}${changePct.toFixed(2)}%` : "—"}
-                          </td>
-                          <td className="px-4 py-3 text-right text-xs text-gray-400">{price?.trade_date ?? "—"}</td>
-                          <td className="px-4 py-3 text-center text-xs">
-                            {analysis ? (
-                              <span className="text-green-700 font-medium">{analysis.changed_pct != null && analysis.changed_pct > 90 ? t(labels, "significant_change") : analysis.changed_pct != null ? `${analysis.changed_pct.toFixed(1)}%` : "—"}</span>
-                            ) : (
-                              <span className="text-gray-300">—</span>
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-center">
-                            <WatchlistButton compact symbol={tk.symbol} exchange="US" name={tk.name} />
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            );
-
-            return <StockViewToggle gridView={gridView} listView={listView} gridLabel={t(labels, "view_grid")} listLabel={t(labels, "view_list")} />;
-          })()}
+      {/* ═══════════════════════════════════════════════════════════════════
+          MARKET COVERAGE
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="max-w-6xl mx-auto px-6 py-16">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-[#252525]">
+            {tl(labels, "home_markets_title", "From Wall Street to Southeast Asia")}
+          </h2>
+          <p className="text-gray-500 mt-2 text-base">
+            {tl(labels, "home_markets_sub", "Every market, one platform. Real-time prices, AI analysis, and alerts.")}
+          </p>
         </div>
 
-        {/* How it works */}
-        <div>
-          <h2 className="text-3xl font-bold text-[#252525] mb-6">{t(labels, "how_it_works")}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {[
-              { step: "1", label: t(labels, "step1_label"), desc: t(labels, "step1_desc") },
-              { step: "2", label: t(labels, "step2_label"), desc: t(labels, "step2_desc") },
-              { step: "3", label: t(labels, "step3_label"), desc: t(labels, "step3_desc") },
-              { step: "4", label: t(labels, "step4_label"), desc: t(labels, "step4_desc") },
-            ].map((item) => (
-              <div key={item.step} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-                <div className="text-brand font-bold text-3xl mb-3">{item.step}</div>
-                <div className="text-[#252525] font-bold text-lg mb-2">{item.label}</div>
-                <div className="text-gray-500 text-base">{item.desc}</div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          {MARKETS.map((m) => (
+            <Link key={m.href} href={m.href}
+              className="group bg-white border border-gray-200 rounded-xl p-4 text-center hover:border-[#2e8b57] hover:shadow-md transition-all hover:-translate-y-0.5">
+              <div className="text-3xl mb-2">{m.flag}</div>
+              <div className="font-semibold text-sm text-gray-800 group-hover:text-[#2e8b57]">{t(labels, m.key)}</div>
+              <div className="text-xs text-gray-400 mt-0.5">{m.stocks} {tl(labels, "home_stocks", "stocks")}</div>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          KEY FEATURES
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: "#f8faf9" }} className="py-16">
+        <div className="max-w-6xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <h2 className="text-3xl font-bold text-[#252525]">
+              {tl(labels, "home_features_title", "What Makes Us Different")}
+            </h2>
+            <p className="text-gray-500 mt-2 text-base">
+              {tl(labels, "home_features_sub", "AI agents that read company websites, debate each other, and deliver verified signals.")}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {FEATURES.map((f, i) => (
+              <div key={i} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+                <div className="text-3xl mb-3">{f.icon}</div>
+                <h3 className="font-bold text-lg text-[#252525] mb-2">
+                  {tl(labels, f.titleKey, f.fallbackTitle)}
+                </h3>
+                <p className="text-sm text-gray-500 leading-relaxed">
+                  {tl(labels, f.descKey, f.fallbackDesc)}
+                </p>
               </div>
             ))}
           </div>
         </div>
+      </section>
 
-        {/* Trust layer callout */}
-        <div className="border border-gray-200 rounded-2xl p-8 bg-white shadow-sm">
-          <h3 className="font-bold text-xl text-[#252525] mb-4">
-            {t(labels, "trust_title")}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-base text-gray-500">
-            <div>
-              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_source")}</div>
-              {t(labels, "trust_source_desc")}
+      {/* ═══════════════════════════════════════════════════════════════════
+          AGENT FLOW VISUALIZATION
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="max-w-4xl mx-auto px-6 py-16">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-bold text-[#252525]">
+            {tl(labels, "home_pipeline_title", "How AI Agents Work Together")}
+          </h2>
+          <p className="text-gray-500 mt-2 text-base">
+            {tl(labels, "home_pipeline_sub", "Multiple agents analyse independently, then validate each other. Only verified signals reach you.")}
+          </p>
+        </div>
+
+        <div className="flex flex-col items-center gap-1">
+          {AGENT_STEPS.map((step, i) => (
+            <div key={i} className="flex items-center gap-3 w-full max-w-md">
+              {i > 0 && (
+                <div className="flex flex-col items-center" style={{ width: 40 }}>
+                  <div className="w-0.5 h-6" style={{ background: "#2e8b57" }} />
+                  <div style={{ color: "#2e8b57", fontSize: 10 }}>▼</div>
+                </div>
+              )}
+              {i === 0 && <div style={{ width: 40 }} />}
+              <div className={`flex-1 flex items-center gap-3 rounded-xl px-4 py-3 border ${i === 3 ? "border-amber-300 bg-amber-50" : i === 6 ? "border-green-300 bg-green-50" : "border-gray-200 bg-white"}`}>
+                <span className="text-xl flex-shrink-0">{step.icon}</span>
+                <span className="text-sm font-medium text-gray-700">
+                  {tl(labels, step.labelKey, step.fallback)}
+                </span>
+              </div>
             </div>
-            <div>
-              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_evidence")}</div>
-              {t(labels, "trust_evidence_desc")}
-            </div>
-            <div>
-              <div className="font-semibold text-gray-700 mb-2">{t(labels, "trust_ai")}</div>
-              {t(labels, "trust_ai_desc")}
-            </div>
+          ))}
+        </div>
+
+        {/* Agent labels */}
+        <div className="flex justify-center gap-6 mt-8 text-xs text-gray-400">
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-amber-100 border border-amber-300" />
+            {tl(labels, "home_pipeline_parallel", "3 agents in parallel")}
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="w-3 h-3 rounded bg-green-100 border border-green-300" />
+            {tl(labels, "home_pipeline_output", "Verified output")}
+          </span>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          HOW IT WORKS
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: "linear-gradient(135deg, #1a3a2a, #2e8b57)" }} className="py-16">
+        <div className="max-w-5xl mx-auto px-6">
+          <h2 className="text-3xl font-bold text-white text-center mb-10">
+            {tl(labels, "home_how_title", "How It Works")}
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { num: "1", titleKey: "home_how_1_title", descKey: "home_how_1_desc",
+                ft: "Pick Your Markets", fd: "Choose from 12 exchanges. Add stocks to your watchlist. Set your risk profile and preferred language." },
+              { num: "2", titleKey: "home_how_2_title", descKey: "home_how_2_desc",
+                ft: "AI Does The Research", fd: "AI agents scan company websites, analyse technicals, score fundamentals, and debate each other — 24/7." },
+              { num: "3", titleKey: "home_how_3_title", descKey: "home_how_3_desc",
+                ft: "You Make The Call", fd: "Get BUY/SELL signals with confidence scores. Ask the AI copilot to explain. The decision is always yours." },
+            ].map((s) => (
+              <div key={s.num} className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 border border-white/20">
+                <div className="text-4xl font-bold text-white/30 mb-3">{s.num}</div>
+                <h3 className="text-lg font-bold text-white mb-2">{tl(labels, s.titleKey, s.ft)}</h3>
+                <p className="text-sm text-white/70 leading-relaxed">{tl(labels, s.descKey, s.fd)}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          LANGUAGE SUPPORT
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="max-w-5xl mx-auto px-6 py-16 text-center">
+        <h2 className="text-3xl font-bold text-[#252525] mb-3">
+          {tl(labels, "home_lang_title", "Speak Your Language")}
+        </h2>
+        <p className="text-gray-500 mb-8 text-base">
+          {tl(labels, "home_lang_sub", "Every AI report, signal, and chat — in your preferred language.")}
+        </p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          {LANGS.map((l) => (
+            <div key={l.code}
+              className="flex items-center gap-2 bg-white border border-gray-200 rounded-full px-4 py-2 shadow-sm">
+              <span className="text-lg">{l.flag}</span>
+              <span className="text-sm font-medium text-gray-700">{l.label}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          POWERED BY
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section style={{ background: "#f8faf9" }} className="py-12">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <p className="text-sm text-gray-400 uppercase tracking-wider font-semibold mb-6">
+            {tl(labels, "home_powered_by", "Powered By")}
+          </p>
+          <div className="flex items-center justify-center gap-10">
+            <a href="https://www.datap.ai" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-70">
+              <Image src="/logos/datapai.png" width={120} height={30} alt="DataP.ai" style={{ height: "30px", width: "auto" }} />
+            </a>
+            <span className="text-gray-300 text-2xl font-extralight">×</span>
+            <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-70">
+              <Image src="/logos/tinyfish.svg" width={80} height={20} alt="TinyFish" style={{ height: "20px", width: "auto" }} />
+            </a>
+            <span className="text-gray-300 text-2xl font-extralight">&</span>
+            <a href="https://www.ag2.ai" target="_blank" rel="noopener noreferrer" className="transition-opacity hover:opacity-70">
+              <Image src="/logos/ag2.png" width={40} height={20} alt="ag2" style={{ height: "20px", width: "auto" }} />
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          PRICING PREVIEW
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section className="max-w-4xl mx-auto px-6 py-16 text-center">
+        <h2 className="text-3xl font-bold text-[#252525] mb-3">
+          {tl(labels, "home_pricing_title", "Free Forever to Start")}
+        </h2>
+        <p className="text-gray-500 mb-8 text-base max-w-xl mx-auto">
+          {tl(labels, "home_pricing_sub", "No credit card required. Upgrade when you're ready for more AI signals, larger watchlists, and custom strategies.")}
+        </p>
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <div className="bg-white border-2 border-[#2e8b57] rounded-xl px-6 py-4 shadow-sm">
+            <div className="text-2xl font-bold text-[#2e8b57]">$0</div>
+            <div className="text-sm text-gray-500">{tl(labels, "home_pricing_free", "Signal Watch — Free forever")}</div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl px-6 py-4">
+            <div className="text-2xl font-bold text-gray-700">$49</div>
+            <div className="text-sm text-gray-500">{tl(labels, "home_pricing_individual", "Individual — Full AI suite")}</div>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-xl px-6 py-4">
+            <div className="text-2xl font-bold text-gray-700">$299</div>
+            <div className="text-sm text-gray-500">{tl(labels, "home_pricing_pro", "Professional — All markets")}</div>
+          </div>
+        </div>
+        <Link href="/pricing"
+          className="inline-block mt-6 text-[#2e8b57] font-semibold hover:underline text-sm">
+          {tl(labels, "home_pricing_cta", "View all plans")} →
+        </Link>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════════════
+          FINAL CTA
+          ═══════════════════════════════════════════════════════════════════ */}
+      <section
+        className="w-full py-16"
+        style={{ background: "linear-gradient(135deg, #1a3a2a, #2e8b57)" }}
+      >
+        <div className="max-w-3xl mx-auto px-6 text-center space-y-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-white">
+            {tl(labels, "home_final_title", "50,000+ Stocks Monitored by AI. Start Free Today.")}
+          </h2>
+          <p className="text-white/70 text-base">
+            {tl(labels, "home_final_sub", "Join investors across Asia-Pacific using AI to find opportunities faster.")}
+          </p>
+          <Link href="/register"
+            className="inline-block px-10 py-4 rounded-xl font-bold text-white text-lg transition-all hover:brightness-110 hover:-translate-y-0.5 shadow-lg"
+            style={{ background: "#fd8412" }}>
+            {tl(labels, "home_final_cta", "Create Free Account")} →
+          </Link>
+        </div>
+      </section>
     </div>
   );
 }

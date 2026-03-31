@@ -73,7 +73,7 @@ export default async function RootLayout({
               <MarketDropdown
                 buttonLabel={t(labels, "nav_exchanges")}
                 markets={[
-                  { href: "/", label: t(labels, "nav_usStocks"), flag: "🇺🇸" },
+                  { href: "/us", label: t(labels, "nav_usStocks"), flag: "🇺🇸" },
                   { href: "/asx", label: t(labels, "nav_asx"), flag: "🇦🇺" },
                   { href: "/china", label: t(labels, "nav_china"), flag: "🇨🇳" },
                   { href: "/hongkong", label: t(labels, "nav_hongkong"), flag: "🇭🇰" },
