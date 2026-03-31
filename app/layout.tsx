@@ -185,29 +185,13 @@ export default async function RootLayout({
 
         {/* Footer */}
         <footer style={{ background: "#252525" }} className="mt-16">
-          {/* ── ASIC-style General Advice Warning ── */}
-          <div style={{ background: "linear-gradient(90deg, #1a1a2e, #16213e)" }} className="border-t border-amber-500/30">
-            <div className="max-w-7xl mx-auto px-6 py-4 space-y-3">
-              {/* General Advice Warning (ASIC RG 244 compliant, i18n) */}
-              <div className="flex items-start gap-3 bg-red-950/40 border border-red-500/20 rounded-xl px-5 py-4">
-                <span className="text-red-400 text-xl flex-shrink-0 mt-0.5">&#9888;</span>
-                <div>
-                  <p className="text-red-200 text-sm font-bold mb-1">{t(labels, "asic_warning_title")}</p>
-                  <p className="text-red-100/80 text-xs leading-relaxed">
-                    {t(labels, "asic_warning_body")}
-                  </p>
-                </div>
-              </div>
-              {/* AI Disclaimer */}
-              <div className="flex items-start gap-3 bg-amber-950/40 border border-amber-500/20 rounded-xl px-5 py-4">
-                <span className="text-amber-400 text-xl flex-shrink-0 mt-0.5">&#9888;</span>
-                <div>
-                  <p className="text-amber-200 text-sm font-bold mb-1">{t(labels, "disclaimer_title")}</p>
-                  <p className="text-amber-100/80 text-xs leading-relaxed">
-                    {t(labels, "disclaimer_body")}
-                  </p>
-                </div>
-              </div>
+          {/* ── Disclaimer (consolidated) ── */}
+          <div className="border-t border-gray-700">
+            <div className="max-w-7xl mx-auto px-6 py-4">
+              <p className="text-gray-500 text-xs leading-relaxed">
+                <span className="font-semibold text-gray-400">{t(labels, "asic_warning_title")}</span> — {t(labels, "asic_warning_body")}
+                {" "}{t(labels, "disclaimer_body")}
+              </p>
             </div>
           </div>
 
