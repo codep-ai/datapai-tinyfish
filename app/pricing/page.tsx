@@ -40,7 +40,7 @@ const TIERS: Tier[] = [
     cta: { label: "Start free", href: "/register", style: "outline" as const },
     badge: null,
     features: [
-      { key: "pf_stocks_monitored", text: "10 stocks monitored", note: "US & ASX" },
+      { key: "pf_stocks_monitored", text: "10 stocks monitored", note: "all markets" },
       { key: "pf_weekly_scan", text: "Weekly IR page scan", note: null },
       { key: "pf_lang_shift_alerts", text: "Language shift alerts", noteKey: "pf_note_commitment", note: "commitment · hedging · risk" },
       { key: "pf_scan_history_30d", text: "30-day scan history", note: null },
@@ -61,7 +61,7 @@ const TIERS: Tier[] = [
     cta: { label: "Start 14-day free trial", href: "/register?plan=individual", style: "solid" as const },
     badge: "Most popular",
     features: [
-      { key: "pf_stocks_monitored", text: "50 stocks monitored", note: "US & ASX" },
+      { key: "pf_stocks_monitored", text: "50 stocks monitored", note: "all markets" },
       { key: "pf_daily_ir_scan", text: "Daily IR page scan", noteKey: "pf_note_every_trading", note: "every trading day" },
       { key: "pf_lang_shift_alerts", text: "Language shift alerts", noteKey: "pf_full_pipeline", note: "full signal pipeline" },
       { key: "pf_scan_history_1y", text: "1-year scan history", note: null },
@@ -82,7 +82,7 @@ const TIERS: Tier[] = [
     cta: { label: "Start 14-day free trial", href: "/register?plan=professional", style: "solid" as const },
     badge: null,
     features: [
-      { key: "pf_stocks_monitored", text: "200 stocks monitored", note: "US & ASX" },
+      { key: "pf_stocks_monitored", text: "200 stocks monitored", note: "all markets" },
       { key: "pf_multi_scans", text: "Multiple daily scans", noteKey: "pf_note_configurable", note: "configurable schedule" },
       { key: "pf_full_ai_pipeline", text: "Full AI signal pipeline", noteKey: "pf_note_6agents", note: "all 6 agents" },
       { key: "pf_unlimited_history", text: "Unlimited scan history", note: null },
@@ -103,7 +103,7 @@ const TIERS: Tier[] = [
     cta: { label: "Contact us", href: "mailto:donny@datap.ai?subject=Business plan enquiry", style: "dark" as const },
     badge: "Institutional",
     features: [
-      { key: "pf_unlimited_stocks", text: "Unlimited stocks", note: "9,000+ US · 2,000+ ASX" },
+      { key: "pf_unlimited_stocks", text: "Unlimited stocks", note: "50,000+ across all markets" },
       { key: "pf_unlimited_scans", text: "Unlimited scans", noteKey: "pf_note_configurable", note: "configurable schedule" },
       { key: "pf_full_ai_pipeline", text: "Full AI signal pipeline", noteKey: "pf_note_6agents", note: "all 6 agents" },
       { key: "pf_all_professional", text: "All Professional features", note: null },
