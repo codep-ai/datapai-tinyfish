@@ -183,70 +183,21 @@ export default async function RootLayout({
           />
         )}
 
-        {/* Footer */}
-        <footer style={{ background: "#252525" }} className="mt-16">
-          {/* ── Disclaimer (consolidated) ── */}
-          <div className="border-t border-gray-700">
-            <div className="max-w-7xl mx-auto px-6 py-4">
-              <p className="text-gray-500 text-xs leading-relaxed">
-                <span className="font-semibold text-gray-400">{t(labels, "asic_warning_title")}</span> — {t(labels, "asic_warning_body")}
-                {" "}{t(labels, "disclaimer_body")}
-              </p>
-            </div>
-          </div>
-
-          <div className="max-w-7xl mx-auto px-6 py-8 flex flex-col items-center gap-4">
-            <div className="flex items-center gap-6">
-              <span className="bg-white rounded px-2 py-1 flex items-center">
-                <Image src="/logos/datapai.png" width={80} height={20} alt="DataP.ai" style={{ height: "20px", width: "auto" }} />
-              </span>
-              <span className="text-gray-600 text-xl font-extralight select-none">×</span>
-              <span className="bg-white rounded px-2 py-0.5 flex items-center">
-                <Image src="/logos/tinyfish.svg" width={80} height={18} alt="TinyFish" style={{ height: "18px", width: "auto" }} />
-              </span>
-              <span className="text-gray-600 text-xl font-extralight select-none">&amp;</span>
-              <span className="bg-white rounded px-2 py-0.5 flex items-center">
-                <Image src="/logos/ag2.png" width={48} height={18} alt="ag2" style={{ height: "18px", width: "auto" }} />
-              </span>
-            </div>
-            <p className="text-gray-500 text-xs text-center">
-              {t(labels, "footer_project")} ·{" "}
-              {t(labels, "footer_poweredBy")}{" "}
-              <a href="https://tinyfish.ai" target="_blank" rel="noopener noreferrer" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">TinyFish</a>
-              {" "}{t(labels, "footer_realBrowser")} &amp;{" "}
-              <a href="https://www.ag2.ai" target="_blank" rel="noopener noreferrer" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">ag2</a>
-              {" "}{t(labels, "footer_aiFramework")}
+        {/* Footer — clean, company info only */}
+        <footer className="mt-16 border-t border-gray-200 bg-white">
+          <div className="max-w-7xl mx-auto px-6 py-6 text-center space-y-2">
+            <p className="text-gray-400 text-xs">
+              &copy; 2020–2026 AWSME Pty Ltd &middot;{" "}
+              <a href="/terms" className="text-gray-500 hover:text-gray-700 transition-colors">Terms</a> &middot;{" "}
+              <a href="/privacy" className="text-gray-500 hover:text-gray-700 transition-colors">Privacy</a>
             </p>
-            <div className="flex items-center gap-4 text-xs text-gray-600">
-              <span>{t(labels, "footer_websiteIntel")}</span>
-              <a href="/pricing" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">{t(labels, "nav_pricing")}</a>
-              <a href="https://platform.datap.ai/bi" target="_blank" rel="noopener noreferrer" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">platform.datap.ai</a>
-            </div>
-
-            {/* LLM Providers */}
-            <div className="flex items-center justify-center gap-6 mt-4 text-xs text-gray-600 flex-wrap">
-              <span className="text-gray-500 font-medium">Built on top LLM models:</span>
-              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#10a37f]" />OpenAI GPT</span>
-              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#d97757]" />Anthropic Claude</span>
-              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#4285f4]" />Google Gemini</span>
-              <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#ff9900]" />AWS Bedrock</span>
-            </div>
-
-            {/* Company info */}
-            <div className="border-t border-gray-700 mt-6 pt-5 text-center space-y-1">
-              <p className="text-gray-500 text-xs">
-                &copy; 2020–2026 AWSME Pty Ltd &middot;{" "}
-                <a href="/terms" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">Terms</a> &middot;{" "}
-                <a href="/privacy" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">Privacy</a>
-              </p>
-              <p className="text-gray-600 text-xs">
-                Suite 2/200 Mona Vale Rd, St Ives NSW 2075
-              </p>
-              <p className="text-gray-600 text-xs">
-                <a href="tel:+61431525939" className="hover:text-gray-400 transition-colors">0431 525 939</a> &middot;{" "}
-                <a href="mailto:info@datap.ai" className="text-[#8fbc8f] hover:text-[#a8d5a8] transition-colors">info@datap.ai</a>
-              </p>
-            </div>
+            <p className="text-gray-300 text-xs">
+              Suite 2/200 Mona Vale Rd, St Ives NSW 2075 &middot;{" "}
+              <a href="mailto:info@datap.ai" className="text-gray-400 hover:text-gray-600 transition-colors">info@datap.ai</a>
+            </p>
+            <p className="text-gray-300 text-[10px] leading-relaxed max-w-3xl mx-auto pt-2">
+              {t(labels, "asic_warning_body")} {t(labels, "disclaimer_body")}
+            </p>
           </div>
         </footer>
 
