@@ -323,20 +323,7 @@ export default function CandlestickChart({ data, currency = "$", height = 320, e
     // ── Sync time scales: main chart is the master ───────────────────
     const allCharts = [mainChart, ...subCharts];
 
-    // For intraday with known exchange: pad right side to show full market hours
-    // For daily: just fit to data
     mainChart.timeScale().fitContent();
-
-    if (!isDaily && exchange && MARKET_HOURS[exchange] && data.length > 0) {
-      const mkt = MARKET_HOURS[exchange];
-      // Calculate total market minutes and how many 5-min bars that is
-      const totalMinutes = (mkt.close[0] * 60 + mkt.close[1]) - (mkt.open[0] * 60 + mkt.open[1]);
-      const totalBars = Math.ceil(totalMinutes / 5);
-      // Right offset = remaining bars after current data
-      const rightPadding = Math.max(totalBars - data.length, 0);
-      mainChart.timeScale().applyOptions({ rightOffset: rightPadding });
-    }
-
     const mainRange = mainChart.timeScale().getVisibleLogicalRange();
     if (mainRange) {
       for (const sub of subCharts) {

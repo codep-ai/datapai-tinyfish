@@ -1085,17 +1085,11 @@ export interface IntradayBar {
 }
 
 export async function getIntradayBars(ticker: string, exchange: string, days: number = 5): Promise<IntradayBar[]> {
-  // Only return the latest trading day's bars (not all days in the table).
-  // This prevents mixing multiple days on the intraday chart.
   return q<IntradayBar>(
     `SELECT ts::text, open, high, low, close, volume
      FROM datapai.ohlcv_intraday
      WHERE ticker = $1
        AND exchange = $2
-       AND ts::date = (
-         SELECT MAX(ts::date) FROM datapai.ohlcv_intraday
-         WHERE ticker = $1 AND exchange = $2
-       )
      ORDER BY ts ASC`,
     [ticker, exchange]
   );
