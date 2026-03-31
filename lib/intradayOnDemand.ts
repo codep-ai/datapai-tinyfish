@@ -57,6 +57,11 @@ export async function fetchAndCacheIntraday(
 
   fetchingSet.add(key);
   try {
+    // China A-shares: route to Python backend (Sina Finance — free, works from AWS)
+    if (exchange === "SSE" || exchange === "SZSE") {
+      return await fetchViaBackendApi(ticker, exchange);
+    }
+
     const suffix = YF_SUFFIX[exchange] ?? "";
     const yfSymbol = `${ticker}${suffix}`;
     const tz = MARKET_TZ[exchange] ?? "UTC";
