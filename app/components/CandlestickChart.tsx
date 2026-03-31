@@ -324,6 +324,18 @@ export default function CandlestickChart({ data, currency = "$", height = 320, e
     const allCharts = [mainChart, ...subCharts];
 
     mainChart.timeScale().fitContent();
+
+    // Intraday: fix x-axis to full market hours (e.g. 10:00–16:00 for ASX)
+    // Matches how toTime() encodes: local time string + "Z" → UTC seconds
+    if (!isDaily && exchange && MARKET_HOURS[exchange] && data.length > 0) {
+      const mkt = MARKET_HOURS[exchange];
+      const dateStr = (data[0].ts ?? data[0].date ?? "").substring(0, 10);
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const fromTs = Math.floor(new Date(`${dateStr}T${pad(mkt.open[0])}:${pad(mkt.open[1])}:00Z`).getTime() / 1000);
+      const toTs = Math.floor(new Date(`${dateStr}T${pad(mkt.close[0])}:${pad(mkt.close[1])}:00Z`).getTime() / 1000);
+      mainChart.timeScale().setVisibleRange({ from: fromTs as any, to: toTs as any });
+    }
+
     const mainRange = mainChart.timeScale().getVisibleLogicalRange();
     if (mainRange) {
       for (const sub of subCharts) {
