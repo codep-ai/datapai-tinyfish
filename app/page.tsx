@@ -34,7 +34,35 @@ const FEATURES = [
     titleKey: "home_feat_multiagent_title",
     descKey: "home_feat_multiagent_desc",
     fallbackTitle: "Multi-Agent AI Debate",
-    fallbackDesc: "Not one AI — a team. Multiple agents analyse independently, debate each other, and cross-validate. Only the consensus survives. Like a room of analysts arguing your trade.",
+    fallbackDesc: "Not one AI — a team. TA, FA, Chart Analysis, Macro, and Website agents each analyse independently, then debate and cross-validate. Only the consensus survives.",
+  },
+  {
+    icon: "📈",
+    titleKey: "home_feat_ta_title",
+    descKey: "home_feat_ta_desc",
+    fallbackTitle: "Technical Analysis Agent",
+    fallbackDesc: "RSI, MACD, KDJ, Bollinger Bands, moving averages, volume, and volatility — computed across 4 timeframes. Multi-factor scoring with backtest-validated thresholds.",
+  },
+  {
+    icon: "📊",
+    titleKey: "home_feat_fa_title",
+    descKey: "home_feat_fa_desc",
+    fallbackTitle: "Fundamental Analysis Agent",
+    fallbackDesc: "PE, PEG, ROE, margins, growth rates, debt ratios, DCF valuation — AI reads the balance sheet so you don't have to. Quality tiers from A to D.",
+  },
+  {
+    icon: "👁️",
+    titleKey: "home_feat_ca_title",
+    descKey: "home_feat_ca_desc",
+    fallbackTitle: "Chart Vision Agent",
+    fallbackDesc: "AI sees your chart like a human trader. Detects head & shoulders, double tops, wedges, divergences, and support/resistance — from the actual chart image.",
+  },
+  {
+    icon: "🌍",
+    titleKey: "home_feat_macro_title",
+    descKey: "home_feat_macro_desc",
+    fallbackTitle: "Macro Intelligence Agent",
+    fallbackDesc: "Crawls Reuters, IMF, CFR, and analyst commentary in real-time. Detects macro regime shifts, interest rate impacts, and geopolitical risks affecting your stocks.",
   },
   {
     icon: "💬",
@@ -44,25 +72,11 @@ const FEATURES = [
     fallbackDesc: "Ask anything about any stock, in your language. Context-aware — knows what page you're on, what stocks you hold, and your risk profile.",
   },
   {
-    icon: "📊",
-    titleKey: "home_feat_screener_title",
-    descKey: "home_feat_screener_desc",
-    fallbackTitle: "AI Screener",
-    fallbackDesc: "50,000+ stocks scored daily. BUY/SELL signals across 4 timeframes. Technical + fundamental + website intelligence combined into one score.",
-  },
-  {
     icon: "🧪",
     titleKey: "home_feat_studio_title",
     descKey: "home_feat_studio_desc",
     fallbackTitle: "Custom AI Studio",
     fallbackDesc: "Build your own AI strategy. Define rules, backtest with 5 years of data, let AI run it automatically. Your strategy, your edge.",
-  },
-  {
-    icon: "✅",
-    titleKey: "home_feat_verify_title",
-    descKey: "home_feat_verify_desc",
-    fallbackTitle: "Multi-Source Verification",
-    fallbackDesc: "Every signal cross-validated across company websites, exchange filings, press releases, and news. Confidence scores, not guesses.",
   },
 ];
 
@@ -102,7 +116,7 @@ export default async function HomePage() {
           ═══════════════════════════════════════════════════════════════════ */}
       <section
         className="w-full"
-        style={{ background: "linear-gradient(135deg, #1a3a2a 0%, #2e8b57 50%, #3cb371 100%)", paddingTop: "60px", paddingBottom: "60px" }}
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "60px", paddingBottom: "60px" }}
       >
         <div className="max-w-5xl mx-auto px-6 text-center space-y-6">
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
@@ -174,9 +188,9 @@ export default async function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {FEATURES.map((f, i) => (
-              <div key={i} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+              <div key={i} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
                 <div className="text-3xl mb-3">{f.icon}</div>
                 <h3 className="font-bold text-lg text-[#252525] mb-2">
                   {tl(labels, f.titleKey, f.fallbackTitle)}
@@ -239,7 +253,7 @@ export default async function HomePage() {
       {/* ═══════════════════════════════════════════════════════════════════
           HOW IT WORKS
           ═══════════════════════════════════════════════════════════════════ */}
-      <section style={{ background: "linear-gradient(135deg, #1a3a2a, #2e8b57)" }} className="py-16">
+      <section style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)" }} className="py-16">
         <div className="max-w-5xl mx-auto px-6">
           <h2 className="text-3xl font-bold text-white text-center mb-10">
             {tl(labels, "home_how_title", "How It Works")}
@@ -305,6 +319,31 @@ export default async function HomePage() {
               <Image src="/logos/ag2.png" width={40} height={20} alt="ag2" style={{ height: "20px", width: "auto" }} />
             </a>
           </div>
+
+          {/* LLM Providers */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-xs text-gray-400 uppercase tracking-wider font-semibold mb-4">
+              {tl(labels, "home_llm_title", "Built on Top LLM Models")}
+            </p>
+            <div className="flex items-center justify-center gap-8 flex-wrap text-sm text-gray-500">
+              <span className="flex items-center gap-2 font-medium">
+                <span className="w-2 h-2 rounded-full bg-[#10a37f]" />
+                OpenAI GPT-4o
+              </span>
+              <span className="flex items-center gap-2 font-medium">
+                <span className="w-2 h-2 rounded-full bg-[#d97757]" />
+                Anthropic Claude
+              </span>
+              <span className="flex items-center gap-2 font-medium">
+                <span className="w-2 h-2 rounded-full bg-[#4285f4]" />
+                Google Gemini
+              </span>
+              <span className="flex items-center gap-2 font-medium">
+                <span className="w-2 h-2 rounded-full bg-[#ff9900]" />
+                AWS Bedrock
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
@@ -343,7 +382,7 @@ export default async function HomePage() {
           ═══════════════════════════════════════════════════════════════════ */}
       <section
         className="w-full py-16"
-        style={{ background: "linear-gradient(135deg, #1a3a2a, #2e8b57)" }}
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)" }}
       >
         <div className="max-w-3xl mx-auto px-6 text-center space-y-6">
           <h2 className="text-3xl md:text-4xl font-bold text-white">
