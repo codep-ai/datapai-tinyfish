@@ -17,7 +17,22 @@ interface Props {
   data: Bar[];
   currency?: string;
   height?: number;
+  exchange?: string;
 }
+
+// Market hours per exchange (local time) — for setting intraday chart x-axis range
+const MARKET_HOURS: Record<string, { open: [number, number]; close: [number, number] }> = {
+  US:   { open: [9, 30],  close: [16, 0] },
+  ASX:  { open: [10, 0],  close: [16, 0] },
+  HKEX: { open: [9, 30],  close: [16, 0] },
+  SET:  { open: [10, 0],  close: [16, 30] },
+  KLSE: { open: [9, 0],   close: [17, 0] },
+  IDX:  { open: [9, 0],   close: [16, 15] },
+  HOSE: { open: [9, 0],   close: [15, 0] },
+  SSE:  { open: [9, 30],  close: [15, 0] },
+  SZSE: { open: [9, 30],  close: [15, 0] },
+  LSE:  { open: [8, 0],   close: [16, 30] },
+};
 
 // ── TA computation helpers ───────────────────────────────────────────────
 
@@ -139,7 +154,7 @@ function ToggleBtn({ label, active, onClick }: { label: string; active: boolean;
 
 // ── Main Component ───────────────────────────────────────────────────────
 
-export default function CandlestickChart({ data, currency = "$", height = 320 }: Props) {
+export default function CandlestickChart({ data, currency = "$", height = 320, exchange }: Props) {
   const mainRef = useRef<HTMLDivElement>(null);
   const rsiRef = useRef<HTMLDivElement>(null);
   const macdRef = useRef<HTMLDivElement>(null);
@@ -308,8 +323,19 @@ export default function CandlestickChart({ data, currency = "$", height = 320 }:
     // ── Sync time scales: main chart is the master ───────────────────
     const allCharts = [mainChart, ...subCharts];
 
-    // Fit main chart first, then force sub-charts to match
+    // For intraday: set visible range to full market hours (e.g. 10:00–16:00)
+    // For daily: just fit to data
     mainChart.timeScale().fitContent();
+
+    if (!isDaily && exchange && MARKET_HOURS[exchange]) {
+      const mkt = MARKET_HOURS[exchange];
+      // Get today's date from the first data point
+      const dateStr = data[0]?.ts?.substring(0, 10) || new Date().toISOString().substring(0, 10);
+      const openTs = Math.floor(new Date(`${dateStr}T${String(mkt.open[0]).padStart(2, "0")}:${String(mkt.open[1]).padStart(2, "0")}:00`).getTime() / 1000) as any;
+      const closeTs = Math.floor(new Date(`${dateStr}T${String(mkt.close[0]).padStart(2, "0")}:${String(mkt.close[1]).padStart(2, "0")}:00`).getTime() / 1000) as any;
+      mainChart.timeScale().setVisibleRange({ from: openTs, to: closeTs });
+    }
+
     const mainRange = mainChart.timeScale().getVisibleLogicalRange();
     if (mainRange) {
       for (const sub of subCharts) {

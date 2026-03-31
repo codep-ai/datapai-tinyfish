@@ -164,6 +164,7 @@ export default function PriceChart({ data, scanDates = [], exchange = "US", symb
           data={candleBars}
           currency={cp}
           height={320}
+          exchange={exchange}
         />
       )}
     </div>
