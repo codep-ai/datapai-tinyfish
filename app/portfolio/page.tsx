@@ -140,7 +140,7 @@ export default function PortfolioPage() {
       {/* Hero */}
       <div
         className="w-full flex flex-col justify-center"
-        style={{ background: "linear-gradient(135deg, #0d1b2a 0%, #1b2838 50%, #1a365d 100%)", paddingTop: 28, paddingBottom: 28 }}
+        style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: 28, paddingBottom: 28 }}
       >
         <div className="max-w-6xl mx-auto px-6 space-y-2">
           <h1 className="text-2xl font-bold text-white">
