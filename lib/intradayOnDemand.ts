@@ -1,12 +1,12 @@
 /**
- * lib/intradayOnDemand.ts — On-demand intraday data fetch for non-watchlist stocks.
+ * lib/intradayOnDemand.ts — On-demand intraday + quote data fetch.
  *
- * When a user views a ticker page for a stock not in demo/watchlist,
- * we fetch 1-day 5m bars from Yahoo Finance, cache them in the
- * per-market intraday table, and return them immediately.
+ * When a user views a ticker page for a stock not in demo/watchlist:
+ *   1. Fetch 1-day 5m bars from Yahoo → cache in intraday table
+ *   2. Fetch quote summary from Yahoo → cache in stock_fundamentals + stock_directory
  *
- * Next viewer of the same stock gets cached data (no Yahoo call).
- * The intraday archive process cleans up old data automatically.
+ * This gives non-registered users a complete ticker page (chart + fundamentals)
+ * for ANY stock, even if we've never seen it before.
  */
 
 import { getPool, type IntradayBar } from "./db";
@@ -148,6 +148,10 @@ export async function fetchAndCacheIntraday(
       await pool.query(sql, insertParams);
     }
 
+    // Fire-and-forget: also fetch quote info (sector, PE, market cap, etc.)
+    // Non-blocking — intraday bars are returned immediately
+    fetchAndCacheQuoteInfo(ticker, exchange, yfSymbol).catch(() => {});
+
     return bars;
   } catch (err) {
     console.warn(`[intraday-on-demand] Error fetching ${ticker}:`, err);
@@ -175,4 +179,130 @@ async function readFromDB(ticker: string, exchange: string): Promise<IntradayBar
     close: Math.round(r.close * 100) / 100,
     volume: Math.round(r.volume),
   }));
+}
+
+
+/**
+ * Fetch quote summary from Yahoo and cache into stock_fundamentals + stock_directory.
+ * Runs in the background — does not block the intraday response.
+ */
+async function fetchAndCacheQuoteInfo(ticker: string, exchange: string, yfSymbol: string): Promise<void> {
+  try {
+    const url =
+      `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(yfSymbol)}` +
+      `?modules=summaryDetail,defaultKeyStatistics,financialData,assetProfile`;
+
+    const res = await fetch(url, {
+      headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json" },
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (!res.ok) return;
+    const data = await res.json();
+    const result = data?.quoteSummary?.result?.[0];
+    if (!result) return;
+
+    const sd = result.summaryDetail ?? {};
+    const ks = result.defaultKeyStatistics ?? {};
+    const fd = result.financialData ?? {};
+    const ap = result.assetProfile ?? {};
+
+    const pool = getPool();
+
+    // Helper to extract raw value from Yahoo's {raw: number, fmt: string} format
+    const raw = (obj: Record<string, unknown> | undefined, key: string): number | null => {
+      if (!obj) return null;
+      const v = obj[key];
+      if (v && typeof v === "object" && "raw" in (v as Record<string, unknown>)) return (v as { raw: number }).raw;
+      if (typeof v === "number") return v;
+      return null;
+    };
+
+    const rawStr = (obj: Record<string, unknown> | undefined, key: string): string | null => {
+      if (!obj) return null;
+      const v = obj[key];
+      if (typeof v === "string") return v;
+      if (v && typeof v === "object" && "fmt" in (v as Record<string, unknown>)) return (v as { fmt: string }).fmt;
+      return null;
+    };
+
+    // Upsert into stock_fundamentals
+    await pool.query(`
+      INSERT INTO datapai.stock_fundamentals (
+        ticker, exchange, market_cap, pe_ttm, pe_forward, pb_ratio, ps_ratio, peg_ratio,
+        dividend_rate, dividend_yield, beta,
+        fifty_two_week_high, fifty_two_week_low,
+        profit_margin, operating_margin, return_on_equity, return_on_assets,
+        revenue_ttm, net_income_ttm, ebitda,
+        earnings_growth, revenue_growth,
+        total_cash, total_debt, debt_to_equity, current_ratio, book_value,
+        sector, industry, currency, source, updated_at
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25, $26, $27,
+        $28, $29, $30, $31, NOW()
+      )
+      ON CONFLICT (ticker, exchange) DO UPDATE SET
+        market_cap = COALESCE(EXCLUDED.market_cap, datapai.stock_fundamentals.market_cap),
+        pe_ttm = COALESCE(EXCLUDED.pe_ttm, datapai.stock_fundamentals.pe_ttm),
+        pe_forward = COALESCE(EXCLUDED.pe_forward, datapai.stock_fundamentals.pe_forward),
+        pb_ratio = COALESCE(EXCLUDED.pb_ratio, datapai.stock_fundamentals.pb_ratio),
+        ps_ratio = COALESCE(EXCLUDED.ps_ratio, datapai.stock_fundamentals.ps_ratio),
+        peg_ratio = COALESCE(EXCLUDED.peg_ratio, datapai.stock_fundamentals.peg_ratio),
+        dividend_rate = COALESCE(EXCLUDED.dividend_rate, datapai.stock_fundamentals.dividend_rate),
+        dividend_yield = COALESCE(EXCLUDED.dividend_yield, datapai.stock_fundamentals.dividend_yield),
+        beta = COALESCE(EXCLUDED.beta, datapai.stock_fundamentals.beta),
+        fifty_two_week_high = COALESCE(EXCLUDED.fifty_two_week_high, datapai.stock_fundamentals.fifty_two_week_high),
+        fifty_two_week_low = COALESCE(EXCLUDED.fifty_two_week_low, datapai.stock_fundamentals.fifty_two_week_low),
+        profit_margin = COALESCE(EXCLUDED.profit_margin, datapai.stock_fundamentals.profit_margin),
+        operating_margin = COALESCE(EXCLUDED.operating_margin, datapai.stock_fundamentals.operating_margin),
+        return_on_equity = COALESCE(EXCLUDED.return_on_equity, datapai.stock_fundamentals.return_on_equity),
+        return_on_assets = COALESCE(EXCLUDED.return_on_assets, datapai.stock_fundamentals.return_on_assets),
+        revenue_ttm = COALESCE(EXCLUDED.revenue_ttm, datapai.stock_fundamentals.revenue_ttm),
+        net_income_ttm = COALESCE(EXCLUDED.net_income_ttm, datapai.stock_fundamentals.net_income_ttm),
+        ebitda = COALESCE(EXCLUDED.ebitda, datapai.stock_fundamentals.ebitda),
+        earnings_growth = COALESCE(EXCLUDED.earnings_growth, datapai.stock_fundamentals.earnings_growth),
+        revenue_growth = COALESCE(EXCLUDED.revenue_growth, datapai.stock_fundamentals.revenue_growth),
+        total_cash = COALESCE(EXCLUDED.total_cash, datapai.stock_fundamentals.total_cash),
+        total_debt = COALESCE(EXCLUDED.total_debt, datapai.stock_fundamentals.total_debt),
+        debt_to_equity = COALESCE(EXCLUDED.debt_to_equity, datapai.stock_fundamentals.debt_to_equity),
+        current_ratio = COALESCE(EXCLUDED.current_ratio, datapai.stock_fundamentals.current_ratio),
+        book_value = COALESCE(EXCLUDED.book_value, datapai.stock_fundamentals.book_value),
+        sector = COALESCE(EXCLUDED.sector, datapai.stock_fundamentals.sector),
+        industry = COALESCE(EXCLUDED.industry, datapai.stock_fundamentals.industry),
+        currency = COALESCE(EXCLUDED.currency, datapai.stock_fundamentals.currency),
+        source = EXCLUDED.source,
+        updated_at = NOW()
+    `, [
+      ticker, exchange,
+      raw(sd, "marketCap"), raw(sd, "trailingPE"), raw(sd, "forwardPE"),
+      raw(ks, "priceToBook"), raw(ks, "priceToSalesTrailing12Months"), raw(ks, "pegRatio"),
+      raw(sd, "dividendRate"), raw(sd, "dividendYield"), raw(sd, "beta"),
+      raw(sd, "fiftyTwoWeekHigh"), raw(sd, "fiftyTwoWeekLow"),
+      raw(fd, "profitMargins"), raw(fd, "operatingMargins"),
+      raw(fd, "returnOnEquity"), raw(fd, "returnOnAssets"),
+      raw(fd, "totalRevenue"), raw(fd, "netIncomeToCommon"), raw(fd, "ebitda"),
+      raw(fd, "earningsGrowth"), raw(fd, "revenueGrowth"),
+      raw(fd, "totalCash"), raw(fd, "totalDebt"),
+      raw(fd, "debtToEquity"), raw(fd, "currentRatio"), raw(ks, "bookValue"),
+      ap.sector ?? null, ap.industry ?? null,
+      sd.currency ?? null, "on_demand",
+    ]);
+
+    // Also upsert stock_directory (company name + sector) for search/display
+    const name = ap.longName ?? ap.shortName ?? null;
+    if (name) {
+      await pool.query(`
+        INSERT INTO datapai.stock_directory (symbol, name, exchange, sector, lang)
+        VALUES ($1, $2, $3, $4, 'en')
+        ON CONFLICT (symbol, exchange, lang) DO UPDATE SET
+          name = COALESCE(EXCLUDED.name, datapai.stock_directory.name),
+          sector = COALESCE(EXCLUDED.sector, datapai.stock_directory.sector)
+      `, [ticker, name, exchange, ap.sector ?? null]);
+    }
+
+    console.log(`[quote-on-demand] Cached fundamentals for ${ticker} (${exchange})`);
+  } catch (err) {
+    console.warn(`[quote-on-demand] Error fetching quote for ${ticker}:`, err);
+  }
 }
