@@ -100,7 +100,7 @@ export default async function HomePage() {
                 href="#"
                 onClick={undefined}
                 className="text-xs font-semibold rounded-full px-3.5 py-1.5 transition-all hover:brightness-110 hover:-translate-y-0.5 cursor-pointer"
-                style={{ background: "#fbbf24", color: "#252525" }}
+                style={{ background: "#fd8412", color: "#fff" }}
                 data-lang={l.code}
               >
                 {l.flag} {l.label}
@@ -127,7 +127,8 @@ export default async function HomePage() {
               {tl(labels, "home_cta_start", "Get Started Free")} →
             </Link>
             <Link href="/us"
-              className="px-8 py-3.5 rounded-xl font-bold text-white/90 text-base border-2 border-white/30 hover:bg-white/10 transition-all hover:-translate-y-0.5">
+              className="px-8 py-3.5 rounded-xl font-bold text-white text-base transition-all hover:brightness-110 hover:-translate-y-0.5 shadow-lg"
+              style={{ background: "#fd8412" }}>
               {tl(labels, "home_cta_explore", "Explore Markets")}
             </Link>
             <Link href="/pricing"
@@ -159,11 +160,6 @@ export default async function HomePage() {
           <p className="text-gray-500 mt-2 text-base">
             {tl(labels, "home_markets_sub", "From Wall Street to Southeast Asia — 12 markets, real-time prices, AI analysis, and alerts. All in one place.")}
           </p>
-          <Link href="/pricing"
-            className="inline-block mt-4 px-6 py-2.5 rounded-xl font-bold text-[#252525] text-sm transition-all hover:brightness-110"
-            style={{ background: "#fbbf24" }}>
-            {tl(labels, "home_pricing_cta", "View all plans")} →
-          </Link>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-12">
