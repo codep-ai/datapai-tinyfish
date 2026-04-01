@@ -47,13 +47,34 @@ export async function POST(req: Request) {
     if (user?.userId) userId = parseInt(user.userId, 10) || 0;
   } catch { /* anonymous */ }
 
-  // Build enriched context for the Python backend
-  // The page_context is a pre-built summary of what the user is viewing
-  // Page context — Gemini now uses Google Search for real-time data,
-  // so we only pass page context for awareness (what user is viewing)
-  const systemContext = body.page_context
-    ? `[Page the user is currently viewing]\n${body.page_context}`
-    : null;
+  // Detect ticker in user message and inject verified price from our DB
+  // This prevents Gemini from guessing wrong prices
+  let verifiedPrice = "";
+  try {
+    const tickerMatch = message.match(/\b([A-Z]{1,5})(?:\.(ASX|SI|TW|T|HK|VN|BK|KL|JK|L|SS|SZ))?\b/);
+    if (tickerMatch) {
+      const detectedTicker = tickerMatch[1];
+      const detectedExchange = body.exchange || body.ticker?.split(".")?.[1] || "US";
+      const { getPool } = await import("@/lib/db");
+      const pool = getPool();
+      const { rows } = await pool.query(
+        `SELECT close, trade_date FROM datapai.prices
+         WHERE ticker = $1 AND exchange = $2
+         ORDER BY trade_date DESC LIMIT 1`,
+        [detectedTicker, detectedExchange]
+      );
+      if (rows.length > 0) {
+        const p = rows[0];
+        verifiedPrice = `\n[VERIFIED PRICE from DataP.ai DB — use this, not Google Search]\n${detectedTicker}: $${Number(p.close).toFixed(2)} as of ${p.trade_date}\n`;
+      }
+    }
+  } catch { /* non-fatal */ }
+
+  // Page context + verified price
+  const systemContext = [
+    verifiedPrice,
+    body.page_context ? `[Page the user is currently viewing]\n${body.page_context}` : "",
+  ].filter(Boolean).join("\n") || null;
 
   try {
     const upstream = await fetch(`${AGENT_BASE}/agent/stock-chat/stream`, {
