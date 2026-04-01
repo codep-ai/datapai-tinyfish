@@ -7,7 +7,6 @@
  */
 
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
@@ -244,14 +243,11 @@ export default async function WhyDatapaiPage() {
               DataP.ai — {tl(labels, "why_ss_correct", "Correct")}: $52.56
             </div>
             <div className="bg-gray-50 p-4 min-h-[200px] flex items-center justify-center">
-              <Image src="/why-us/datapai-bhp-en.png" alt="DataP.ai BHP price" width={400} height={250}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/why-us/datapai-bhp-en.png" alt="DataP.ai BHP price"
                 className="rounded-lg w-full h-auto"
-                style={{ objectFit: "contain" }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                style={{ objectFit: "contain", maxHeight: "250px" }}
               />
-              <p className="text-gray-300 text-xs text-center hidden" id="placeholder-datapai">
-                {tl(labels, "why_ss_placeholder", "Screenshot coming soon")}
-              </p>
             </div>
           </div>
 
@@ -261,10 +257,10 @@ export default async function WhyDatapaiPage() {
               {tl(labels, "why_cmp_competitor_a", "Leading Trading App AI")} — {tl(labels, "why_ss_wrong", "Wrong")}: $53.75
             </div>
             <div className="bg-gray-50 p-4 min-h-[200px] flex items-center justify-center">
-              <Image src="/why-us/competitor-a.png" alt="Competitor A wrong price" width={400} height={250}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/why-us/competitor-a.png" alt="Competitor A wrong price"
                 className="rounded-lg w-full h-auto"
-                style={{ objectFit: "contain" }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                style={{ objectFit: "contain", maxHeight: "250px" }}
               />
             </div>
           </div>
@@ -275,10 +271,10 @@ export default async function WhyDatapaiPage() {
               {tl(labels, "why_cmp_competitor_b", "Leading AI Assistant")} — {tl(labels, "why_ss_wrong_ohlcv", "Wrong OHLCV")}
             </div>
             <div className="bg-gray-50 p-4 min-h-[200px] flex items-center justify-center">
-              <Image src="/why-us/competitor-b.png" alt="Competitor B wrong OHLCV" width={400} height={250}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/why-us/competitor-b.png" alt="Competitor B wrong OHLCV"
                 className="rounded-lg w-full h-auto"
-                style={{ objectFit: "contain" }}
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                style={{ objectFit: "contain", maxHeight: "250px" }}
               />
             </div>
           </div>
