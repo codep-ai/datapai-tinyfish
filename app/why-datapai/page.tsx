@@ -293,8 +293,31 @@ export default async function WhyDatapaiPage() {
             </p>
           </div>
 
+          {/* Screenshots for EN, ZH, VI */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {[
+              { flag: "🇬🇧", lang: "English", img: "/why-us/datapai-bhp-en.png", w: 676, h: 496 },
+              { flag: "🇨🇳", lang: "简体中文", img: "/why-us/datapai-bhp-zh.png", w: 337, h: 246 },
+              { flag: "🇻🇳", lang: "Tiếng Việt", img: "/why-us/datapai-bhp-vi.png", w: 674, h: 576 },
+            ].map((l) => (
+              <div key={l.lang} className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all">
+                <div className="px-4 py-2 flex items-center gap-2" style={{ background: "#2e8b57" }}>
+                  <span className="text-xl">{l.flag}</span>
+                  <span className="font-bold text-sm text-white">{l.lang}</span>
+                </div>
+                <div className="p-4">
+                  <Image src={l.img} alt={`DataP.ai in ${l.lang}`}
+                    width={l.w} height={l.h}
+                    className="rounded-lg w-full h-auto"
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Text examples for remaining languages */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {LANG_SHOWCASE.map((l) => (
+            {LANG_SHOWCASE.filter((l) => !["English", "简体中文", "Tiếng Việt"].includes(l.lang)).map((l) => (
               <div key={l.lang} className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-2xl">{l.flag}</span>
