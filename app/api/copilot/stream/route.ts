@@ -47,78 +47,11 @@ export async function POST(req: Request) {
     if (user?.userId) userId = parseInt(user.userId, 10) || 0;
   } catch { /* anonymous */ }
 
-  // Detect ticker in message → fetch live price from Yahoo → inject into context
-  let verifiedPrice = "";
-  try {
-    // Find ticker: last word that looks like a ticker (skip common English words)
-    const skip = new Set(["WHAT","WHATS","THE","PRICE","OF","IS","FOR","HOW","MUCH","DOES","ABOUT","TELL","ME","SHOW","GET","AND","OR","IN","ON","AT","TO","A","AN","IT","DO","CAN","YOU","MY","HI","HELLO"]);
-    const words = message.toUpperCase().replace(/[^A-Z0-9.\s]/g, "").split(/\s+/);
-    const candidates = words.filter(w => w.length >= 2 && w.length <= 6 && !skip.has(w));
-    // Prefer words with exchange suffix (BHP.ASX) or last candidate
-    const tickerWord = candidates.find(w => w.includes(".")) || candidates[candidates.length - 1] || "";
-    const match = tickerWord.match(/^([A-Z0-9]{1,6})(?:\.(ASX|SI|TW|T|HK|VN|BK|KL|JK|L|SS|SZ))?$/);
-    if (match && match[1].length >= 2) {
-      const ticker = match[1];
-      const exSuffix = match[2] || "";
-      const sfx: Record<string, string> = { ASX:".AX", SI:".SI", TW:".TW", T:".T", HK:".HK", VN:".VN", BK:".BK", KL:".KL", JK:".JK", L:".L", SS:".SS", SZ:".SZ" };
-      // Determine exchange: from explicit suffix > page context > lookup DB > default US
-      let resolvedSuffix = exSuffix;
-      if (!resolvedSuffix && body.exchange && body.exchange !== "US") {
-        // User is on a market page — use that exchange
-        const exToSuffix: Record<string, string> = { ASX:"ASX", HKEX:"HK", TWSE:"TW", SGX:"SI", TSE:"T", SSE:"SS", SZSE:"SZ", HOSE:"VN", SET:"BK", KLSE:"KL", IDX:"JK", LSE:"L" };
-        resolvedSuffix = exToSuffix[body.exchange] || "";
-      }
-      if (!resolvedSuffix) {
-        // Try DB lookup for the ticker's exchange
-        try {
-          const { getPool } = await import("@/lib/db");
-          const pool = getPool();
-          const { rows } = await pool.query(
-            "SELECT exchange FROM datapai.ticker_universe WHERE ticker = $1 AND is_active LIMIT 1",
-            [ticker]
-          );
-          if (rows.length > 0) {
-            const dbEx = rows[0].exchange;
-            const exToSuffix: Record<string, string> = { ASX:"ASX", HKEX:"HK", TWSE:"TW", SGX:"SI", TSE:"T", SSE:"SS", SZSE:"SZ", HOSE:"VN", SET:"BK", KLSE:"KL", IDX:"JK", LSE:"L" };
-            resolvedSuffix = exToSuffix[dbEx] || "";
-          }
-        } catch { /* fallback to no suffix = US */ }
-      }
-      const yfSym = `${ticker}${resolvedSuffix ? (sfx[resolvedSuffix] || "") : ""}`;
-      const yRes = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${yfSym}?range=2d&interval=1d`, {
-        headers: { "User-Agent": "Mozilla/5.0" },
-        signal: AbortSignal.timeout(3000),
-      });
-      if (yRes.ok) {
-        const yd = await yRes.json();
-        const meta = yd?.chart?.result?.[0]?.meta;
-        if (meta?.regularMarketPrice) {
-          const p = meta.regularMarketPrice;
-          const pc = meta.previousClose ?? meta.chartPreviousClose ?? p;
-          const chg = p - pc;
-          const pct = pc ? (chg / pc * 100) : 0;
-          const cur = meta.currency ?? "USD";
-          const exn = meta.exchangeName ?? "";
-          const state = meta.marketState === "REGULAR" ? "Live" : "Close";
-          // Map Yahoo exchange names to our standard codes
-          const exMap: Record<string, string> = {
-            NMS: "US", NYQ: "US", NGM: "US", NCM: "US", ASX: "ASX",
-            HKG: "HKEX", TAI: "TWSE", SES: "SGX", JPX: "TSE",
-            SHH: "SSE", SHZ: "SZSE", LON: "LSE", SET: "SET",
-            KLS: "KLSE", JKT: "IDX", VNM: "HOSE",
-          };
-          const exCode = exMap[exn] || exn;
-          const displayTicker = `${ticker}.${exCode}`;
-          verifiedPrice = `[VERIFIED PRICE from Yahoo Finance — use this exact data, do not use Google Search for price]\n${displayTicker}: ${cur} ${p.toFixed(2)} ${chg >= 0 ? "+" : ""}${chg.toFixed(2)} (${chg >= 0 ? "+" : ""}${pct.toFixed(2)}%) · ${state}\n`;
-        }
-      }
-    }
-  } catch { /* non-fatal */ }
-
-  const systemContext = [
-    verifiedPrice,
-    body.page_context ? `[Page the user is currently viewing]\n${body.page_context}` : "",
-  ].filter(Boolean).join("\n") || null;
+  // Backend handles price lookups via Gemini function calling + Yahoo API
+  // Frontend only passes page context for awareness
+  const systemContext = body.page_context
+    ? `[Page the user is currently viewing]\n${body.page_context}`
+    : null;
 
   try {
     const upstream = await fetch(`${AGENT_BASE}/agent/stock-chat/stream`, {
