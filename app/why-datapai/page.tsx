@@ -15,9 +15,9 @@ import { loadTranslations } from "@/lib/i18n";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Why DataP.ai — AI Stock Research That Gets The Numbers Right",
+  title: "Why DataP.ai — AI Stock Research Designed for Verified Market Data",
   description:
-    "Real-time stock prices verified against Google Finance. 13 markets. 8 native languages. See how we compare to leading AI assistants.",
+    "Real-time stock prices cross-checked against Google Finance. 13 markets. 8 languages. See how we compare to leading AI assistants.",
 };
 
 /* ── Constants ──────────────────────────────────────────────────────────────── */
@@ -113,10 +113,10 @@ export default async function WhyDatapaiPage() {
             {tl(labels, "why_hero_label", "Why DataP.ai")}
           </p>
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
-            {tl(labels, "why_hero_headline", "AI Stock Research That Gets The Numbers Right")}
+            {tl(labels, "why_hero_headline", "AI Stock Research Designed for Verified Market Data")}
           </h1>
           <p className="text-lg md:text-xl text-white/80 max-w-3xl">
-            {tl(labels, "why_hero_sub", "13 markets. 8 native languages. Real-time OHLCV data verified against Google Finance.")}
+            {tl(labels, "why_hero_sub", "13 markets. 8 languages. Real-time prices cross-checked against Google Finance.")}
           </p>
 
           {/* CTA buttons */}
@@ -153,7 +153,7 @@ export default async function WhyDatapaiPage() {
             {tl(labels, "why_accuracy_title", "The Price Accuracy Challenge")}
           </h2>
           <p className="text-gray-500 mt-2 text-base max-w-2xl mx-auto">
-            {tl(labels, "why_accuracy_sub", "We asked 3 AI assistants the same question: \"What is the current price of BHP on ASX?\" Here are the results.")}
+            {tl(labels, "why_accuracy_sub", "In our benchmark example, we asked 3 AI assistants the same question: \"What is the current price of BHP on ASX?\" Here are the results.")}
           </p>
         </div>
 
@@ -288,7 +288,7 @@ export default async function WhyDatapaiPage() {
               {tl(labels, "why_lang_title", "AI That Thinks In Your Language")}
             </h2>
             <p className="text-gray-500 mt-2 text-base max-w-2xl mx-auto">
-              {tl(labels, "why_lang_sub", "Not just translated UI. Company names, price labels, timezone, and disclaimer — all in your native language. No other AI stock platform does this.")}
+              {tl(labels, "why_lang_sub", "Not just translated UI. Company names, price labels, timezone, and disclaimer — designed to respond in your native language.")}
             </p>
           </div>
 
@@ -335,10 +335,10 @@ export default async function WhyDatapaiPage() {
               <span className="text-3xl flex-shrink-0">🌏</span>
               <div>
                 <h3 className="font-bold text-lg mb-1">
-                  {tl(labels, "why_lang_callout_title", "8 Languages, 100% Native")}
+                  {tl(labels, "why_lang_callout_title", "8 Languages, Native Experience")}
                 </h3>
                 <p className="text-white/80 text-sm">
-                  {tl(labels, "why_lang_callout_desc", "English, Simplified Chinese, Traditional Chinese, Japanese, Korean, Vietnamese, Thai, Malay. Every label, every company name, every timestamp — translated from our proprietary stock dictionary covering 50,000+ stocks.")}
+                  {tl(labels, "why_lang_callout_desc", "English, Simplified Chinese, Traditional Chinese, Japanese, Korean, Vietnamese, Thai, Malay. Labels, company names, and timestamps are translated using our proprietary stock dictionary covering 50,000+ stocks.")}
                 </p>
               </div>
             </div>
@@ -381,7 +381,7 @@ export default async function WhyDatapaiPage() {
               {tl(labels, "why_trust_title", "Data You Can Verify")}
             </h2>
             <p className="text-gray-500 mt-2 text-base">
-              {tl(labels, "why_trust_sub", "Our OHLCV data matches Google Finance. Don't take our word for it — check it yourself.")}
+              {tl(labels, "why_trust_sub", "In our benchmark example, OHLCV data matched Google Finance. Don't take our word for it — check it yourself.")}
             </p>
           </div>
 
@@ -449,7 +449,7 @@ export default async function WhyDatapaiPage() {
           {/* Trust statement */}
           <div className="rounded-xl p-6 bg-white" style={{ borderLeft: "4px solid #2e8b57" }}>
             <p className="text-lg font-bold" style={{ color: "#000" }}>
-              {tl(labels, "why_trust_statement", "\"Our stock price data matches Google Finance — Open, High, Low, Close, Volume. Every market, every stock, every time.\"")}
+              {tl(labels, "why_trust_statement", "\"In our benchmark test, stock price data matched Google Finance — Open, High, Low, Close, Volume — designed for accuracy across all supported markets.\"")}
             </p>
             <p className="text-gray-500 text-sm mt-2">
               {tl(labels, "why_trust_date", "BHP Group Limited (ASX: BHP) — April 1, 2026")}
