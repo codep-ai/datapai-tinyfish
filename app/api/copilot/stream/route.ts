@@ -61,7 +61,30 @@ export async function POST(req: Request) {
       const ticker = match[1];
       const exSuffix = match[2] || "";
       const sfx: Record<string, string> = { ASX:".AX", SI:".SI", TW:".TW", T:".T", HK:".HK", VN:".VN", BK:".BK", KL:".KL", JK:".JK", L:".L", SS:".SS", SZ:".SZ" };
-      const yfSym = `${ticker}${exSuffix ? (sfx[exSuffix] || "") : ""}`;
+      // Determine exchange: from explicit suffix > page context > lookup DB > default US
+      let resolvedSuffix = exSuffix;
+      if (!resolvedSuffix && body.exchange && body.exchange !== "US") {
+        // User is on a market page — use that exchange
+        const exToSuffix: Record<string, string> = { ASX:"ASX", HKEX:"HK", TWSE:"TW", SGX:"SI", TSE:"T", SSE:"SS", SZSE:"SZ", HOSE:"VN", SET:"BK", KLSE:"KL", IDX:"JK", LSE:"L" };
+        resolvedSuffix = exToSuffix[body.exchange] || "";
+      }
+      if (!resolvedSuffix) {
+        // Try DB lookup for the ticker's exchange
+        try {
+          const { getPool } = await import("@/lib/db");
+          const pool = getPool();
+          const { rows } = await pool.query(
+            "SELECT exchange FROM datapai.ticker_universe WHERE ticker = $1 AND is_active LIMIT 1",
+            [ticker]
+          );
+          if (rows.length > 0) {
+            const dbEx = rows[0].exchange;
+            const exToSuffix: Record<string, string> = { ASX:"ASX", HKEX:"HK", TWSE:"TW", SGX:"SI", TSE:"T", SSE:"SS", SZSE:"SZ", HOSE:"VN", SET:"BK", KLSE:"KL", IDX:"JK", LSE:"L" };
+            resolvedSuffix = exToSuffix[dbEx] || "";
+          }
+        } catch { /* fallback to no suffix = US */ }
+      }
+      const yfSym = `${ticker}${resolvedSuffix ? (sfx[resolvedSuffix] || "") : ""}`;
       const yRes = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${yfSym}?range=2d&interval=1d`, {
         headers: { "User-Agent": "Mozilla/5.0" },
         signal: AbortSignal.timeout(3000),
