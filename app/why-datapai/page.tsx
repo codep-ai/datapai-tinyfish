@@ -312,7 +312,7 @@ export default async function WhyDatapaiPage() {
             {tl(labels, "why_try_title", "This is not a one-off test — try it yourself")}
           </p>
           <p className="text-gray-500 text-sm max-w-2xl mx-auto mb-4">
-            {tl(labels, "why_try_desc", "Pick any stock across our 13 markets — large cap, mid cap, or small cap — and ask our AI Copilot for the price. Then compare against Google Finance. Our accuracy is designed to be reproducible, not cherry-picked.")}
+            {tl(labels, "why_try_desc", "Pick any stock across our 13 markets — large cap, mid cap, or small cap — and ask our AI Copilot for the price. We encourage you to verify our results independently using public data sources like Google Finance.")}
           </p>
           <Link href="/register"
             className="inline-block font-bold py-2.5 px-6 rounded-xl text-sm transition-all hover:brightness-110 hover:-translate-y-0.5 shadow"
