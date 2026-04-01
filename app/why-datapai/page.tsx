@@ -119,21 +119,6 @@ export default async function WhyDatapaiPage() {
             {tl(labels, "why_hero_sub", "13 markets. 8 native languages. Real-time OHLCV data verified against Google Finance.")}
           </p>
 
-          {/* Audience pills */}
-          <div className="flex items-center gap-3 flex-wrap pt-2">
-            {[
-              { key: "why_audience_investors", fallback: "Self-Directed Investors" },
-              { key: "why_audience_partners",  fallback: "Broker Partners" },
-              { key: "why_audience_vcs",       fallback: "Investors & VCs" },
-            ].map((a) => (
-              <span key={a.key}
-                className="px-4 py-1.5 rounded-full text-sm font-medium"
-                style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>
-                {tl(labels, a.key, a.fallback)}
-              </span>
-            ))}
-          </div>
-
           {/* CTA buttons */}
           <div className="flex items-center gap-4 flex-wrap pt-4">
             <Link href="/register"
