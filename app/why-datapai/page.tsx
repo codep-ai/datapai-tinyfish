@@ -239,15 +239,15 @@ export default async function WhyDatapaiPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             <div>
               <span className="text-gray-400 font-medium">{tl(labels, "why_method_stock", "Stock")}:</span>
-              <span className="text-[#252525] ml-2">BHP Group Limited (ASX: BHP)</span>
+              <span className="text-[#252525] ml-2">{tl(labels, "why_method_stock_val", "BHP Group Limited (ASX: BHP)")}</span>
             </div>
             <div>
-              <span className="text-gray-400 font-medium">{tl(labels, "why_method_date", "Date")}:</span>
-              <span className="text-[#252525] ml-2">7:00 PM, 1 April 2026 (Sydney time)</span>
+              <span className="text-gray-400 font-medium">{tl(labels, "why_method_date", "Date & Time")}:</span>
+              <span className="text-[#252525] ml-2">{tl(labels, "why_method_date_val", "7:00 PM, 1 April 2026 (Sydney time)")}</span>
             </div>
             <div>
               <span className="text-gray-400 font-medium">{tl(labels, "why_method_question", "Question")}:</span>
-              <span className="text-[#252525] ml-2">&quot;What is the current price of BHP?&quot;</span>
+              <span className="text-[#252525] ml-2">&quot;{tl(labels, "why_method_question_val", "What is the current price of BHP?")}&quot;</span>
             </div>
             <div>
               <span className="text-gray-400 font-medium">{tl(labels, "why_method_source", "Source of truth")}:</span>
