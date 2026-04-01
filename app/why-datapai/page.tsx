@@ -231,9 +231,38 @@ export default async function WhyDatapaiPage() {
           </div>
         </div>
 
-        <p className="text-xs text-gray-300 text-center mb-8">
-          {tl(labels, "why_cmp_note", "Test conducted April 2026. All AI assistants asked the same question about BHP on ASX. Competitor brands hidden.")}
-        </p>
+        {/* Benchmark Methodology */}
+        <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8">
+          <h3 className="font-bold text-lg text-[#252525] mb-4">
+            {tl(labels, "why_method_title", "Benchmark Methodology")}
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
+            <div>
+              <span className="text-gray-400 font-medium">{tl(labels, "why_method_stock", "Stock")}:</span>
+              <span className="text-[#252525] ml-2">BHP Group Limited (ASX: BHP)</span>
+            </div>
+            <div>
+              <span className="text-gray-400 font-medium">{tl(labels, "why_method_date", "Date")}:</span>
+              <span className="text-[#252525] ml-2">7:00 PM, 1 April 2026 (Sydney time)</span>
+            </div>
+            <div>
+              <span className="text-gray-400 font-medium">{tl(labels, "why_method_question", "Question")}:</span>
+              <span className="text-[#252525] ml-2">&quot;What is the current price of BHP?&quot;</span>
+            </div>
+            <div>
+              <span className="text-gray-400 font-medium">{tl(labels, "why_method_source", "Source of truth")}:</span>
+              <span className="text-[#252525] ml-2">Google Finance, {tl(labels, "why_method_exchange", "Exchange official data")}</span>
+            </div>
+            <div>
+              <span className="text-gray-400 font-medium">{tl(labels, "why_method_platforms", "Platforms tested")}:</span>
+              <span className="text-[#252525] ml-2">DataP.ai · {tl(labels, "why_cmp_competitor_a", "Leading Trading App AI")} · {tl(labels, "why_cmp_competitor_b", "Leading AI Assistant")}</span>
+            </div>
+            <div>
+              <span className="text-gray-400 font-medium">{tl(labels, "why_method_langs", "Languages tested")}:</span>
+              <span className="text-[#252525] ml-2">English · 中文 · 日本語 · 한국어 · Tiếng Việt</span>
+            </div>
+          </div>
+        </div>
 
         {/* Screenshot comparison — 3 cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
