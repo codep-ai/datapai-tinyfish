@@ -134,6 +134,20 @@ export default async function WhyDatapaiPage() {
             ))}
           </div>
 
+          {/* CTA buttons */}
+          <div className="flex items-center gap-4 flex-wrap pt-4">
+            <Link href="/register"
+              className="font-bold py-3.5 px-8 rounded-xl text-base transition-all hover:brightness-110 hover:-translate-y-0.5 shadow-lg"
+              style={{ background: "#fd8412", color: "#fff" }}>
+              {tl(labels, "why_cta_start", "Start Free")} →
+            </Link>
+            <a href="mailto:info@datap.ai?subject=Partnership Enquiry"
+              className="font-bold py-3.5 px-8 rounded-xl text-base transition-all hover:-translate-y-0.5"
+              style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }}>
+              {tl(labels, "why_cta_partner", "Partner With Us")}
+            </a>
+          </div>
+
           {/* Market flags */}
           <div className="flex items-center gap-3 text-2xl pt-2">
             {MARKETS.map((m) => (
@@ -449,10 +463,10 @@ export default async function WhyDatapaiPage() {
 
           {/* Trust statement */}
           <div className="rounded-xl p-6 bg-white" style={{ borderLeft: "4px solid #2e8b57" }}>
-            <p className="text-[#252525] font-medium">
+            <p className="text-lg font-bold" style={{ color: "#000" }}>
               {tl(labels, "why_trust_statement", "\"Our stock price data matches Google Finance — Open, High, Low, Close, Volume. Every market, every stock, every time.\"")}
             </p>
-            <p className="text-gray-400 text-xs mt-2">
+            <p className="text-gray-500 text-sm mt-2">
               {tl(labels, "why_trust_date", "BHP Group Limited (ASX: BHP) — April 1, 2026")}
             </p>
           </div>
@@ -488,48 +502,16 @@ export default async function WhyDatapaiPage() {
       </section>
 
       {/* ═══════════════════════════════════════════════════════════════════
-          SECTION 7: TRIPLE CTA
+          DISCLAIMER
           ═══════════════════════════════════════════════════════════════════ */}
-      <section
-        className="rounded-none md:rounded-2xl md:mx-6 lg:mx-auto lg:max-w-5xl p-12 text-center"
-        style={{ background: "#fff", border: "1px solid #e5e7eb" }}
-      >
-        <h2 className="text-3xl font-bold text-[#252525] mb-3">
-          {tl(labels, "why_cta_title", "Ready to See the Difference?")}
-        </h2>
-        <p className="text-gray-500 mb-8 max-w-xl mx-auto">
-          {tl(labels, "why_cta_sub", "Join thousands of self-directed investors across 13 Asia-Pacific markets.")}
+      <section className="max-w-5xl mx-auto px-6 py-12">
+        <p className="text-sm leading-relaxed font-semibold" style={{ color: "#000" }}>
+          The information on this website is general information only and does not take into account your objectives, financial situation or needs. Before acting on any information, you should consider its appropriateness and consider seeking advice from a qualified financial advisor. Any AI-generated signals, scores, or recommendations (including BUY, SELL, HOLD) are produced by automated systems and may be inaccurate or outdated. Past performance is not indicative of future results. Investing carries risk — you may lose some or all of your investment. AWSME Pty Ltd does not hold an AFSL and is not authorised to provide personal financial advice. All data, signals, scores, and AI-generated content on DataP.ai are for educational and informational purposes only and do NOT constitute financial advice, investment recommendations, or solicitation to buy or sell securities. Technical indicators are computed from historical price data and backtested against past performance — past performance does not guarantee future results. Always conduct your own research and consult a qualified financial advisor before making investment decisions. DataP.ai and its operators are not responsible for any trading losses.
         </p>
-
-        <div className="flex items-center justify-center gap-4 flex-wrap">
-          <Link href="/register"
-            className="font-bold py-3 px-8 rounded-xl text-base transition-all hover:-translate-y-0.5 hover:shadow-lg"
-            style={{ background: "#2e8b57", color: "#fff" }}>
-            {tl(labels, "why_cta_start", "Start Free")} →
-          </Link>
-          <a href="mailto:donny@datap.ai?subject=Broker Partnership Enquiry"
-            className="font-bold py-3 px-8 rounded-xl text-base transition-all hover:-translate-y-0.5 hover:shadow-lg"
-            style={{ background: "#fd8412", color: "#fff" }}>
-            {tl(labels, "why_cta_partner", "Partner With Us")}
-          </a>
-          <a href="mailto:donny@datap.ai?subject=Investor Enquiry"
-            className="font-bold py-3 px-8 rounded-xl text-base transition-all hover:-translate-y-0.5"
-            style={{ background: "#f3f4f6", color: "#252525", border: "1px solid #e5e7eb" }}>
-            {tl(labels, "why_cta_founders", "Talk to Founders")}
-          </a>
-        </div>
-
-        {/* Trust line with flags */}
-        <div className="mt-8 text-gray-400 text-sm">
-          <div className="flex items-center justify-center gap-2 text-lg mb-2">
-            {MARKETS.map((m) => <span key={m.key}>{m.flag}</span>)}
-          </div>
-          {tl(labels, "why_cta_trust", "Trusted by self-directed investors across 13 Asia-Pacific markets")}
-        </div>
       </section>
 
       {/* Bottom spacing */}
-      <div className="h-16" />
+      <div className="h-8" />
     </div>
   );
 }
