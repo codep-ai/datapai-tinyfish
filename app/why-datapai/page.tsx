@@ -40,7 +40,7 @@ const MARKETS = [
 
 const COMPARE_ROWS = [
   { key: "why_cmp_price",     datapai: "correct",  compA: "wrong",   compB: "wrong"   },
-  { key: "why_cmp_ohlcv",     datapai: "correct",  compA: "missing", compB: "wrong"   },
+  { key: "why_cmp_ohlcv",     datapai: "correct",  compA: "wrong",   compB: "wrong"   },
   { key: "why_cmp_lang",      datapai: "full",     compA: "limited", compB: "partial" },
   { key: "why_cmp_timezone",  datapai: "correct",  compA: "missing", compB: "missing" },
   { key: "why_cmp_company",   datapai: "correct",  compA: "missing", compB: "missing" },
