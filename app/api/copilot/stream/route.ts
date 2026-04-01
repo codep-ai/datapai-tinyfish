@@ -47,10 +47,40 @@ export async function POST(req: Request) {
     if (user?.userId) userId = parseInt(user.userId, 10) || 0;
   } catch { /* anonymous */ }
 
-  // Page context only — Gemini handles all price data via Google Search
-  const systemContext = body.page_context
-    ? `[Page the user is currently viewing]\n${body.page_context}`
-    : null;
+  // Detect ticker in message → fetch live price from Yahoo → inject into context
+  let verifiedPrice = "";
+  try {
+    const match = message.toUpperCase().match(/\b([A-Z0-9]{1,6})(?:\.(ASX|SI|TW|T|HK|VN|BK|KL|JK|L|SS|SZ))?\b/);
+    if (match && match[1].length >= 2) {
+      const ticker = match[1];
+      const exSuffix = match[2] || "";
+      const sfx: Record<string, string> = { ASX:".AX", SI:".SI", TW:".TW", T:".T", HK:".HK", VN:".VN", BK:".BK", KL:".KL", JK:".JK", L:".L", SS:".SS", SZ:".SZ" };
+      const yfSym = `${ticker}${exSuffix ? (sfx[exSuffix] || "") : ""}`;
+      const yRes = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${yfSym}?range=2d&interval=1d`, {
+        headers: { "User-Agent": "Mozilla/5.0" },
+        signal: AbortSignal.timeout(3000),
+      });
+      if (yRes.ok) {
+        const yd = await yRes.json();
+        const meta = yd?.chart?.result?.[0]?.meta;
+        if (meta?.regularMarketPrice) {
+          const p = meta.regularMarketPrice;
+          const pc = meta.previousClose ?? meta.chartPreviousClose ?? p;
+          const chg = p - pc;
+          const pct = pc ? (chg / pc * 100) : 0;
+          const cur = meta.currency ?? "USD";
+          const exn = meta.exchangeName ?? "";
+          const state = meta.marketState === "REGULAR" ? "Live" : "Close";
+          verifiedPrice = `[VERIFIED PRICE from Yahoo Finance — use this exact data, do not use Google Search for price]\n${ticker}: ${cur} ${p.toFixed(2)} ${chg >= 0 ? "+" : ""}${chg.toFixed(2)} (${chg >= 0 ? "+" : ""}${pct.toFixed(2)}%) · ${exn} · ${state}\n`;
+        }
+      }
+    }
+  } catch { /* non-fatal */ }
+
+  const systemContext = [
+    verifiedPrice,
+    body.page_context ? `[Page the user is currently viewing]\n${body.page_context}` : "",
+  ].filter(Boolean).join("\n") || null;
 
   try {
     const upstream = await fetch(`${AGENT_BASE}/agent/stock-chat/stream`, {
