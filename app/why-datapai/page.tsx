@@ -128,7 +128,7 @@ export default async function WhyDatapaiPage() {
             </Link>
             <a href="mailto:info@datap.ai?subject=Partnership Enquiry"
               className="font-bold py-3.5 px-8 rounded-xl text-base transition-all hover:-translate-y-0.5"
-              style={{ background: "rgba(255,255,255,0.15)", color: "#fff", border: "1px solid rgba(255,255,255,0.3)" }}>
+              style={{ background: "#fd8412", color: "#fff" }}>
               {tl(labels, "why_cta_partner", "Partner With Us")}
             </a>
           </div>
