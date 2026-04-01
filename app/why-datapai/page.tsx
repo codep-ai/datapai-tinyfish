@@ -492,12 +492,12 @@ export default async function WhyDatapaiPage() {
           ═══════════════════════════════════════════════════════════════════ */}
       <section
         className="rounded-none md:rounded-2xl md:mx-6 lg:mx-auto lg:max-w-5xl p-12 text-center"
-        style={{ background: "linear-gradient(135deg, #1a1a2e, #16213e)", border: "1px solid rgba(255,255,255,0.08)" }}
+        style={{ background: "#fff", border: "1px solid #e5e7eb" }}
       >
-        <h2 className="text-3xl font-bold text-white mb-3">
+        <h2 className="text-3xl font-bold text-[#252525] mb-3">
           {tl(labels, "why_cta_title", "Ready to See the Difference?")}
         </h2>
-        <p className="text-white/60 mb-8 max-w-xl mx-auto">
+        <p className="text-gray-500 mb-8 max-w-xl mx-auto">
           {tl(labels, "why_cta_sub", "Join thousands of self-directed investors across 13 Asia-Pacific markets.")}
         </p>
 
@@ -514,13 +514,13 @@ export default async function WhyDatapaiPage() {
           </a>
           <a href="mailto:donny@datap.ai?subject=Investor Enquiry"
             className="font-bold py-3 px-8 rounded-xl text-base transition-all hover:-translate-y-0.5"
-            style={{ background: "rgba(255,255,255,0.1)", color: "#fff", border: "1px solid rgba(255,255,255,0.2)" }}>
+            style={{ background: "#f3f4f6", color: "#252525", border: "1px solid #e5e7eb" }}>
             {tl(labels, "why_cta_founders", "Talk to Founders")}
           </a>
         </div>
 
         {/* Trust line with flags */}
-        <div className="mt-8 text-white/30 text-sm">
+        <div className="mt-8 text-gray-400 text-sm">
           <div className="flex items-center justify-center gap-2 text-lg mb-2">
             {MARKETS.map((m) => <span key={m.key}>{m.flag}</span>)}
           </div>
