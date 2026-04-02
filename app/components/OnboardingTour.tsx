@@ -27,11 +27,20 @@ interface TourStep {
 
 const STEPS: TourStep[] = [
   {
+    target: "copilot-bubble",
+    titleKey: "tour_copilot_title",
+    descKey: "tour_copilot_desc",
+    fallbackTitle: "Meet Your AI Copilot",
+    fallbackDesc: "This small icon is your most powerful tool. Ask about any stock price, get real-time OHLCV data, AI analysis, and market insights — in 8 languages: English, 中文, 日本語, 한국어, Tiếng Việt, ภาษาไทย, Bahasa Melayu, Bahasa Indonesia. Try it now!",
+    position: "top",
+    arrow: "end",
+  },
+  {
     target: "search-bar",
     titleKey: "tour_search_title",
     descKey: "tour_search_desc",
     fallbackTitle: "Search any stock",
-    fallbackDesc: "Type a ticker or company name to jump straight to its analysis page. Works across all 9 markets.",
+    fallbackDesc: "Type a ticker or company name to jump straight to its analysis page. Works across all 13 markets.",
     position: "bottom",
   },
   {
@@ -73,15 +82,6 @@ const STEPS: TourStep[] = [
     fallbackTitle: "AI Studio",
     fallbackDesc: "Create your own custom AI strategies. Define rules, backtest, and let AI run your analysis automatically.",
     position: "bottom",
-  },
-  {
-    target: "copilot-bubble",
-    titleKey: "tour_copilot_title",
-    descKey: "tour_copilot_desc",
-    fallbackTitle: "AI Copilot",
-    fallbackDesc: "Your personal AI assistant — always available in the corner. Ask anything about markets, stocks, or your portfolio.",
-    position: "top",
-    arrow: "end",
   },
 ];
 
