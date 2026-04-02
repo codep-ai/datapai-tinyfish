@@ -127,6 +127,13 @@ export default async function RootLayout({
               {/* Language toggle */}
               <LangToggle current={lang} languages={languages} />
 
+              {/* Take a Tour — visible to everyone */}
+              <a href="#tour"
+                className="text-gray-400 hover:text-[#2e8b57] transition-colors font-medium text-sm px-3 py-1.5 rounded-md hover:bg-gray-50"
+                data-start-tour="true">
+                {t(labels, "nav_take_tour") || "Take a Tour"}
+              </a>
+
               {user ? (
                 <>
                   {/* Early Supporter badge */}
@@ -143,7 +150,7 @@ export default async function RootLayout({
                     onboardingDone={investorProfile?.onboarding_completed ?? false}
                     profileLabel={t(labels, "nav_profile")}
                     setupLabel={t(labels, "nav_setup_profile")}
-                    tourLabel={t(labels, "nav_take_tour")}
+                    tourLabel=""
                   />
                   <span className="text-sm text-gray-400 max-w-[140px] truncate hidden sm:block" title={user.email}>
                     {user.email}
@@ -177,13 +184,11 @@ export default async function RootLayout({
         {/* Global AI Copilot — floating chat on every page */}
         <GlobalCopilot lang={lang} />
 
-        {/* Onboarding tour — auto-shows for logged-in users who finished profile but haven't seen tour */}
-        {user && (
-          <OnboardingTour
-            labels={labels}
-            autoShow={investorProfile?.onboarding_completed ?? false}
-          />
-        )}
+        {/* Onboarding tour — available to everyone, auto-shows for logged-in users who finished profile */}
+        <OnboardingTour
+          labels={labels}
+          autoShow={user ? (investorProfile?.onboarding_completed ?? false) : false}
+        />
 
         {/* Footer — clean, company info only */}
         <footer className="mt-16 border-t border-gray-200 bg-white">
