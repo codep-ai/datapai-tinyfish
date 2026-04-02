@@ -26,6 +26,7 @@ interface TourStep {
 }
 
 const STEPS: TourStep[] = [
+  // Step 1: AI Copilot — most powerful, easy to miss
   {
     target: "copilot-bubble",
     titleKey: "tour_copilot_title",
@@ -35,30 +36,35 @@ const STEPS: TourStep[] = [
     position: "top",
     arrow: "end",
   },
+  // Step 2: Why Us — core value proposition
   {
-    target: "search-bar",
-    titleKey: "tour_search_title",
-    descKey: "tour_search_desc",
-    fallbackTitle: "Search any stock",
-    fallbackDesc: "Type a ticker or company name to jump straight to its analysis page. Works across all 13 markets.",
+    target: "nav-why-us",
+    titleKey: "tour_why_us_title",
+    descKey: "tour_why_us_desc",
+    fallbackTitle: "Why DataP.ai?",
+    fallbackDesc: "See how we compare. Accurate real-time stock data cross-checked against Google Finance, powered by the latest AI technology, available in 8 native languages across 13 Asia-Pacific markets. Our benchmark results speak for themselves.",
     position: "bottom",
   },
+  // Step 3: Language switcher
   {
-    target: "watchlist-star",
-    titleKey: "tour_watchlist_title",
-    descKey: "tour_watchlist_desc",
-    fallbackTitle: "Add to your watchlist",
-    fallbackDesc: "Click the star on any stock card to track it. Your watchlist syncs across devices and feeds the AI copilot.",
+    target: "lang-toggle",
+    titleKey: "tour_lang_title",
+    descKey: "tour_lang_desc",
+    fallbackTitle: "Switch Language",
+    fallbackDesc: "Choose your preferred language here. The entire platform — AI Copilot, stock data, labels, company names, and alerts — will respond in your language. Supports: English, 中文, 繁體中文, 日本語, 한국어, Tiếng Việt, ภาษาไทย, Bahasa Melayu.",
     position: "bottom",
+    arrow: "end",
   },
+  // Step 4: Watchlist (consolidated)
   {
     target: "nav-watchlist",
-    titleKey: "tour_nav_watchlist_title",
-    descKey: "tour_nav_watchlist_desc",
-    fallbackTitle: "Your watchlist",
-    fallbackDesc: "All your starred stocks in one place. See prices, changes, and AI alerts at a glance.",
+    titleKey: "tour_watchlist_combined_title",
+    descKey: "tour_watchlist_combined_desc",
+    fallbackTitle: "Your Watchlist",
+    fallbackDesc: "Add any stock to your watchlist by clicking the star icon. Track prices, daily changes, and AI alerts — all in one place. Your watchlist feeds the AI Copilot for personalised insights.",
     position: "bottom",
   },
+  // Step 6: AI Analysis
   {
     target: "nav-ai",
     titleKey: "tour_nav_ai_title",
@@ -67,6 +73,7 @@ const STEPS: TourStep[] = [
     fallbackDesc: "Deep-dive into any stock with our AI agents. Get fundamental, technical, and macro analysis in your language.",
     position: "bottom",
   },
+  // Step 7: Screener
   {
     target: "nav-screener",
     titleKey: "tour_nav_screener_title",
@@ -75,6 +82,7 @@ const STEPS: TourStep[] = [
     fallbackDesc: "Find actionable buy and sell candidates filtered by our AI scoring system. Updated daily for each market.",
     position: "bottom",
   },
+  // Step 8: Studio
   {
     target: "nav-studio",
     titleKey: "tour_nav_studio_title",

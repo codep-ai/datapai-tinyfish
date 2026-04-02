@@ -103,7 +103,7 @@ export default async function RootLayout({
                 style={{ fontSize: "0.92rem" }}>{t(labels, "nav_portfolio")}</a>
               <a href="/pricing" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>{t(labels, "nav_pricing")}</a>
-              <a href="/why-datapai" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
+              <a href="/why-datapai" data-tour="nav-why-us" className="text-gray-500 hover:text-[#2e8b57] transition-colors font-medium px-4 py-2 rounded-md hover:bg-gray-50"
                 style={{ fontSize: "0.92rem" }}>{t(labels, "nav_why_us") || "Why Us?"}</a>
             </nav>
 
@@ -125,7 +125,7 @@ export default async function RootLayout({
               </div>
 
               {/* Language toggle */}
-              <LangToggle current={lang} languages={languages} />
+              <LangToggle current={lang} languages={languages} buttonLabel={t(labels, "nav_language") || "Language"} />
 
               {/* Take a Tour — visible to everyone */}
               <button type="button"

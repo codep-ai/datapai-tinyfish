@@ -18,9 +18,11 @@ type LangOption = {
 export default function LangToggle({
   current,
   languages,
+  buttonLabel,
 }: {
   current: Lang;
   languages: LangOption[];
+  buttonLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -41,12 +43,14 @@ export default function LangToggle({
   }
 
   const currentLang = languages.find((l) => l.lang === current);
-  const label = currentLang
+  const label = buttonLabel
+    ? `${currentLang?.flag_emoji ?? ""} ${buttonLabel}`
+    : currentLang
     ? `${currentLang.flag_emoji} ${currentLang.display_name}`
     : current.toUpperCase();
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative" data-tour="lang-toggle">
       <button
         onClick={() => setOpen(!open)}
         className="text-sm font-semibold px-2.5 py-1 rounded-md border transition-colors hover:bg-gray-50"
