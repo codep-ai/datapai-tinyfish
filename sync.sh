@@ -1,5 +1,5 @@
 #!/bin/bash
-# Sync datapai-tinyfish to EC2 server
+# Sync datapai-stock-fe to EC2 server
 # Usage: ./sync.sh
 
 rsync -avz --delete --progress \
@@ -11,5 +11,5 @@ rsync -avz --delete --progress \
   --exclude '.env*' \
   --exclude 'data/' \
   --exclude 'PRIVATE_NOTES.md' \
-  /Users/linlin/git/datapai-tinyfish/ \
-  ec2-user@platform.datap.ai:/home/ec2-user/git/datapai-tinyfish/
+  /Users/linlin/git/datapai-stock-fe/ \
+  ec2-user@platform.datap.ai:/home/ec2-user/git/datapai-stock-fe/
