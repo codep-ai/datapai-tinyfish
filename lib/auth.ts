@@ -10,6 +10,10 @@ import crypto from "crypto";
 import { cookies } from "next/headers";
 import { getSession, deleteSession } from "./db";
 
+// ─── SSO JWT cookie (auth.datap.ai) ──────────────────────────────────────────
+const SSO_COOKIE = "datapai_auth";
+const JWT_SECRET = process.env.JWT_SECRET || "";
+
 // ─── Cookie config ────────────────────────────────────────────────────────────
 
 export const SESSION_COOKIE = "session_token";
@@ -90,17 +94,49 @@ export interface AuthUser {
  */
 export async function getAuthUser(): Promise<AuthUser | null> {
   const cookieStore = await cookies();
+
+  // 1) Prefer new SSO JWT cookie from auth.datap.ai
+  const jwt = cookieStore.get(SSO_COOKIE)?.value;
+  if (jwt && JWT_SECRET) {
+    const payload = verifyJwtHs256(jwt, JWT_SECRET);
+    if (payload) return { userId: String(payload.sub), email: payload.email };
+  }
+
+  // 2) Legacy session cookie (local stock-fe sessions) — kept as fallback
   const token = cookieStore.get(SESSION_COOKIE)?.value;
   if (!token) return null;
-
   const session = await getSession(token);
   if (!session) return null;
-
-  // Belt-and-suspenders expiry check (DB query already filters, but be safe)
   if (new Date(session.expires_at) < new Date()) {
     await deleteSession(token);
     return null;
   }
-
   return { userId: session.user_id, email: session.email };
+}
+
+// ─── Local JWT HS256 verification (no external deps) ─────────────────────────
+function verifyJwtHs256(token: string, secret: string):
+  { sub: string; email: string; uuid: string; locale: string; exp: number } | null {
+  try {
+    const [headerB64, payloadB64, sigB64] = token.split(".");
+    if (!headerB64 || !payloadB64 || !sigB64) return null;
+    const data = `${headerB64}.${payloadB64}`;
+    const expected = crypto
+      .createHmac("sha256", secret)
+      .update(data)
+      .digest("base64")
+      .replace(/=+$/, "")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
+    const a = Buffer.from(expected);
+    const b = Buffer.from(sigB64);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) return null;
+    const payload = JSON.parse(
+      Buffer.from(payloadB64.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf-8")
+    );
+    if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
+    return payload;
+  } catch {
+    return null;
+  }
 }

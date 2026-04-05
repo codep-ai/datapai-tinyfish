@@ -2,7 +2,12 @@
 
 export default function LogoutButton() {
   async function handleLogout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+    try {
+      await fetch("https://auth.datap.ai/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch {}
     window.location.href = "/";
   }
 

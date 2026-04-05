@@ -161,7 +161,7 @@ export default async function RootLayout({
                 </>
               ) : (
                 <a
-                  href="/login"
+                  href="https://auth.datap.ai/login?return=https://stock.datap.ai/"
                   className="inline-flex items-center font-semibold rounded-lg px-5 py-2 transition-all hover:bg-[#2e8b57] hover:text-white"
                   style={{ fontSize: "0.9rem", color: "#2e8b57", border: "1.5px solid #2e8b57" }}
                 >
