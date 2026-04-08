@@ -33,6 +33,7 @@ interface Props {
 
 const CURRENCY_MAP: Record<string, string> = {
   ASX: "A$", HKEX: "HK$", SET: "฿", KLSE: "RM", IDX: "Rp", HOSE: "₫",
+  SSE: "¥", SZSE: "¥", LSE: "p", TSE: "¥", SGX: "S$", TWSE: "NT$",
   INDEX: "", US: "$",
 };
 
@@ -110,11 +111,14 @@ export default function PriceChart({ data, scanDates = [], exchange = "US", symb
     }));
   }
 
-  // Calculate change
-  const first = Number(candleBars[0]?.close ?? 0);
+  // Calculate change — use previous day's close as base (not first visible bar)
   const last = Number(candleBars[candleBars.length - 1]?.close ?? 0);
-  const change = last - first;
-  const changePct = first > 0 ? (change / first) * 100 : 0;
+  const sortedDaily = [...data].sort((a, b) => a.date.localeCompare(b.date));
+  const prevDayClose = sortedDaily.length >= 2
+    ? Number(sortedDaily[sortedDaily.length - 2]?.close ?? 0)
+    : Number(candleBars[0]?.close ?? 0);
+  const change = last - prevDayClose;
+  const changePct = prevDayClose > 0 ? (change / prevDayClose) * 100 : 0;
   const isUp = change >= 0;
 
   return (
