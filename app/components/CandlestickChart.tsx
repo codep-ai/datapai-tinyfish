@@ -23,7 +23,7 @@ interface Props {
 // Market hours per exchange (local time) — for setting intraday chart x-axis range
 const MARKET_HOURS: Record<string, { open: [number, number]; close: [number, number] }> = {
   US:   { open: [9, 30],  close: [16, 0] },
-  ASX:  { open: [10, 0],  close: [16, 0] },
+  ASX:  { open: [10, 0],  close: [16, 15] },
   HKEX: { open: [9, 30],  close: [16, 0] },
   SET:  { open: [10, 0],  close: [16, 30] },
   KLSE: { open: [9, 0],   close: [17, 0] },
