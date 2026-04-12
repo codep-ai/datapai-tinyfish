@@ -27,10 +27,18 @@ interface TourStep {
 
 const STEPS: TourStep[] = [
   {
+    target: "hero-search",
+    titleKey: "tour_welcome_title",
+    descKey: "tour_welcome_desc",
+    fallbackTitle: "👋 Welcome to stock.datap.ai",
+    fallbackDesc: "You have 20 free AI queries today without login required. Ask any stock — our AI agents analyse technicals, fundamentals, macro and company insights instantly.",
+    position: "bottom",
+  },
+  {
     target: "copilot-bubble",
     titleKey: "tour_copilot_title",
     descKey: "tour_copilot_desc",
-    fallbackTitle: "👋 AI Copilot",
+    fallbackTitle: "AI Copilot",
     fallbackDesc: "Ask any stock question in your preferred language. Prices, company names, and analysis — all localized.",
     position: "top",
     arrow: "end",

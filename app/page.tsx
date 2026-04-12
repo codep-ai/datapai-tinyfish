@@ -85,7 +85,7 @@ export default async function HomePage() {
         className="w-full"
         style={{ background: "linear-gradient(45deg, seagreen, darkseagreen)", paddingTop: "60px", paddingBottom: "60px" }}
       >
-        <div className="max-w-5xl mx-auto px-6 space-y-5">
+        <div className="max-w-5xl mx-auto px-6 space-y-5" data-tour="hero-search">
           {/* Headline + sub — left aligned */}
           <h1 className="text-4xl md:text-5xl font-bold text-white leading-tight">
             {tl(labels, "home_hero_headline", "AI-Powered Stock Intelligence Across Asia-Pacific")}
