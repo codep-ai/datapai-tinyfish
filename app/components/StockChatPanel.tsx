@@ -195,7 +195,7 @@ export default function StockChatPanel({
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100" style={{ background: "#f9fafb" }}>
         <div className="flex items-center gap-2.5">
-          <span className="text-xl">💬</span>
+          <img src="/logos/ai-icon.png" alt="AI" className="w-6 h-6" />
           <div>
             <span className="font-bold text-[#252525] text-base">
               {lang === "zh" ? "AI研究助手" : "AI Research Co-pilot"}
@@ -262,7 +262,7 @@ export default function StockChatPanel({
             {msg.role === "assistant" && (
               <div className="w-7 h-7 rounded-full flex-shrink-0 mr-2.5 mt-0.5 overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logos/datapai.png" alt="DataP.ai" className="w-6 h-6 object-contain" />
+                <img src="/logos/ai-icon.png" alt="AI" className="w-6 h-6 object-contain" />
               </div>
             )}
             <div

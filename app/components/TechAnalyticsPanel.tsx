@@ -776,7 +776,7 @@ export default function TechAnalyticsPanel({
             className="px-6 py-3 flex items-center gap-2"
             style={{ background: "#f0fdf4", borderBottom: "1.5px solid #bbf7d0" }}
           >
-            <span className="text-lg">🤖</span>
+            <img src="/logos/ai-icon.png" alt="AI" className="w-5 h-5" />
             <span className="font-bold text-green-800 text-base">AI Research Co-pilot</span>
             <span className="text-xs text-green-600 font-medium ml-1">— ask anything about this stock</span>
           </div>

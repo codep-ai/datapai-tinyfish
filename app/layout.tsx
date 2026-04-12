@@ -13,6 +13,7 @@ import LangToggle from "./components/LangToggle";
 import ProfileBadge from "./components/ProfileBadge";
 import EarlySupporterBadge from "./components/EarlySupporterBadge";
 import OnboardingBanner from "./components/OnboardingBanner";
+import AnimatedLogo from "./components/AnimatedLogo";
 import MarketDropdown from "./components/MarketDropdown";
 import GlobalCopilot from "./components/GlobalCopilot";
 import OnboardingTour from "./components/OnboardingTour";
@@ -59,13 +60,10 @@ export default async function RootLayout({
             {/* Left: DataP.ai logo */}
             <a href="/" title="DataP.ai"
               className="flex-shrink-0 transition-opacity hover:opacity-80">
-              <Image
-                src="/logos/datapai.png"
-                width={130}
-                height={34}
-                alt="DataP.ai"
-                style={{ height: "34px", width: "auto" }}
-              />
+              <span className="flex items-center gap-2">
+                <AnimatedLogo size={34} />
+                <span className="font-bold" style={{ color: "#2e8b57", fontFamily: "var(--font-rajdhani)", fontSize: "1.3rem" }}>DATAP.AI</span>
+              </span>
             </a>
 
             {/* Centre: page nav */}

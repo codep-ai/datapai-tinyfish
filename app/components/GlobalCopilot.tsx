@@ -416,7 +416,7 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
         style={{ background: "linear-gradient(135deg, #2e8b57, #3cb371)" }}
       >
         <div className="flex items-center gap-2.5">
-          <span className="text-xl">🤖</span>
+          <img src="/logos/ai-icon.png" alt="AI" className="w-7 h-7 rounded-full bg-white p-0.5" />
           <div>
             <span className="font-bold text-white text-sm">AI Copilot</span>
             <span className="ml-1.5 text-white/60 text-xs font-normal">
@@ -500,9 +500,9 @@ export default function GlobalCopilot({ lang = "en" }: { lang?: string }) {
         {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             {msg.role === "assistant" && (
-              <div className="w-6 h-6 rounded-full flex-shrink-0 mr-2 mt-0.5 overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full flex-shrink-0 mr-2 mt-0.5 overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/logos/datapai.png" alt="AI" className="w-5 h-5 object-contain" />
+                <img src="/logos/ai-icon.png" alt="AI" className="w-6 h-6 object-contain" />
               </div>
             )}
             <div
