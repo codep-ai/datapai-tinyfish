@@ -21,6 +21,7 @@ import { scanTicker, AGENT_ENABLED, resolveTickerUrl } from "@/lib/scan-pipeline
 import { insertRun, startRun, finishRun, failRun, getWatchlist, getAllWatchlistTickers, getActiveStocks, lookupStock } from "@/lib/db";
 import type { ActiveStock } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth";
+import { UNIVERSE, ASX_UNIVERSE } from "@/lib/universe";
 
 export const maxDuration = 300;
 
@@ -72,18 +73,17 @@ export async function POST(req: NextRequest) {
 
   let universe: ScanTicker[];
 
-  // Load active stocks from DB for the requested exchange(s)
-  const exchanges = exchange === "ASX" ? ["ASX"]
-    : exchange === "US" ? ["NASDAQ", "NYSE"]
-    : ["NASDAQ", "NYSE", "ASX", "HOSE", "HNX"];
-  const dbStocks = (await Promise.all(
-    exchanges.map((ex) => getActiveStocks(ex, "en", 500))
-  )).flat();
-  const baseUniverse: ScanTicker[] = dbStocks.map((s) => ({
-    symbol: s.symbol,
-    name: s.name,
-    url: resolveTickerUrl(s.symbol, s.exchange),
-    exchange: s.exchange,
+  // Use the hardcoded IR-monitored universe (20 US + 18 ASX = 38 stocks).
+  // NOT getActiveStocks() which pulls 500+ per exchange from ticker_universe
+  // and was burning ~1,000 TinyFish scans/day. Budget cap: 2,000 scans/month.
+  const irUniverse = exchange === "ASX" ? ASX_UNIVERSE
+    : exchange === "US" ? UNIVERSE
+    : [...UNIVERSE, ...ASX_UNIVERSE];
+  const baseUniverse: ScanTicker[] = irUniverse.map((t) => ({
+    symbol: t.symbol,
+    name: t.name,
+    url: t.url,
+    exchange: t.exchange ?? "NASDAQ",
   }));
 
   // Always merge watchlist stocks into the scan — no separate mode needed.
