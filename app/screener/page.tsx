@@ -555,7 +555,12 @@ function TechnicalTab({ labels }: { labels: Labels }) {
   const [near52Low,  setNear52Low]  = useState("");
   const [limit,      setLimit]      = useState(50);
 
-  const [actionFilter, setActionFilter] = useState<"actionable" | "all">("actionable");
+  // Action filter: actionable=BUY+SELL only, buy/sell/hold for single-direction,
+  // all=everything. User can drill into one direction or include HOLDs.
+  const [actionFilter, setActionFilter] = useState<"actionable" | "buy" | "sell" | "hold" | "all">("actionable");
+  // Ticker search — case-insensitive substring match on symbol; lets users
+  // filter the table to specific stocks without leaving the screener.
+  const [tickerQuery, setTickerQuery] = useState<string>("");
 
   const [rows,    setRows]    = useState<TechRow[]>([]);
   const [total,   setTotal]   = useState(0);
@@ -621,22 +626,39 @@ function TechnicalTab({ labels }: { labels: Labels }) {
             {/* Action filter — default to actionable only */}
             <div className="flex flex-col gap-1">
               <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">{L(labels, "screener_filter_action", "Show")}</label>
-              <div className="flex gap-1">
-                <button onClick={() => setActionFilter("actionable")}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                  style={actionFilter === "actionable"
-                    ? { background: "#fd8412", color: "#fff" }
-                    : { background: "rgba(255,255,255,0.2)", color: "#fff" }}>
-                  {L(labels, "screener_action_buy_sell", "BUY / SELL")}
-                </button>
-                <button onClick={() => setActionFilter("all")}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
-                  style={actionFilter === "all"
-                    ? { background: "#fd8412", color: "#fff" }
-                    : { background: "rgba(255,255,255,0.2)", color: "#fff" }}>
-                  {L(labels, "screener_action_all", "All")}
-                </button>
+              <div className="flex gap-1 flex-wrap">
+                {([
+                  { k: "actionable", label: "BUY / SELL", title: "Show rows where ANY timeframe is BUY or SELL" },
+                  { k: "buy",        label: "🟢 BUY",     title: "Show rows where ANY timeframe is BUY" },
+                  { k: "sell",       label: "🔴 SELL",    title: "Show rows where ANY timeframe is SELL" },
+                  { k: "hold",       label: "🟡 HOLD",    title: "Show rows where ALL timeframes are HOLD" },
+                  { k: "all",        label: "All",        title: "Show every row regardless of direction" },
+                ] as const).map((opt) => (
+                  <button key={opt.k} title={opt.title}
+                    onClick={() => setActionFilter(opt.k)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all"
+                    style={actionFilter === opt.k
+                      ? { background: "#fd8412", color: "#fff" }
+                      : { background: "rgba(255,255,255,0.2)", color: "#fff" }}>
+                    {opt.label}
+                  </button>
+                ))}
               </div>
+            </div>
+
+            {/* Ticker search — substring match on the symbol */}
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] font-semibold text-white/70 uppercase tracking-wide">
+                {L(labels, "screener_filter_ticker", "Ticker")}
+              </label>
+              <input
+                type="text"
+                value={tickerQuery}
+                onChange={(e) => setTickerQuery(e.target.value)}
+                placeholder={L(labels, "screener_filter_ticker_placeholder", "e.g. BHP, NVDA")}
+                className="w-32 text-xs border-0 rounded-lg px-2 py-1.5 bg-white/90 text-gray-700 placeholder:text-gray-400 uppercase tracking-wide"
+                style={{ textTransform: "uppercase" }}
+              />
             </div>
 
             {/* Exchange */}
@@ -774,27 +796,40 @@ function TechnicalTab({ labels }: { labels: Labels }) {
         )}
 
         {!loading && rows.length > 0 && (() => {
-          // Client-side action filter: only show stocks with BUY or SELL in any timeframe
-          const filteredRows = actionFilter === "actionable"
-            ? rows.filter((r) => {
-                const signals = [signalDays(r), signalWeeks(r), signalMonths(r), signalQuarter(r)];
-                return signals.some((s) => s === "BUY" || s === "SELL");
-              })
-            : rows;
+          // Client-side action filter — 5 modes:
+          //   actionable: ANY timeframe BUY or SELL
+          //   buy:        ANY timeframe BUY
+          //   sell:       ANY timeframe SELL
+          //   hold:       ALL timeframes HOLD (no actionable signal anywhere)
+          //   all:        no direction filter
+          const tickerQ = tickerQuery.trim().toUpperCase();
+          const filteredRows = rows.filter((r) => {
+            // Ticker search (substring match)
+            if (tickerQ && !r.ticker.toUpperCase().includes(tickerQ)) return false;
+            // Direction filter
+            if (actionFilter === "all") return true;
+            const signals = [signalDays(r), signalWeeks(r), signalMonths(r), signalQuarter(r)];
+            if (actionFilter === "actionable") return signals.some((s) => s === "BUY" || s === "SELL");
+            if (actionFilter === "buy")        return signals.some((s) => s === "BUY");
+            if (actionFilter === "sell")       return signals.some((s) => s === "SELL");
+            if (actionFilter === "hold")       return signals.every((s) => s === "HOLD");
+            return true;
+          });
+          const filterLabel: Record<typeof actionFilter, string> = {
+            actionable: L(labels, "screener_actionable_of", "actionable of"),
+            buy:        "BUY signals of",
+            sell:       "SELL signals of",
+            hold:       "HOLD-only of",
+            all:        L(labels, "screener_of", "of"),
+          };
           return (
           <>
             <div className="flex items-center justify-between">
               <p className="text-sm text-gray-500">
-                {actionFilter === "actionable" ? (
-                  <>
-                    <strong>{filteredRows.length}</strong> {L(labels, "screener_actionable_of", "actionable of")} <strong>{total.toLocaleString()}</strong> {exchange} {L(labels, "screener_stocks", "stocks")}
-                  </>
-                ) : (
-                  <>
-                    <strong>{rows.length}</strong> {L(labels, "screener_of", "of")} <strong>{total.toLocaleString()}</strong> {exchange} {L(labels, "screener_stocks", "stocks")}
-                    {rows.length < total && ` ${L(labels, "screener_filtered", "(filtered)")}`}
-                  </>
-                )}
+                <strong>{filteredRows.length}</strong>
+                {tickerQ ? <> matching <span className="font-mono text-gray-700">{tickerQ}</span> · </> : <>{" "}</>}
+                {filterLabel[actionFilter]} <strong>{total.toLocaleString()}</strong> {exchange} {L(labels, "screener_stocks", "stocks")}
+                {actionFilter === "all" && rows.length < total && ` ${L(labels, "screener_filtered", "(filtered)")}`}
               </p>
               <p className="text-xs text-gray-400">
                 {L(labels, "screener_updated", "Updated")}: {rows[0]?.trade_date ?? "—"} · {L(labels, "screener_sort_tip", "Click column headers to sort")}
@@ -909,7 +944,11 @@ function TechnicalTab({ labels }: { labels: Labels }) {
         )}
 
         {/* ── Backtest Results ──────────────────────────────────────────── */}
-        <details className="bg-white rounded-xl border border-gray-100 shadow-sm">
+        {/* Always rendered (open by default) so the methodology + win-rate
+            evidence is visible to every visitor — including when the filter
+            returns 0 matches above. This is the credibility surface for
+            investors and buyers. */}
+        <details open className="bg-white rounded-xl border border-gray-100 shadow-sm">
           <summary className="px-5 py-3 cursor-pointer text-sm font-semibold text-gray-600 hover:text-gray-800 select-none">
             {L(labels, "screener_backtest_title", "Signal Backtest Results & Methodology")} (v2, 171 US stocks, Jan 2024 &ndash; Mar 2026)
           </summary>
