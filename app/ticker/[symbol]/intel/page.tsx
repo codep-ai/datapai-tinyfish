@@ -11,7 +11,7 @@
 
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getTickerSnapshots, getLatestAnalysisWithAgentContent, lookupStock, getCachedTaSignal, getActiveStocks } from "@/lib/db";
+import { getTickerSnapshots, getLatestAnalysisWithAgentContent, lookupStock, getCachedTaSignal, getActiveStocks, getStockSynthesisFlexible } from "@/lib/db";
 import { fetchPrices } from "@/lib/price";
 import { getLang } from "@/lib/getLang";
 import { loadTranslations } from "@/lib/i18n";
@@ -58,11 +58,12 @@ export default async function IntelPage({
   const exchangeLabel = (dirEntry?.exchange ?? "NASDAQ") as string;
   const companyName = dirEntry?.name ?? sym;
 
-  const [snapshots, signalSource, cachedTaSignal, prices] = await Promise.all([
+  const [snapshots, signalSource, cachedTaSignal, prices, synthesis] = await Promise.all([
     getTickerSnapshots(sym, 1),
     getLatestAnalysisWithAgentContent(sym),
     getCachedTaSignal(sym, 48),
     fetchPrices(sym, 30, exchangeLabel),
+    getStockSynthesisFlexible(sym, exchangeLabel),
   ]);
   const latestSnap = snapshots[0] ?? null;
 
@@ -209,6 +210,66 @@ export default async function IntelPage({
               <PriceChart data={prices} scanDates={[]} exchange={exchangeLabel} symbol={sym} />
             </div>
           )}
+
+          {/* ── AI Analyst Call (AG2 multi-agent synthesis) ──────────────── */}
+          {synthesis && (() => {
+            const dir = synthesis.direction || "HOLD";
+            const conf = Number(synthesis.confidence) || 0;
+            const conv = synthesis.conviction || "LOW";
+            const dirStyles: Record<string, { bg: string; color: string; emoji: string; label: string }> = {
+              STRONG_BUY:  { bg: "#dcfce7", color: "#15803d", emoji: "🟢", label: "STRONG BUY" },
+              BUY:         { bg: "#dcfce7", color: "#166534", emoji: "🟢", label: "BUY" },
+              HOLD:        { bg: "#fefce8", color: "#854d0e", emoji: "🟡", label: "HOLD" },
+              SELL:        { bg: "#fef2f2", color: "#991b1b", emoji: "🔴", label: "SELL" },
+              STRONG_SELL: { bg: "#fef2f2", color: "#7f1d1d", emoji: "🔴", label: "STRONG SELL" },
+            };
+            const ds = dirStyles[dir] ?? dirStyles.HOLD;
+            const computedDate = synthesis.computed_at ? new Date(synthesis.computed_at).toLocaleDateString() : "—";
+            return (
+              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+                <div className="px-5 py-3 flex items-center justify-between gap-3 flex-wrap" style={{ background: ds.bg, borderBottom: `1px solid ${ds.color}22` }}>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h2 className="text-sm font-bold text-gray-800">🤖 AI Analyst Call</h2>
+                    <span className="text-xs px-2.5 py-1 rounded-full font-bold tracking-wide" style={{ background: ds.color, color: "#fff" }}>
+                      {ds.emoji} {ds.label}
+                    </span>
+                    <span className="text-xs text-gray-700">Confidence: <span className="font-bold">{Math.round(conf * 100)}%</span></span>
+                    <span className="text-xs text-gray-700">Conviction: <span className="font-bold">{conv}</span></span>
+                  </div>
+                  <span className="text-[10px] text-gray-500">Updated {computedDate}</span>
+                </div>
+                <div className="px-5 py-4 space-y-2.5 text-sm text-gray-700">
+                  {synthesis.thesis && (
+                    <p><span className="font-semibold text-gray-900">Thesis:</span> {synthesis.thesis}</p>
+                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+                    {synthesis.what_bulls_say && (
+                      <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-emerald-700 mb-1">Bulls say</div>
+                        <div className="text-xs text-emerald-900 leading-snug">{synthesis.what_bulls_say}</div>
+                      </div>
+                    )}
+                    {synthesis.what_bears_say && (
+                      <div className="bg-red-50 border border-red-100 rounded-lg p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-red-700 mb-1">Bears say</div>
+                        <div className="text-xs text-red-900 leading-snug">{synthesis.what_bears_say}</div>
+                      </div>
+                    )}
+                    {synthesis.key_risk && (
+                      <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-amber-700 mb-1">Key risk</div>
+                        <div className="text-xs text-amber-900 leading-snug">{synthesis.key_risk}</div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="pt-2 text-[10px] text-gray-400 italic">
+                    Powered by 4-agent debate (Bull · Bear · Risk · Portfolio Manager). Not financial advice.
+                    See <Link href="/performance" className="underline text-[#2e8b57]">/performance</Link> for the full track record.
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
 
             {/* ── AI Research Co-pilot (top of section) */}
           <StockChatPanel

@@ -97,26 +97,57 @@ function dirLabel(dir: string, labels: Labels): string {
   return ll(labels, key, dir);
 }
 
+// ── Current synthesis row from /api/synthesis ──
+interface SynthRow {
+  ticker: string;
+  exchange: string;
+  direction: string;
+  confidence: number | string;
+  conviction: string;
+  thesis: string | null;
+  what_bulls_say: string | null;
+  what_bears_say: string | null;
+  key_risk: string | null;
+  ta_direction: string | null;
+  fa_direction: string | null;
+  ma_direction: string | null;
+  signals_aligned: boolean | null;
+  computed_at: string;
+}
+
+type TabKey = "current" | "track";
+
 export default function PerformancePage() {
   const labels = useLabels();
+  const [tab, setTab] = useState<TabKey>("current");
   const [summary, setSummary] = useState<Summary | null>(null);
   const [byDir, setByDir] = useState<DirStat[]>([]);
   const [byEx, setByEx] = useState<ExStat[]>([]);
   const [signals, setSignals] = useState<Signal[]>([]);
+  const [synth, setSynth] = useState<SynthRow[]>([]);
+  const [synthSummary, setSynthSummary] = useState<{ total: number; by_direction: Record<string, number>; latest_computed_at: string | null } | null>(null);
+  const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const url = `/api/performance${filter ? `?direction=${filter}` : ""}`;
-      const res = await fetch(url);
-      const data = await res.json();
-      if (data.ok) {
-        setSummary(data.summary);
-        setByDir(data.by_direction);
-        setByEx(data.by_exchange);
-        setSignals(data.signals);
+      const [perfRes, synthRes] = await Promise.all([
+        fetch(`/api/performance${filter ? `?direction=${filter}` : ""}`),
+        fetch(`/api/synthesis${filter ? `?direction=${filter}` : ""}`),
+      ]);
+      const perf = await perfRes.json();
+      const sx   = await synthRes.json();
+      if (perf.ok) {
+        setSummary(perf.summary);
+        setByDir(perf.by_direction);
+        setByEx(perf.by_exchange);
+        setSignals(perf.signals);
+      }
+      if (sx.ok) {
+        setSynth(sx.items || []);
+        setSynthSummary(sx.summary || null);
       }
     } catch {}
     setLoading(false);
@@ -142,10 +173,134 @@ export default function PerformancePage() {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 py-8 space-y-8">
+        {/* ── Tab switcher ────────────────────────────────────────────── */}
+        <div className="flex items-center gap-2 border-b border-gray-200">
+          {([
+            { k: "current" as TabKey, label: "Current Recommendations", count: synthSummary?.total ?? 0, sub: synthSummary?.latest_computed_at ? `Updated ${new Date(synthSummary.latest_computed_at).toLocaleDateString()}` : "" },
+            { k: "track"   as TabKey, label: "Track Record",            count: summary?.total_signals ?? 0, sub: "Historical" },
+          ]).map((t) => {
+            const active = tab === t.k;
+            return (
+              <button
+                key={t.k}
+                onClick={() => setTab(t.k)}
+                className={`px-4 py-2 text-sm font-semibold border-b-2 transition-colors ${active ? "border-[#2e8b57] text-[#2e8b57]" : "border-transparent text-gray-500 hover:text-gray-700"}`}
+              >
+                {t.label}
+                <span className="ml-2 text-xs text-gray-400 font-normal">({t.count}{t.sub ? ` · ${t.sub}` : ""})</span>
+              </button>
+            );
+          })}
+        </div>
+
         {loading ? (
           <div className="text-center text-gray-400 py-20">Loading...</div>
+        ) : tab === "current" ? (
+          /* ── CURRENT RECOMMENDATIONS TAB ─────────────────────────── */
+          synth.length === 0 ? (
+            <div className="text-center text-gray-400 py-20">
+              No current recommendations yet. The synthesis engine runs nightly across the
+              monitored universe; check back tomorrow.
+            </div>
+          ) : (
+            <>
+              {/* Direction distribution mini-cards */}
+              <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
+                {(["STRONG_BUY", "BUY", "HOLD", "SELL", "STRONG_SELL"] as const).map((d) => {
+                  const n = synthSummary?.by_direction?.[d] ?? 0;
+                  return (
+                    <div key={d} className="bg-white rounded-xl border p-4 text-center">
+                      <p className={`text-2xl font-bold ${d === "STRONG_BUY" || d === "BUY" ? "text-emerald-600" : d === "STRONG_SELL" || d === "SELL" ? "text-red-500" : "text-gray-500"}`}>{n}</p>
+                      <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wide">{dirLabel(d, labels)}</p>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Recommendations table — click row to expand thesis */}
+              <div className="bg-white rounded-xl border overflow-hidden">
+                <div className="px-5 py-3 border-b bg-gray-50 flex items-center justify-between">
+                  <h2 className="text-sm font-semibold text-gray-700">AI Analyst — Latest Calls</h2>
+                  <select
+                    className="text-xs border rounded px-2 py-1 text-gray-600"
+                    value={filter}
+                    onChange={(e) => setFilter(e.target.value)}
+                  >
+                    <option value="">All Directions</option>
+                    <option value="STRONG_BUY">{dirLabel("STRONG_BUY", labels)}</option>
+                    <option value="BUY">{dirLabel("BUY", labels)}</option>
+                    <option value="HOLD">{dirLabel("HOLD", labels)}</option>
+                    <option value="SELL">{dirLabel("SELL", labels)}</option>
+                    <option value="STRONG_SELL">{dirLabel("STRONG_SELL", labels)}</option>
+                  </select>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-gray-500 text-xs border-b">
+                        <th className="px-4 py-2">Ticker</th>
+                        <th className="px-4 py-2">Market</th>
+                        <th className="px-4 py-2">Call</th>
+                        <th className="px-4 py-2 text-right">Confidence</th>
+                        <th className="px-4 py-2">Conviction</th>
+                        <th className="px-4 py-2">Why (thesis)</th>
+                        <th className="px-4 py-2 text-right">Updated</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {synth.map((r, i) => {
+                        const conf = Number(r.confidence);
+                        const isOpen = expandedTicker === `${r.ticker}-${r.exchange}`;
+                        return (
+                          <>
+                            <tr key={`${r.ticker}-${r.exchange}-${i}`} className="border-b hover:bg-gray-50 cursor-pointer" onClick={() => setExpandedTicker(isOpen ? null : `${r.ticker}-${r.exchange}`)}>
+                              <td className="px-4 py-2">
+                                <Link href={`/ticker/${r.ticker}?exchange=${r.exchange}`} onClick={(e) => e.stopPropagation()} className="text-[#2e8b57] font-medium hover:underline">
+                                  {r.ticker}
+                                </Link>
+                              </td>
+                              <td className="px-4 py-2 text-gray-500 text-xs">{ll(labels, "mkt_" + r.exchange, r.exchange)}</td>
+                              <td className="px-4 py-2">
+                                <span className={`text-xs font-semibold px-2 py-0.5 rounded ${dirBadge(r.direction)}`}>
+                                  {dirLabel(r.direction, labels)}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2 text-right font-medium">{isNaN(conf) ? "—" : `${Math.round(conf * 100)}%`}</td>
+                              <td className="px-4 py-2 text-xs text-gray-600">{r.conviction || "—"}</td>
+                              <td className="px-4 py-2 text-xs text-gray-700 max-w-md truncate" title={r.thesis ?? ""}>
+                                {r.thesis ?? "—"}
+                              </td>
+                              <td className="px-4 py-2 text-right text-xs text-gray-400">
+                                {r.computed_at ? new Date(r.computed_at).toLocaleDateString() : "—"}
+                              </td>
+                            </tr>
+                            {isOpen && (
+                              <tr key={`${r.ticker}-${r.exchange}-${i}-detail`} className="bg-gray-50">
+                                <td colSpan={7} className="px-6 py-4 text-xs text-gray-700 space-y-2">
+                                  {r.thesis && <div><span className="font-bold text-gray-800">Thesis:</span> {r.thesis}</div>}
+                                  {r.what_bulls_say && <div><span className="font-bold text-emerald-700">Bulls say:</span> {r.what_bulls_say}</div>}
+                                  {r.what_bears_say && <div><span className="font-bold text-red-700">Bears say:</span> {r.what_bears_say}</div>}
+                                  {r.key_risk && <div><span className="font-bold text-amber-700">Key risk:</span> {r.key_risk}</div>}
+                                  <div className="flex gap-4 pt-2 text-[10px] text-gray-500 uppercase tracking-wide">
+                                    {r.ta_direction && <span>TA: <span className="font-semibold text-gray-700">{r.ta_direction}</span></span>}
+                                    {r.fa_direction && <span>FA: <span className="font-semibold text-gray-700">{r.fa_direction}</span></span>}
+                                    {r.ma_direction && <span>News: <span className="font-semibold text-gray-700">{r.ma_direction}</span></span>}
+                                    {r.signals_aligned !== null && <span>Signals: <span className="font-semibold text-gray-700">{r.signals_aligned ? "ALIGNED" : "CONFLICTING"}</span></span>}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
+          )
         ) : !summary ? (
-          <div className="text-center text-gray-400 py-20">No data available</div>
+          <div className="text-center text-gray-400 py-20">No track-record data yet</div>
         ) : (
           <>
             {/* KPI Cards */}
