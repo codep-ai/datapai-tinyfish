@@ -20,7 +20,7 @@ import AgentPipelineAnimation from "../components/AgentPipelineAnimation";
 export const metadata: Metadata = {
   title: "AI Methodology — DataPai Stock Intelligence",
   description:
-    "How DataPai's 17 specialised AI agents debate every stock. From RSI/MACD technicals through multi-agent debate to governance gates — explained agent by agent.",
+    "How DataPai's 13 specialised AI agents debate every stock. From RSI/MACD technicals through multi-agent debate to governance gates and a self-learning Reflector — every BUY/SELL/HOLD is the output of scheduled Airflow DAGs.",
 };
 
 type Agent = {
@@ -47,51 +47,16 @@ const AGENTS: Agent[] = [
       "RSI 72 (overbought) + MACD bearish crossover + price below 50-day MA → SELL 0.78.",
   },
   {
-    slug: "valuation",
-    name: "Valuation Agent",
+    slug: "fundamental",
+    name: "Fundamental Composite",
     group: "Input",
-    role: "Sub-agent inside Fundamental Composite. Are we paying a fair price?",
-    ingests: "PE, PB, EV/EBITDA, EV/Sales, sector medians.",
+    role: "One signal that rolls up five fundamental views: valuation, quality, growth, analyst consensus, and macro overlay.",
+    ingests:
+      "PE / PB / EV-EBITDA · ROE / margins / debt / liquidity · revenue + EPS YoY · Wall Street ratings + price targets · Treasury yields / sector cycle / FX.",
     strategy:
-      "Scores valuation 0–1 vs. sector. <0.3 = cheap, >0.7 = expensive. Penalises high PE on slow-growth names.",
-  },
-  {
-    slug: "quality",
-    name: "Quality Agent",
-    group: "Input",
-    role: "Sub-agent inside Fundamental Composite. Is this a good business?",
-    ingests: "ROE, net margin, operating margin, debt/equity, current ratio.",
-    strategy:
-      "Tiers stocks A / B / C / D. A = ROE > 20%, margins expanding, balance sheet clean. D = unprofitable + over-leveraged.",
+      "Each sub-view (valuation/quality/growth/analyst/macro) scores 0–1 inside agents/fundamental/*. They combine into a single FA signal (BUY/HOLD/SELL + confidence) that enters the debate — the AG2 personas reason over the composite, not the five separately.",
     example:
-      "BHP: ROE 24.7%, margin 19% → Quality tier A.",
-  },
-  {
-    slug: "growth",
-    name: "Growth Agent",
-    group: "Input",
-    role: "Sub-agent inside Fundamental Composite. Is the business getting bigger?",
-    ingests: "Revenue YoY, EPS YoY, forward consensus revenue/EPS growth.",
-    strategy:
-      "Scores momentum. Penalises decelerating growth even if absolute level is high.",
-  },
-  {
-    slug: "analyst",
-    name: "Analyst Consensus",
-    group: "Input",
-    role: "Sub-agent inside Fundamental Composite. What does Wall Street think?",
-    ingests: "Aggregated broker ratings, price targets, recent upgrades/downgrades.",
-    strategy:
-      "Translates BUY/HOLD/SELL consensus + upside % into a confidence-weighted signal. Flags fresh downgrades as new evidence.",
-  },
-  {
-    slug: "macro",
-    name: "Macro Agent",
-    group: "Input",
-    role: "Top-down overlay — when the market regime overrides bottom-up.",
-    ingests: "Treasury yields, sector rotation, commodity cycle, FX.",
-    strategy:
-      "Boosts/dampens directional confidence based on regime fit. A BUY on cyclicals during a tightening cycle gets demoted.",
+      "BHP: PE 17.66 (cheap-ish) + ROE 24.7% (Quality A) + revenue +10.8% YoY (Growth A) + analyst HOLD (consensus +5.86% upside) → FA composite = BUY 0.66.",
   },
   {
     slug: "market_activity",
@@ -122,7 +87,7 @@ const AGENTS: Agent[] = [
     name: "Bull Analyst",
     group: "Debate",
     role: "Argues the bullish thesis to the strongest standard of evidence.",
-    ingests: "All 8 input agents' outputs + past lessons from Reflector.",
+    ingests: "All 4 input agents' outputs (TA / FA / Market Activity / News) + past lessons from Reflector.",
     strategy:
       "Highlights catalysts, refutes the bear's points, identifies what the market is missing. Hard-capped at 200 tokens to force concision (no essays).",
   },
@@ -197,11 +162,13 @@ const AGENTS: Agent[] = [
     slug: "reflector",
     name: "Reflector",
     group: "Learning",
-    role: "Closes the loop — learns from realised outcomes.",
+    role: "Closes the loop — grades past debates and learns from realised outcomes.",
     ingests:
-      "Every past debate + the realised 7/30/90-day stock return after the call was made.",
+      "Every past debate (sys_agent_debate_log) + realised 7d/30d/90d stock returns once they've actually happened.",
     strategy:
-      "Extracts patterns like 'when FA=BUY and News=HOLD on commodity stocks, hit-rate over 30d is 58%'. Lessons get injected into the next debate's persona prompts. The system improves debate-by-debate.",
+      "Three separate nightly passes (one per horizon). For each ripe debate, asks Gemini to write a 2-3 sentence lesson per persona (Bull/Bear/Risk/PM) tagged horizon:7d/30d/90d. Next debate's prompts pull the most-similar lessons via BM25, biased toward 30d+90d (longer horizon = better signal-to-noise than 7d). Live numbers visible on /performance.",
+    example:
+      "Currently 59.3% 30-day hit rate over 150 graded debates. Reflector's daily DAG runs at 06:00 UTC.",
   },
 ];
 
@@ -242,7 +209,7 @@ export default function MethodologyPage() {
           Methodology
         </p>
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
-          17 AI agents. One opinion. No black box.
+          13 AI agents. Real Airflow DAGs. One opinion. No black box.
         </h1>
         <p className="mt-3 text-gray-600 max-w-3xl">
           Every BUY/SELL/HOLD call on stock.datap.ai is the output of a structured pipeline: 8 input agents gather evidence, 4 debate agents argue it out, 4 governance gates apply guardrails, and a Reflector learns from realised returns. Here is exactly what each one does.

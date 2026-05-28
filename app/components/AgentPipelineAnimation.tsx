@@ -1,76 +1,163 @@
 "use client";
 
 /**
- * AgentPipelineAnimation — auto-playing SVG/CSS visualisation of the
- * 17-agent pipeline. Sits at the top of /methodology as the "in 10
- * seconds, here's what we do" hero.
+ * AgentPipelineAnimation — Airflow-style DAG visualisation of the real
+ * pipeline running on EC2. Each node maps to an actual scheduled DAG.
  *
- * Stages animate in sequence, looping forever:
- *   1. Input agents (8 nodes on the left) light up one by one
- *   2. A "data beam" travels right into the Debate stage
- *   3. Bull/Bear/Risk/PM nodes light up in order; chat bubbles flash
- *   4. Beam travels into Governance Gates (4 nodes); one randomly fires
- *   5. Final BUY / HOLD / SELL card emerges at the right
- *   6. Reflector arc loops back from the final call to the input column
- *      (the "learning" feedback)
+ * Goal: B2B prospects see "production-grade scheduled pipeline", not
+ * "marketing diagram." Hover any node to read what it does, what it
+ * produces, and when it runs. A travelling pulse cycles through the
+ * stages so the picture feels alive without being noisy.
  *
- * Pure CSS keyframes + a single React state ticker. No external animation
- * library. ~6-second loop. Pause-on-hover so demo'er can stop and explain.
+ * Truth-anchored (2026-05-28 audit): exactly 4 input agents → 4 debate
+ * personas → 4 governance gates → 1 Reflector. 13 active agents total.
+ * Don't overstate.
+ *
+ * Schedules below match production stock_*.py DAGs on EC2 Airflow.
+ * Update both when the DAGs change — there's no other source of truth.
  */
 
 import { useEffect, useState } from "react";
 
-const INPUT_AGENTS = [
-  { slug: "technical",       label: "Technical",    short: "TA"   },
-  { slug: "valuation",       label: "Valuation",    short: "Val"  },
-  { slug: "quality",         label: "Quality",      short: "Qual" },
-  { slug: "growth",          label: "Growth",       short: "Grow" },
-  { slug: "analyst",         label: "Analyst",      short: "Anal" },
-  { slug: "macro",           label: "Macro",        short: "Macro"},
-  { slug: "market_activity", label: "Mkt Activity", short: "MA"   },
-  { slug: "news",            label: "News",         short: "News" },
+type NodeKind = "ingest" | "input_agent" | "debate" | "gate" | "output" | "reflector";
+
+interface PipelineNode {
+  id: string;
+  label: string;
+  sublabel?: string;
+  dag?: string;           // Airflow DAG name on EC2
+  schedule?: string;      // human-readable cron description
+  produces?: string;      // DB table or downstream consumer
+  col: number;            // 0-indexed column position
+  row: number;            // 0-indexed row position
+  kind: NodeKind;
+}
+
+interface PipelineEdge {
+  from: string;
+  to: string;
+  label?: string;
+}
+
+// ── Pipeline definition (matches EC2 production DAGs) ───────────────────────
+const NODES: PipelineNode[] = [
+  // Column 0 — RAW DATA INGESTION (the "feeders")
+  { id: "eod",       label: "Daily Prices",   sublabel: "OHLCV",       dag: "stock_eod_dynamic",        schedule: "Per market close",       produces: "datapai.prices",        col: 0, row: 0, kind: "ingest" },
+  { id: "fund_etl",  label: "Fundamentals",   sublabel: "10-K/10-Q",   dag: "stock_fundamentals_weekly", schedule: "Weekly Mon 02:00",       produces: "datapai.fundamental_lite", col: 0, row: 1, kind: "ingest" },
+  { id: "ir_scan",   label: "IR Page Scan",   sublabel: "TinyFish",    dag: "stock_tinyfish_scan",       schedule: "Daily 04:00",            produces: "datapai.snapshots",     col: 0, row: 2, kind: "ingest" },
+  { id: "news_in",   label: "News Fetch",     sublabel: "Google + 8-K", dag: "stock_news_monitor",        schedule: "Every 30 min, 06-22 UTC", produces: "datapai.news_events",   col: 0, row: 3, kind: "ingest" },
+
+  // Column 1 — INPUT AGENTS (compute signals)
+  { id: "ta",        label: "Technical",      sublabel: "RSI · MACD · MAs",    dag: "stock_weekly_ta + monthly + EOD daily", schedule: "Daily after EOD",      produces: "datapai.ta_signals",     col: 1, row: 0, kind: "input_agent" },
+  { id: "fa",        label: "Fundamental",    sublabel: "Val · Qual · Growth · Analyst", dag: "stock_fundamentals_weekly",    schedule: "Weekly Mon 02:00",     produces: "fundamental_lite",       col: 1, row: 1, kind: "input_agent" },
+  { id: "ma",        label: "Market Activity",sublabel: "IR-page diffs",         dag: "stock_tinyfish_scan",                schedule: "Daily 04:00",          produces: "tinyfish events",        col: 1, row: 2, kind: "input_agent" },
+  { id: "news",      label: "News Classifier",sublabel: "severity + sentiment",   dag: "stock_news_monitor",                 schedule: "Every 30 min",         produces: "material events",        col: 1, row: 3, kind: "input_agent" },
+
+  // Column 2 — DEBATE (AG2 GroupChat)
+  { id: "bull",      label: "Bull",            sublabel: "🐂 bullish case",        dag: "stock_synthesis (asx/us)",          schedule: "18:00 local Mon-Fri",  produces: "bull_arguments",         col: 2, row: 0, kind: "debate" },
+  { id: "bear",      label: "Bear",            sublabel: "🐻 bearish case",        dag: "stock_synthesis (asx/us)",          schedule: "18:00 local Mon-Fri",  produces: "bear_arguments",         col: 2, row: 1, kind: "debate" },
+  { id: "risk",      label: "Risk Manager",    sublabel: "🛡 position sizing",     dag: "stock_synthesis (asx/us)",          schedule: "18:00 local Mon-Fri",  produces: "risk_arguments",         col: 2, row: 2, kind: "debate" },
+  { id: "pm",        label: "Portfolio Mgr",   sublabel: "⚖️ final call",          dag: "stock_synthesis (asx/us)",          schedule: "18:00 local Mon-Fri",  produces: "pm_arguments + JSON",    col: 2, row: 3, kind: "debate" },
+
+  // Column 3 — GATES
+  { id: "g_quality", label: "Quality Gate",    sublabel: "demote C/D",             dag: "stock_synthesis",                    schedule: "inline post-debate",   produces: "gate_decisions JSONB",   col: 3, row: 0, kind: "gate" },
+  { id: "g_regime",  label: "Regime Gate",     sublabel: "TA+FA bearish",          dag: "stock_synthesis",                    schedule: "inline post-debate",   produces: "gate_decisions JSONB",   col: 3, row: 1, kind: "gate" },
+  { id: "g_sanity",  label: "Sanity Override", sublabel: "impossible flip",        dag: "stock_synthesis",                    schedule: "inline post-debate",   produces: "gate_decisions JSONB",   col: 3, row: 2, kind: "gate" },
+  { id: "g_crit",    label: "Critical News",   sublabel: "fraud / bankruptcy",     dag: "stock_synthesis",                    schedule: "inline post-debate",   produces: "force SELL override",    col: 3, row: 3, kind: "gate" },
+
+  // Column 4 — OUTPUT + REFLECTOR (the learning loop)
+  { id: "synthesis", label: "stock_synthesis", sublabel: "BUY / HOLD / SELL row",  dag: "stock_synthesis",                    schedule: "Mon-Fri 18:00 local",  produces: "datapai.stock_synthesis",col: 4, row: 1, kind: "output"   },
+  { id: "reflector", label: "Reflector",       sublabel: "7d/30d/90d grader",      dag: "stock_reflector",                    schedule: "Daily 06:00 UTC",      produces: "sys_agent_memory lessons", col: 4, row: 3, kind: "reflector" },
 ];
 
-const DEBATE_AGENTS = [
-  { slug: "bull", label: "Bull",  emoji: "🐂", color: "#16a34a" },
-  { slug: "bear", label: "Bear",  emoji: "🐻", color: "#dc2626" },
-  { slug: "risk", label: "Risk",  emoji: "🛡",  color: "#d97706" },
-  { slug: "pm",   label: "PM",    emoji: "⚖️", color: "#4f46e5" },
+const EDGES: PipelineEdge[] = [
+  // raw → input agents
+  { from: "eod",      to: "ta"   },
+  { from: "fund_etl", to: "fa"   },
+  { from: "ir_scan",  to: "ma"   },
+  { from: "news_in",  to: "news" },
+  // input agents → all 4 debate personas (each persona sees all signals)
+  { from: "ta",   to: "bull" },
+  { from: "fa",   to: "bull" },
+  { from: "ma",   to: "bull" },
+  { from: "news", to: "bull" },
+  { from: "ta",   to: "bear" },
+  { from: "fa",   to: "bear" },
+  { from: "ma",   to: "bear" },
+  { from: "news", to: "bear" },
+  { from: "bull", to: "risk" },
+  { from: "bear", to: "risk" },
+  { from: "risk", to: "pm"   },
+  // PM → gates
+  { from: "pm", to: "g_quality" },
+  { from: "pm", to: "g_regime"  },
+  { from: "pm", to: "g_sanity"  },
+  { from: "pm", to: "g_crit"    },
+  // gates → final
+  { from: "g_quality", to: "synthesis" },
+  { from: "g_regime",  to: "synthesis" },
+  { from: "g_sanity",  to: "synthesis" },
+  { from: "g_crit",    to: "synthesis" },
+  // synthesis → reflector (after 7/30/90 days realised return)
+  { from: "synthesis", to: "reflector" },
+  // reflector feedback loop back into debate (lessons inject into next debate)
+  { from: "reflector", to: "bull", label: "lessons" },
+  { from: "reflector", to: "bear", label: "lessons" },
+  { from: "reflector", to: "risk", label: "lessons" },
+  { from: "reflector", to: "pm",   label: "lessons" },
 ];
 
-const GATES = [
-  { slug: "quality",  label: "Quality"  },
-  { slug: "regime",   label: "Regime"   },
-  { slug: "sanity",   label: "Sanity"   },
-  { slug: "critical", label: "Critical News" },
+// ── Layout constants ───────────────────────────────────────────────────────
+const COL_WIDTH = 220;
+const ROW_HEIGHT = 90;
+const NODE_W = 180;
+const NODE_H = 64;
+const N_COLS = 5;
+const N_ROWS = 4;
+const CANVAS_W = COL_WIDTH * N_COLS;
+const CANVAS_H = ROW_HEIGHT * N_ROWS + 60;
+
+const COL_LABELS = [
+  { idx: 0, label: "Raw Data",      sub: "Ingestion DAGs"   },
+  { idx: 1, label: "Input Agents",  sub: "4 signal sources" },
+  { idx: 2, label: "AG2 Debate",    sub: "4-persona GroupChat" },
+  { idx: 3, label: "Gates",         sub: "4 guardrails"     },
+  { idx: 4, label: "Output + Learn",sub: "Synthesis + Reflector" },
 ];
 
-const STAGE_DURATION_MS = 1400;   // each stage holds for ~1.4s
-const TOTAL_STAGES = 5;            // input → debate → gates → final → reflector
+function nodePos(n: PipelineNode) {
+  const x = n.col * COL_WIDTH + (COL_WIDTH - NODE_W) / 2;
+  const y = n.row * ROW_HEIGHT + 50;
+  return { x, y, cx: x + NODE_W / 2, cy: y + NODE_H / 2 };
+}
+
+function kindStyles(k: NodeKind) {
+  switch (k) {
+    case "ingest":      return { bg: "#1e3a8a", border: "#3b82f6", text: "#dbeafe" };
+    case "input_agent": return { bg: "#064e3b", border: "#10b981", text: "#d1fae5" };
+    case "debate":      return { bg: "#5b21b6", border: "#a78bfa", text: "#ede9fe" };
+    case "gate":        return { bg: "#7c2d12", border: "#fb923c", text: "#fed7aa" };
+    case "output":      return { bg: "#9d174d", border: "#f472b6", text: "#fce7f3" };
+    case "reflector":   return { bg: "#312e81", border: "#818cf8", text: "#e0e7ff" };
+  }
+}
+
+// Which "stage" is currently active in the auto-loop animation
+const PULSE_STAGES: NodeKind[] = ["ingest", "input_agent", "debate", "gate", "output", "reflector"];
+const STAGE_MS = 1500;
 
 export default function AgentPipelineAnimation() {
   const [stage, setStage] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [hover, setHover] = useState<string | null>(null);
 
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(() => {
-      setStage((s) => (s + 1) % TOTAL_STAGES);
-    }, STAGE_DURATION_MS);
+    const t = setInterval(() => setStage((s) => (s + 1) % PULSE_STAGES.length), STAGE_MS);
     return () => clearInterval(t);
   }, [paused]);
 
-  // Which stage is "lit" right now
-  const lit = {
-    inputs:    stage >= 0,
-    debate:    stage >= 1,
-    gates:     stage >= 2,
-    final:     stage >= 3,
-    reflector: stage >= 4,
-  };
-
-  // Pick a "fired" gate randomly per loop for visual variety
-  const firedGateIdx = stage % GATES.length;
+  const activeKind = PULSE_STAGES[stage];
 
   return (
     <div
@@ -78,7 +165,7 @@ export default function AgentPipelineAnimation() {
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
-      {/* Subtle grid pattern in the background for a "control room" feel */}
+      {/* Grid pattern background */}
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{
@@ -88,357 +175,212 @@ export default function AgentPipelineAnimation() {
         }}
       />
 
-      <div className="relative px-6 py-6 sm:px-8 sm:py-8">
+      <div className="relative px-4 py-5 sm:px-6 sm:py-6">
         {/* Caption */}
-        <div className="text-center mb-5">
+        <div className="text-center mb-3">
           <p className="text-[10px] uppercase tracking-[0.3em] text-emerald-400 font-bold mb-1">
-            Live pipeline · 17 AI agents
+            Production DAG · 13 AI agents
           </p>
           <h2 className="text-xl sm:text-2xl font-bold text-white">
-            From raw signals to a single, defensible BUY / SELL / HOLD
+            Every BUY / SELL / HOLD is the output of scheduled Airflow DAGs
           </h2>
           <p className="text-xs text-gray-400 mt-1.5">
-            Hover to pause · auto-plays the full data flow
+            Hover any node for schedule + output table · auto-plays the data flow
           </p>
         </div>
 
-        {/* Pipeline grid */}
-        <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1fr_1fr_1fr] gap-3 sm:gap-4 items-stretch">
-          {/* ── Stage 1: Input agents ───────────────────────────────────── */}
-          <Stage label="Step 1 · Gather" sublabel="8 input agents" active={lit.inputs}>
-            <div className="grid grid-cols-2 gap-1.5">
-              {INPUT_AGENTS.map((a, i) => (
-                <Node
-                  key={a.slug}
-                  label={a.short}
-                  active={lit.inputs}
-                  pulseDelay={i * 100}
-                  color="#10b981"
+        {/* Pipeline canvas */}
+        <div className="relative overflow-x-auto">
+          <svg
+            viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
+            className="w-full"
+            style={{ minWidth: "900px", height: `${CANVAS_H * 0.85}px` }}
+          >
+            {/* Column headers */}
+            {COL_LABELS.map(({ idx, label, sub }) => {
+              const x = idx * COL_WIDTH + COL_WIDTH / 2;
+              const colKind = (
+                idx === 0 ? "ingest"
+                : idx === 1 ? "input_agent"
+                : idx === 2 ? "debate"
+                : idx === 3 ? "gate"
+                : "output"
+              ) as NodeKind;
+              const colActive = colKind === activeKind || (idx === 4 && activeKind === "reflector");
+              return (
+                <g key={idx}>
+                  <text
+                    x={x}
+                    y={18}
+                    textAnchor="middle"
+                    className="font-bold"
+                    style={{ fontSize: 10, letterSpacing: "0.18em", fill: colActive ? "#34d399" : "#6b7280" }}
+                  >
+                    {label.toUpperCase()}
+                  </text>
+                  <text
+                    x={x}
+                    y={32}
+                    textAnchor="middle"
+                    style={{ fontSize: 9, fill: "#9ca3af" }}
+                  >
+                    {sub}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Edges */}
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#4b5563" />
+              </marker>
+              <marker id="arrowLit" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#34d399" />
+              </marker>
+              <marker id="arrowReflector" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#a78bfa" />
+              </marker>
+            </defs>
+            {EDGES.map((e, i) => {
+              const a = NODES.find((n) => n.id === e.from);
+              const b = NODES.find((n) => n.id === e.to);
+              if (!a || !b) return null;
+              const pa = nodePos(a);
+              const pb = nodePos(b);
+              const isReflectorEdge = e.from === "reflector";
+              const litThisStage =
+                (a.kind === activeKind && b.kind !== "reflector") ||
+                (a.kind === "output" && b.kind === "reflector" && activeKind === "reflector");
+              // Reflector edges curve over the top (visual loopback)
+              const path = isReflectorEdge
+                ? `M ${pa.x + NODE_W / 2},${pa.y} C ${pa.x},${pa.y - 60} ${pb.x + NODE_W / 2},${pb.y - 60} ${pb.x + NODE_W},${pb.y + NODE_H / 2}`
+                : `M ${pa.x + NODE_W},${pa.cy} C ${pa.x + NODE_W + 50},${pa.cy} ${pb.x - 50},${pb.cy} ${pb.x},${pb.cy}`;
+              return (
+                <path
+                  key={i}
+                  d={path}
+                  fill="none"
+                  stroke={isReflectorEdge ? "#a78bfa" : litThisStage ? "#34d399" : "#374151"}
+                  strokeWidth={isReflectorEdge ? 1.2 : litThisStage ? 2 : 1}
+                  strokeDasharray={isReflectorEdge ? "3 3" : litThisStage ? "0" : "2 4"}
+                  opacity={isReflectorEdge ? 0.6 : litThisStage ? 1 : 0.5}
+                  markerEnd={`url(#${isReflectorEdge ? "arrowReflector" : litThisStage ? "arrowLit" : "arrow"})`}
                 />
-              ))}
-            </div>
-          </Stage>
+              );
+            })}
 
-          {/* Beam 1→2 */}
-          <Beam active={lit.debate} side="left" />
-
-          {/* ── Stage 2: Debate ─────────────────────────────────────────── */}
-          <Stage label="Step 2 · Debate" sublabel="AG2 GroupChat" active={lit.debate}>
-            <div className="grid grid-cols-2 gap-1.5">
-              {DEBATE_AGENTS.map((a, i) => (
-                <Node
-                  key={a.slug}
-                  label={`${a.emoji} ${a.label}`}
-                  active={lit.debate}
-                  pulseDelay={i * 200}
-                  color={a.color}
-                />
-              ))}
-            </div>
-            {lit.debate && (
-              <div className="mt-2 text-[9px] text-gray-400 italic text-center">
-                Bull ⇄ Bear · Risk weighs in · PM concludes
-              </div>
-            )}
-          </Stage>
-
-          {/* Beam 2→3 */}
-          <Beam active={lit.gates} side="left" />
-
-          {/* ── Stage 3: Gates ──────────────────────────────────────────── */}
-          <Stage label="Step 3 · Guardrails" sublabel="4 governance gates" active={lit.gates}>
-            <div className="grid grid-cols-2 gap-1.5">
-              {GATES.map((g, i) => {
-                const fired = lit.gates && i === firedGateIdx;
-                return (
-                  <Node
-                    key={g.slug}
-                    label={g.label}
-                    active={lit.gates}
-                    pulseDelay={i * 150}
-                    color={fired ? "#f59e0b" : "#6b7280"}
-                    badge={fired ? "FIRED" : "PASS"}
+            {/* Nodes */}
+            {NODES.map((n) => {
+              const p = nodePos(n);
+              const s = kindStyles(n.kind);
+              const isActive = n.kind === activeKind;
+              const isHover = hover === n.id;
+              return (
+                <g
+                  key={n.id}
+                  onMouseEnter={() => { setHover(n.id); setPaused(true); }}
+                  onMouseLeave={() => setHover(null)}
+                  style={{ cursor: "help" }}
+                >
+                  <rect
+                    x={p.x}
+                    y={p.y}
+                    width={NODE_W}
+                    height={NODE_H}
+                    rx={8}
+                    fill={s.bg}
+                    stroke={isActive || isHover ? s.border : `${s.border}55`}
+                    strokeWidth={isActive || isHover ? 2 : 1}
+                    style={{
+                      filter: isActive
+                        ? `drop-shadow(0 0 8px ${s.border}88)`
+                        : isHover
+                        ? `drop-shadow(0 0 4px ${s.border}66)`
+                        : "none",
+                      transition: "all 0.4s",
+                    }}
                   />
-                );
-              })}
-            </div>
-          </Stage>
+                  <text x={p.cx} y={p.y + 22} textAnchor="middle" style={{ fontSize: 11, fontWeight: 700, fill: "#fff" }}>
+                    {n.label}
+                  </text>
+                  {n.sublabel && (
+                    <text x={p.cx} y={p.y + 38} textAnchor="middle" style={{ fontSize: 9, fill: s.text }}>
+                      {n.sublabel}
+                    </text>
+                  )}
+                  {n.dag && (
+                    <text x={p.cx} y={p.y + 54} textAnchor="middle" style={{ fontSize: 8, fill: "#9ca3af", fontFamily: "monospace" }}>
+                      {n.dag.length > 26 ? n.dag.slice(0, 24) + "…" : n.dag}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </svg>
 
-          {/* Beam 3→4 */}
-          <Beam active={lit.final} side="left" />
-
-          {/* ── Stage 4: Final call ─────────────────────────────────────── */}
-          <Stage label="Step 4 · Decide" sublabel="Final synthesis" active={lit.final}>
-            <FinalCard active={lit.final} />
-          </Stage>
+          {/* Hover tooltip (HTML overlay — easier than SVG <foreignObject>) */}
+          {hover && (() => {
+            const n = NODES.find((x) => x.id === hover);
+            if (!n) return null;
+            const p = nodePos(n);
+            const xPct = (p.x + NODE_W + 12) / CANVAS_W * 100;
+            const yPct = (p.y - 8) / CANVAS_H * 100;
+            const clampedXPct = Math.min(xPct, 70);
+            return (
+              <div
+                className="absolute z-10 bg-gray-950 border border-gray-700 rounded-lg p-3 shadow-2xl pointer-events-none text-xs max-w-[260px]"
+                style={{ left: `${clampedXPct}%`, top: `${Math.max(2, yPct)}%` }}
+              >
+                <div className="font-bold text-white mb-1">{n.label}</div>
+                {n.sublabel && <div className="text-gray-400 text-[10px] mb-2">{n.sublabel}</div>}
+                {n.dag && (
+                  <div className="mb-1">
+                    <span className="text-[10px] text-emerald-400 uppercase tracking-wider">DAG · </span>
+                    <span className="font-mono text-gray-200">{n.dag}</span>
+                  </div>
+                )}
+                {n.schedule && (
+                  <div className="mb-1">
+                    <span className="text-[10px] text-emerald-400 uppercase tracking-wider">Runs · </span>
+                    <span className="text-gray-200">{n.schedule}</span>
+                  </div>
+                )}
+                {n.produces && (
+                  <div>
+                    <span className="text-[10px] text-emerald-400 uppercase tracking-wider">Writes · </span>
+                    <span className="font-mono text-gray-200">{n.produces}</span>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </div>
 
-        {/* Reflector feedback arc spans the whole bottom */}
-        <div className="mt-5 relative h-12 flex items-center">
-          <svg viewBox="0 0 1000 60" className="w-full h-full" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="reflectorGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#a78bfa" stopOpacity="0.2" />
-                <stop offset="50%" stopColor="#a78bfa" stopOpacity="0.9" />
-                <stop offset="100%" stopColor="#a78bfa" stopOpacity="0.2" />
-              </linearGradient>
-            </defs>
-            {/* Backbone arc */}
-            <path
-              d="M 950,5 Q 500,80 50,5"
-              fill="none"
-              stroke="#374151"
-              strokeWidth="1.5"
-              strokeDasharray="4 6"
-            />
-            {/* Lit arc when reflector stage active */}
-            {lit.reflector && (
-              <path
-                d="M 950,5 Q 500,80 50,5"
-                fill="none"
-                stroke="url(#reflectorGrad)"
-                strokeWidth="2.5"
-                style={{
-                  strokeDasharray: 1800,
-                  strokeDashoffset: 1800,
-                  animation: "reflectorFlow 1300ms linear forwards",
-                }}
-              />
-            )}
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span
-              className={`text-[10px] uppercase tracking-[0.25em] font-bold transition-opacity duration-500 ${
-                lit.reflector ? "text-purple-300 opacity-100" : "text-gray-600 opacity-60"
-              }`}
-            >
-              📚 Reflector — feeds realised outcomes back to every agent
-            </span>
+        {/* Footer caption: legend + Reflector explanation */}
+        <div className="flex items-center justify-between flex-wrap gap-3 mt-3 pt-3 border-t border-gray-700">
+          <div className="flex gap-3 flex-wrap text-[10px]">
+            {[
+              { kind: "ingest" as NodeKind,      label: "Ingest"    },
+              { kind: "input_agent" as NodeKind, label: "Input"     },
+              { kind: "debate" as NodeKind,      label: "Debate"    },
+              { kind: "gate" as NodeKind,        label: "Gate"      },
+              { kind: "output" as NodeKind,      label: "Synthesis" },
+              { kind: "reflector" as NodeKind,   label: "Reflector" },
+            ].map(({ kind, label }) => {
+              const s = kindStyles(kind);
+              return (
+                <div key={label} className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded" style={{ background: s.bg, border: `1px solid ${s.border}` }} />
+                  <span className="text-gray-300">{label}</span>
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-[10px] text-purple-300 italic">
+            📚 Purple dashed loop = Reflector feeds learned lessons back into the next debate
           </div>
         </div>
-
-        {/* Stage indicator dots */}
-        <div className="mt-4 flex items-center justify-center gap-2">
-          {Array.from({ length: TOTAL_STAGES }).map((_, i) => (
-            <button
-              key={i}
-              type="button"
-              onClick={() => {
-                setPaused(true);
-                setStage(i);
-              }}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                stage === i ? "w-8 bg-emerald-400" : "w-1.5 bg-gray-600 hover:bg-gray-500"
-              }`}
-              aria-label={`Jump to stage ${i + 1}`}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* keyframes */}
-      <style jsx>{`
-        @keyframes reflectorFlow {
-          to {
-            stroke-dashoffset: 0;
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-// ─── Sub-components ────────────────────────────────────────────────────────
-
-function Stage({
-  label,
-  sublabel,
-  active,
-  children,
-}: {
-  label: string;
-  sublabel: string;
-  active: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className={`relative rounded-xl border p-3 transition-all duration-500 ${
-        active
-          ? "bg-gray-800/80 border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.15)]"
-          : "bg-gray-800/30 border-gray-700"
-      }`}
-    >
-      <div className="mb-2">
-        <div
-          className={`text-[9px] uppercase tracking-[0.2em] font-bold ${
-            active ? "text-emerald-400" : "text-gray-500"
-          }`}
-        >
-          {label}
-        </div>
-        <div className={`text-xs ${active ? "text-gray-200" : "text-gray-500"}`}>
-          {sublabel}
-        </div>
-      </div>
-      {children}
-    </div>
-  );
-}
-
-function Node({
-  label,
-  active,
-  pulseDelay,
-  color,
-  badge,
-}: {
-  label: string;
-  active: boolean;
-  pulseDelay: number;
-  color: string;
-  badge?: string;
-}) {
-  return (
-    <div
-      className="relative rounded-md px-2 py-1.5 text-center transition-all duration-300"
-      style={{
-        background: active ? `${color}22` : "rgba(255,255,255,0.04)",
-        border: active ? `1px solid ${color}66` : "1px solid rgba(255,255,255,0.08)",
-        boxShadow: active ? `0 0 8px ${color}55` : "none",
-        animation: active ? `nodePulse 1.4s ease-in-out ${pulseDelay}ms infinite` : "none",
-      }}
-    >
-      <div
-        className="text-[10px] font-semibold leading-tight"
-        style={{ color: active ? "#fff" : "#9ca3af" }}
-      >
-        {label}
-      </div>
-      {badge && (
-        <div
-          className="text-[8px] font-bold mt-0.5"
-          style={{ color: badge === "FIRED" ? "#fbbf24" : "#9ca3af" }}
-        >
-          {badge}
-        </div>
-      )}
-      <style jsx>{`
-        @keyframes nodePulse {
-          0%, 100% { transform: scale(1); }
-          50%      { transform: scale(1.04); }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function Beam({ active, side }: { active: boolean; side: "left" | "right" }) {
-  // Horizontal connector between stages. Visible only on desktop (md:flex)
-  // because on mobile the stages stack vertically.
-  return (
-    <div className="hidden md:flex items-center justify-center -mx-1">
-      <svg viewBox="0 0 40 100" className="w-full h-full" preserveAspectRatio="none">
-        <line
-          x1="0"
-          y1="50"
-          x2="40"
-          y2="50"
-          stroke="#374151"
-          strokeWidth="2"
-          strokeDasharray="2 4"
-        />
-        {active && (
-          <>
-            <line
-              x1="0"
-              y1="50"
-              x2="40"
-              y2="50"
-              stroke="#10b981"
-              strokeWidth="2.5"
-              style={{
-                strokeDasharray: 40,
-                strokeDashoffset: 40,
-                animation: "beamFlow 700ms ease-out forwards",
-              }}
-            />
-            {/* Travelling particle */}
-            <circle r="2.5" fill="#34d399">
-              <animate
-                attributeName="cx"
-                from="0"
-                to="40"
-                dur="700ms"
-                fill="freeze"
-                repeatCount="1"
-              />
-              <animate
-                attributeName="cy"
-                from="50"
-                to="50"
-                dur="700ms"
-                fill="freeze"
-              />
-              <animate
-                attributeName="opacity"
-                values="0;1;1;0"
-                dur="700ms"
-                fill="freeze"
-              />
-            </circle>
-          </>
-        )}
-        <style jsx>{`
-          @keyframes beamFlow {
-            to {
-              stroke-dashoffset: 0;
-            }
-          }
-        `}</style>
-      </svg>
-      {/* side prop is unused visually but kept for potential L/R asymmetry */}
-      {side === "right" && null}
-    </div>
-  );
-}
-
-function FinalCard({ active }: { active: boolean }) {
-  // Cycles through the three outcomes for visual variety on each loop.
-  const outcomes = [
-    { dir: "BUY",  bg: "bg-emerald-500", emoji: "🟢", label: "BUY",  conf: "78%" },
-    { dir: "HOLD", bg: "bg-amber-500",   emoji: "🟡", label: "HOLD", conf: "65%" },
-    { dir: "SELL", bg: "bg-red-500",     emoji: "🔴", label: "SELL", conf: "82%" },
-  ];
-  const [pick, setPick] = useState(0);
-  useEffect(() => {
-    if (active) setPick((p) => (p + 1) % outcomes.length);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
-  const o = outcomes[pick];
-  return (
-    <div
-      className={`rounded-lg p-3 transition-all duration-500 ${
-        active ? "scale-100 opacity-100" : "scale-95 opacity-40"
-      }`}
-      style={{
-        background: active ? `linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))` : "transparent",
-        border: active ? "1px solid rgba(255,255,255,0.15)" : "1px solid rgba(255,255,255,0.05)",
-      }}
-    >
-      <div className="text-[9px] uppercase tracking-[0.15em] text-gray-400 mb-2 text-center">
-        Final call
-      </div>
-      <div
-        className={`${o.bg} text-white font-bold text-center py-2 rounded-md text-base tracking-wider transition-all duration-500`}
-        style={{
-          boxShadow: active ? `0 0 24px ${o.bg.includes("emerald") ? "#10b98166" : o.bg.includes("red") ? "#ef444466" : "#f59e0b66"}` : "none",
-        }}
-      >
-        {o.emoji} {o.label}
-      </div>
-      <div className="text-[10px] text-center text-gray-400 mt-2">
-        confidence <span className="font-bold text-white">{o.conf}</span>
       </div>
     </div>
   );
