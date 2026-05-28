@@ -19,6 +19,7 @@ import { t } from "@/lib/translations";
 import TechAnalyticsPanel from "../../../components/TechAnalyticsPanel";
 import WatchlistButton from "../../../components/WatchlistButton";
 import StockChatPanel from "../../../components/StockChatPanel";
+import BehindTheCall from "../../../components/BehindTheCall";
 import PriceChart from "../PriceChart";
 
 export const dynamic = "force-dynamic";
@@ -264,12 +265,21 @@ export default async function IntelPage({
                   </div>
                   <div className="pt-2 text-[10px] text-gray-400 italic">
                     Powered by 4-agent debate (Bull · Bear · Risk · Portfolio Manager). Not financial advice.
-                    See <Link href="/performance" className="underline text-[#2e8b57]">/performance</Link> for the full track record.
+                    See <Link href="/performance" className="underline text-[#2e8b57]">/performance</Link> for the full track record · <Link href="/methodology" className="underline text-[#2e8b57]">/methodology</Link> for how every agent works.
                   </div>
                 </div>
               </div>
             );
           })()}
+
+          {/* ── Behind the call — transparency panel ─────────────────────── */}
+          {synthesis && (
+            <BehindTheCall
+              gateDecisions={synthesis.gate_decisions}
+              agentSignals={synthesis.agent_signals}
+              reflectorLessons={synthesis.reflector_lessons}
+            />
+          )}
 
             {/* ── AI Research Co-pilot (top of section) */}
           <StockChatPanel

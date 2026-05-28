@@ -1201,6 +1201,54 @@ export async function getMaterialEventsForTickers(
 
 // ── Stock Synthesis (AG2 multi-agent) ─────────────────────────────────────
 
+// Gate decision shape — one record per governance gate. `fired:false`
+// means the gate evaluated but didn't override the recommendation.
+export interface GateDecision {
+  fired: boolean;
+  reason?: string;
+  demoted_from?: string;
+  demoted_to?: string;
+  // Optional extra fields per gate
+  quality_tier?: string;
+  failed_checks?: string[];
+  ta_direction?: string;
+  fa_direction?: string;
+  sentiment?: string;
+  headline?: string;
+  severity?: string;
+  input_directions?: string[];
+}
+
+export interface GateDecisions {
+  quality_gate?: GateDecision;
+  regime_gate?: GateDecision;
+  sanity_override?: GateDecision;
+  critical_news?: GateDecision;
+}
+
+// Per-input-agent contribution to the debate
+export interface AgentSignal {
+  direction: string;
+  confidence: number;
+  summary: string;
+  data?: Record<string, unknown>;
+}
+
+export interface AgentSignals {
+  technical?: AgentSignal;
+  fundamental?: AgentSignal;
+  macro?: AgentSignal;
+  market_activity?: AgentSignal;
+  news?: AgentSignal;
+  // index signature for any future agents
+  [key: string]: AgentSignal | undefined;
+}
+
+export interface ReflectorLessons {
+  lessons_count?: number;
+  lessons?: string[];
+}
+
 export interface StockSynthesis {
   ticker: string;
   exchange: string;
@@ -1212,6 +1260,16 @@ export interface StockSynthesis {
   what_bears_say: string;
   key_risk: string;
   computed_at: string;
+  // ── Transparency JSONB columns (migration 045, populated 2026-05-28) ──
+  gate_decisions?: GateDecisions;
+  agent_signals?: AgentSignals;
+  reflector_lessons?: ReflectorLessons;
+  // Per-agent direction fields (already in DB)
+  ta_direction?: string;
+  fa_direction?: string;
+  ma_direction?: string;
+  signals_aligned?: boolean;
+  disagreement_summary?: string;
 }
 
 export async function getStockSynthesis(ticker: string, exchange: string): Promise<StockSynthesis | null> {

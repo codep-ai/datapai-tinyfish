@@ -53,6 +53,9 @@ export async function GET(req: Request) {
     const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
     // DISTINCT ON gives the latest synthesis per (ticker, exchange).
+    // Includes structured transparency JSONB (migration 045): gate_decisions,
+    // agent_signals, reflector_lessons. FE renders these as the
+    // "Behind the call" panel.
     const sql = `
       WITH latest AS (
         SELECT DISTINCT ON (ticker, exchange)
@@ -60,7 +63,8 @@ export async function GET(req: Request) {
                thesis, what_bulls_say, what_bears_say, key_risk,
                ta_direction, fa_direction, ma_direction,
                signals_aligned, disagreement_summary,
-               debate_rounds, model_used, computed_at
+               debate_rounds, model_used, computed_at,
+               gate_decisions, agent_signals, reflector_lessons
         FROM datapai.stock_synthesis
         ${where}
         ORDER BY ticker, exchange, computed_at DESC
