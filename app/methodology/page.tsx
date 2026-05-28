@@ -16,6 +16,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AgentPipelineAnimation from "../components/AgentPipelineAnimation";
+import AgentPipelineDark from "../components/AgentPipelineDark";
 
 export const metadata: Metadata = {
   title: "AI Methodology — DataPai Stock Intelligence",
@@ -227,9 +228,26 @@ export default function MethodologyPage() {
         </div>
       </header>
 
-      {/* Animated pipeline hero — the "in 10 seconds, what this is" view */}
-      <section className="mb-10">
-        <AgentPipelineAnimation />
+      {/* Two pipeline views — comparison stage. Vote with your eyes for which
+          aesthetic survives. Remove the loser later. */}
+      <section className="mb-10 space-y-6">
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] uppercase tracking-[0.25em] text-[#2e8b57] font-bold">Option A</span>
+            <span className="text-xs text-gray-500">· Airflow-style (light, monochrome, like real Airflow UI)</span>
+          </div>
+          <AgentPipelineAnimation />
+        </div>
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] uppercase tracking-[0.25em] text-indigo-600 font-bold">Option B</span>
+            <span className="text-xs text-gray-500">· Marketing-style (dark + coloured, more visual impact)</span>
+          </div>
+          <AgentPipelineDark />
+        </div>
+        <div className="text-[10px] text-gray-400 italic text-center pt-1">
+          Two visual treatments — same underlying 13-agent pipeline. Pick which one stays.
+        </div>
       </section>
 
       {/* Pipeline overview */}
