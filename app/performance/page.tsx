@@ -125,7 +125,16 @@ export default function PerformancePage() {
   const [byEx, setByEx] = useState<ExStat[]>([]);
   const [signals, setSignals] = useState<Signal[]>([]);
   const [synth, setSynth] = useState<SynthRow[]>([]);
-  const [synthSummary, setSynthSummary] = useState<{ total: number; by_direction: Record<string, number>; latest_computed_at: string | null } | null>(null);
+  const [synthSummary, setSynthSummary] = useState<{
+    total: number;
+    by_direction: Record<string, number>;
+    latest_computed_at: string | null;
+    hit_rates?: {
+      h7d:  { graded: number; wins: number; rate: number | null };
+      h30d: { graded: number; wins: number; rate: number | null };
+      h90d: { graded: number; wins: number; rate: number | null };
+    } | null;
+  } | null>(null);
   const [expandedTicker, setExpandedTicker] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
@@ -204,6 +213,51 @@ export default function PerformancePage() {
             </div>
           ) : (
             <>
+              {/* AI Debate Hit Rate (multi-horizon) — honest signal-to-noise */}
+              {synthSummary?.hit_rates && (
+                <div className="bg-white rounded-xl border overflow-hidden">
+                  <div className="px-5 py-3 border-b bg-gray-50 flex items-center justify-between flex-wrap gap-2">
+                    <div>
+                      <h2 className="text-sm font-semibold text-gray-700">🎯 AI Debate Hit Rate</h2>
+                      <p className="text-[10px] text-gray-500 mt-0.5">
+                        Graded by Reflector against realised stock returns. 7d is noisy (random walk dominates);
+                        30d and 90d are where AI edge actually lives.
+                      </p>
+                    </div>
+                    <a href="/methodology" className="text-[10px] text-[#2e8b57] hover:underline">How we grade →</a>
+                  </div>
+                  <div className="grid grid-cols-3 gap-0 divide-x">
+                    {([
+                      { key: "h7d",  label: "7-day",  sub: "short-term · noisy"            },
+                      { key: "h30d", label: "30-day", sub: "medium · trend playing out"     },
+                      { key: "h90d", label: "90-day", sub: "long-term · highest signal"     },
+                    ] as const).map(({ key, label, sub }) => {
+                      const h = synthSummary.hit_rates![key];
+                      const rate = h.rate;
+                      const color = rate == null
+                        ? "text-gray-400"
+                        : rate >= 60 ? "text-emerald-600"
+                        : rate >= 50 ? "text-amber-600"
+                        : "text-red-500";
+                      return (
+                        <div key={key} className="p-5 text-center">
+                          <p className={`text-3xl font-bold ${color} tabular-nums`}>
+                            {rate == null ? "—" : `${rate}%`}
+                          </p>
+                          <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider font-semibold">
+                            {label} hit rate
+                          </p>
+                          <p className="text-[10px] text-gray-400 mt-1">{sub}</p>
+                          <p className="text-[10px] text-gray-500 mt-2 font-mono">
+                            {h.wins}/{h.graded} graded
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Direction distribution mini-cards */}
               <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
                 {(["STRONG_BUY", "BUY", "HOLD", "SELL", "STRONG_SELL"] as const).map((d) => {

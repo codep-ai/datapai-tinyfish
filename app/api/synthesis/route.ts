@@ -87,6 +87,39 @@ export async function GET(req: Request) {
 
     const res = await pool.query(sql, [...params, limit]);
 
+    // ── Per-horizon hit rates from sys_agent_debate_log_full ──────────────
+    // Reflector grades each debate at 7d / 30d / 90d separately (migration
+    // 047). We expose 3 hit-rate numbers so /performance can show the
+    // honest signal-to-noise picture: 7d is noisy, 90d is where the AI
+    // edge actually lives.
+    let hit_rates: {
+      h7d:  { graded: number; wins: number; rate: number | null };
+      h30d: { graded: number; wins: number; rate: number | null };
+      h90d: { graded: number; wins: number; rate: number | null };
+    } | null = null;
+    try {
+      const hr = await pool.query(`
+        SELECT
+          COUNT(*) FILTER (WHERE was_correct_7d  IS NOT NULL) AS graded_7d,
+          COUNT(*) FILTER (WHERE was_correct_7d  = TRUE)      AS wins_7d,
+          COUNT(*) FILTER (WHERE was_correct_30d IS NOT NULL) AS graded_30d,
+          COUNT(*) FILTER (WHERE was_correct_30d = TRUE)      AS wins_30d,
+          COUNT(*) FILTER (WHERE was_correct_90d IS NOT NULL) AS graded_90d,
+          COUNT(*) FILTER (WHERE was_correct_90d = TRUE)      AS wins_90d
+        FROM datapai.sys_agent_debate_log_full
+      `);
+      const row = hr.rows[0] ?? {};
+      const rate = (w: number, g: number) =>
+        g > 0 ? Math.round((1000 * w) / g) / 10 : null;
+      hit_rates = {
+        h7d:  { graded: Number(row.graded_7d ?? 0),  wins: Number(row.wins_7d ?? 0),  rate: rate(Number(row.wins_7d ?? 0),  Number(row.graded_7d ?? 0))  },
+        h30d: { graded: Number(row.graded_30d ?? 0), wins: Number(row.wins_30d ?? 0), rate: rate(Number(row.wins_30d ?? 0), Number(row.graded_30d ?? 0)) },
+        h90d: { graded: Number(row.graded_90d ?? 0), wins: Number(row.wins_90d ?? 0), rate: rate(Number(row.wins_90d ?? 0), Number(row.graded_90d ?? 0)) },
+      };
+    } catch (hrErr) {
+      console.warn("hit_rates query failed:", hrErr);
+    }
+
     // Summary counts for the page header
     const summary = {
       total: res.rows.length,
@@ -99,6 +132,7 @@ export async function GET(req: Request) {
           ? r.computed_at : latest,
         null,
       ),
+      hit_rates,
     };
 
     return NextResponse.json({
