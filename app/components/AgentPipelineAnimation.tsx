@@ -84,15 +84,16 @@ const EDGES: PipelineEdge[] = [
   { from: "reflector", to: "pm",   label: "lessons" },
 ];
 
-// Layout constants — wider nodes to fit DAG names like real Airflow boxes
-const COL_WIDTH = 230;
-const ROW_HEIGHT = 100;
-const NODE_W = 200;
-const NODE_H = 74;
+// Layout constants — generous so text is readable without zoom.
+// (Earlier sizes were too small at default browser zoom on a wide monitor.)
+const COL_WIDTH = 280;
+const ROW_HEIGHT = 130;
+const NODE_W = 250;
+const NODE_H = 98;
 const N_COLS = 5;
 const N_ROWS = 4;
 const CANVAS_W = COL_WIDTH * N_COLS;
-const CANVAS_H = ROW_HEIGHT * N_ROWS + 50;
+const CANVAS_H = ROW_HEIGHT * N_ROWS + 60;
 
 const COL_LABELS = [
   { idx: 0, label: "Step 1 · Ingest",  sub: "Data DAGs" },
@@ -104,7 +105,7 @@ const COL_LABELS = [
 
 function nodePos(n: PipelineNode) {
   const x = n.col * COL_WIDTH + (COL_WIDTH - NODE_W) / 2;
-  const y = n.row * ROW_HEIGHT + 38;
+  const y = n.row * ROW_HEIGHT + 48;
   return { x, y, cx: x + NODE_W / 2, cy: y + NODE_H / 2 };
 }
 
@@ -126,17 +127,18 @@ export default function AgentPipelineAnimation() {
 
   return (
     <div
-      className="relative bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
+      className="relative rounded-2xl overflow-hidden border border-gray-200 shadow-sm"
+      style={{ background: "#f8fafc" }}   /* slate-50 — distinct from white page bg */
       onMouseEnter={() => setPaused(true)}
       onMouseLeave={() => setPaused(false)}
     >
       {/* Subtle Airflow-style grid pattern */}
       <div
-        className="absolute inset-0 opacity-[0.025] pointer-events-none"
+        className="absolute inset-0 opacity-[0.04] pointer-events-none"
         style={{
           backgroundImage:
             "linear-gradient(#1f2937 1px, transparent 1px), linear-gradient(90deg, #1f2937 1px, transparent 1px)",
-          backgroundSize: "24px 24px",
+          backgroundSize: "28px 28px",
         }}
       />
 
@@ -163,7 +165,7 @@ export default function AgentPipelineAnimation() {
           <svg
             viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
             className="w-full"
-            style={{ minWidth: "1000px", height: `${CANVAS_H * 0.78}px` }}
+            style={{ minWidth: "1200px", height: `${CANVAS_H * 0.88}px` }}
           >
             <defs>
               <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
@@ -192,13 +194,13 @@ export default function AgentPipelineAnimation() {
                 <g key={idx}>
                   <text
                     x={x}
-                    y={14}
+                    y={18}
                     textAnchor="middle"
-                    style={{ fontSize: 9, letterSpacing: "0.18em", fontWeight: 700, fill: colActive ? "#059669" : "#6b7280" }}
+                    style={{ fontSize: 12, letterSpacing: "0.18em", fontWeight: 700, fill: colActive ? "#059669" : "#6b7280" }}
                   >
                     {label.toUpperCase()}
                   </text>
-                  <text x={x} y={27} textAnchor="middle" style={{ fontSize: 9, fill: "#9ca3af" }}>
+                  <text x={x} y={34} textAnchor="middle" style={{ fontSize: 11, fill: "#9ca3af" }}>
                     {sub}
                   </text>
                 </g>
@@ -261,37 +263,37 @@ export default function AgentPipelineAnimation() {
                   />
                   {/* Task name (top, monospace) */}
                   <text
-                    x={p.x + 10}
-                    y={p.y + 18}
-                    style={{ fontSize: 11, fontWeight: 600, fill: "#111827", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}
+                    x={p.x + 12}
+                    y={p.y + 22}
+                    style={{ fontSize: 14, fontWeight: 700, fill: "#0f172a", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}
                   >
-                    {n.label.length > 25 ? n.label.slice(0, 23) + "…" : n.label}
+                    {n.label.length > 28 ? n.label.slice(0, 26) + "…" : n.label}
                   </text>
                   {/* Status row — green dot + "success" or "running" */}
-                  <circle cx={p.x + 14} cy={p.y + 34} r={3} fill={lit ? "#059669" : "#10b981"} />
+                  <circle cx={p.x + 17} cy={p.y + 42} r={4} fill={lit ? "#059669" : "#10b981"} />
                   <text
-                    x={p.x + 22}
-                    y={p.y + 37}
-                    style={{ fontSize: 9, fill: lit ? "#059669" : "#10b981", fontWeight: 600 }}
+                    x={p.x + 27}
+                    y={p.y + 46}
+                    style={{ fontSize: 12, fill: lit ? "#059669" : "#10b981", fontWeight: 600 }}
                   >
                     {lit ? "running" : "success"}
                   </text>
                   {/* Sublabel (italic, gray) */}
                   {n.sublabel && (
                     <text
-                      x={p.x + 10}
-                      y={p.y + 52}
-                      style={{ fontSize: 9, fill: "#6b7280", fontStyle: "italic" }}
+                      x={p.x + 12}
+                      y={p.y + 66}
+                      style={{ fontSize: 12, fill: "#475569", fontStyle: "italic" }}
                     >
-                      {n.sublabel.length > 30 ? n.sublabel.slice(0, 28) + "…" : n.sublabel}
+                      {n.sublabel.length > 32 ? n.sublabel.slice(0, 30) + "…" : n.sublabel}
                     </text>
                   )}
                   {/* Operator type (bottom) */}
                   {n.operator && (
                     <text
-                      x={p.x + 10}
-                      y={p.y + 66}
-                      style={{ fontSize: 9, fill: "#9ca3af", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}
+                      x={p.x + 12}
+                      y={p.y + 86}
+                      style={{ fontSize: 11, fill: "#64748b", fontFamily: "ui-monospace, SFMono-Regular, monospace" }}
                     >
                       {n.operator}
                     </text>

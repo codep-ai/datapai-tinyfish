@@ -202,7 +202,7 @@ const groupMeta: Record<Agent["group"], { title: string; tag: string; desc: stri
 
 export default function MethodologyPage() {
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+    <div className="max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
       {/* Hero */}
       <header className="mb-8 border-b border-gray-200 pb-6">
         <p className="text-xs font-bold uppercase tracking-widest text-[#2e8b57] mb-2">
