@@ -15,6 +15,7 @@
  */
 import type { Metadata } from "next";
 import Link from "next/link";
+import AgentPipelineAnimation from "../components/AgentPipelineAnimation";
 
 export const metadata: Metadata = {
   title: "AI Methodology — DataPai Stock Intelligence",
@@ -253,8 +254,16 @@ export default function MethodologyPage() {
           <Link href="/screener" className="px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold">
             Stock screener →
           </Link>
+          <Link href="/debate/NVDA" className="px-3 py-1.5 rounded-full bg-[#2e8b57] hover:bg-[#236a44] text-white font-semibold">
+            🎬 Watch a live debate →
+          </Link>
         </div>
       </header>
+
+      {/* Animated pipeline hero — the "in 10 seconds, what this is" view */}
+      <section className="mb-10">
+        <AgentPipelineAnimation />
+      </section>
 
       {/* Pipeline overview */}
       <section className="mb-10 bg-gradient-to-br from-gray-50 to-white border border-gray-200 rounded-xl p-5">
