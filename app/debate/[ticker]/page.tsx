@@ -26,6 +26,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getStockSynthesisFlexible, getDebateTranscript } from "@/lib/db";
+import { fetchPrices } from "@/lib/price";
 import DebateReplay from "../../components/DebateReplay";
 
 interface PageProps {
@@ -87,10 +88,12 @@ export default async function DebatePage({ params, searchParams }: PageProps) {
   const ticker = rawTicker.toUpperCase();
   const exchange = (rawExchange || "US").toUpperCase();
 
-  // Fetch in parallel
-  const [synthesis, transcript] = await Promise.all([
+  // Fetch in parallel — synthesis + transcript + recent prices (for the
+  // "price at debate" anchor in the meta row).
+  const [synthesis, transcript, recentPrices] = await Promise.all([
     getStockSynthesisFlexible(ticker, exchange),
     getDebateTranscript(ticker, exchange),
+    fetchPrices(ticker, 14, exchange).catch(() => []),
   ]);
 
   if (!synthesis) {
@@ -122,6 +125,46 @@ export default async function DebatePage({ params, searchParams }: PageProps) {
 
   const dir = synthesis.direction || "HOLD";
   const dirStyle = directionStyles[dir] ?? directionStyles.HOLD;
+
+  // ── Date / price meta — anchors "at this price, this is what the AI thought" ──
+  const debateDateRaw = synthesis.computed_at ? new Date(synthesis.computed_at) : null;
+  const debateDateStr = debateDateRaw
+    ? debateDateRaw.toLocaleString("en-US", {
+        year: "numeric", month: "short", day: "numeric",
+        hour: "2-digit", minute: "2-digit",
+        timeZone: "UTC", timeZoneName: "short",
+      })
+    : "—";
+
+  // Match the debate date (YYYY-MM-DD) to the closest available price on
+  // or before that date. If no row matches, fall back to the most recent.
+  let priceAtDebate: number | null = null;
+  let priceAtDebateDate: string | null = null;
+  let priceLatest: number | null = null;
+  let priceLatestDate: string | null = null;
+  if (recentPrices.length > 0) {
+    const sorted = [...recentPrices].sort((a, b) => a.date.localeCompare(b.date));
+    priceLatest = sorted[sorted.length - 1].close;
+    priceLatestDate = sorted[sorted.length - 1].date;
+    if (debateDateRaw) {
+      const debateDay = debateDateRaw.toISOString().slice(0, 10); // YYYY-MM-DD
+      // Latest row at or before debate day; else fall back to nearest after
+      const onOrBefore = sorted.filter((p) => p.date <= debateDay);
+      const pick = onOrBefore.length > 0 ? onOrBefore[onOrBefore.length - 1] : sorted[0];
+      priceAtDebate = pick.close;
+      priceAtDebateDate = pick.date;
+    } else {
+      priceAtDebate = priceLatest;
+      priceAtDebateDate = priceLatestDate;
+    }
+  }
+  const priceDeltaPct =
+    priceAtDebate != null && priceLatest != null && priceAtDebate > 0
+      ? ((priceLatest - priceAtDebate) / priceAtDebate) * 100
+      : null;
+
+  // Currency hint by exchange (best-effort, no FX conversion here)
+  const currencySymbol = exchange === "ASX" ? "A$" : exchange === "HKEX" ? "HK$" : exchange === "HOSE" ? "₫" : "$";
 
   // Surface non-empty agent_signals + gate_decisions for the side rails
   const agents = Object.entries(synthesis.agent_signals ?? {}).filter(
@@ -179,6 +222,52 @@ export default async function DebatePage({ params, searchParams }: PageProps) {
               );
             })}
           </div>
+        </div>
+      </div>
+
+      {/* Meta row — anchors the debate to a specific moment in time + price */}
+      <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 mb-5 flex flex-wrap items-center gap-x-6 gap-y-2 text-xs">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Debate run</span>
+          <span className="font-semibold text-gray-900">{debateDateStr}</span>
+        </div>
+
+        {priceAtDebate != null && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Price at debate</span>
+            <span className="font-semibold text-gray-900 tabular-nums">
+              {currencySymbol}{priceAtDebate < 1 ? priceAtDebate.toFixed(4) : priceAtDebate.toFixed(2)}
+            </span>
+            {priceAtDebateDate && (
+              <span className="text-[10px] text-gray-400">({priceAtDebateDate})</span>
+            )}
+          </div>
+        )}
+
+        {priceLatest != null && priceLatestDate !== priceAtDebateDate && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] uppercase tracking-wider text-gray-500 font-semibold">Latest</span>
+            <span className="font-semibold text-gray-900 tabular-nums">
+              {currencySymbol}{priceLatest < 1 ? priceLatest.toFixed(4) : priceLatest.toFixed(2)}
+            </span>
+            {priceLatestDate && (
+              <span className="text-[10px] text-gray-400">({priceLatestDate})</span>
+            )}
+            {priceDeltaPct != null && (
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                  priceDeltaPct >= 0 ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                }`}
+              >
+                {priceDeltaPct >= 0 ? "+" : ""}{priceDeltaPct.toFixed(2)}%
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="flex-1" />
+        <div className="text-[10px] text-gray-400 italic">
+          Next scheduled debate: tonight 22:00 UTC (US) / 08:00 UTC (ASX)
         </div>
       </div>
 
