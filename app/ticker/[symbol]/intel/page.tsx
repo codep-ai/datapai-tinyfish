@@ -212,7 +212,7 @@ export default async function IntelPage({
             </div>
           )}
 
-          {/* ── AI Analyst Call (AG2 multi-agent synthesis) ──────────────── */}
+          {/* ── AI Analyst Call (Agentic AI multi-agent synthesis) ────────── */}
           {synthesis && (() => {
             const dir = synthesis.direction || "HOLD";
             const conf = Number(synthesis.confidence) || 0;

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * DebateReplay — animated chat-style replay of the 4-persona AG2 debate.
+ * DebateReplay — animated chat-style replay of the 4-persona Agentic AI debate.
  *
  * Mounted on /debate/[ticker]. Renders the Bull → Bear → Risk → PM
  * arguments as a sequenced conversation: each persona's message types

@@ -219,7 +219,7 @@ export default function BehindTheCall({ gateDecisions, agentSignals, reflectorLe
           )}
 
           <div className="pt-1 text-[10px] text-gray-400 italic">
-            Each input agent runs independently; the AG2 group-chat debate (Bull → Bear → Risk → Portfolio Manager) reasons over them, then governance gates apply.
+            Each input agent runs independently; the Agentic AI group-chat debate (Bull → Bear → Risk → Portfolio Manager) reasons over them, then governance gates apply.
             Full methodology: <a href="/methodology" className="underline text-[#2e8b57]">/methodology</a>
           </div>
         </div>

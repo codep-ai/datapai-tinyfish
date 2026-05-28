@@ -54,7 +54,7 @@ const AGENTS: Agent[] = [
     ingests:
       "PE / PB / EV-EBITDA · ROE / margins / debt / liquidity · revenue + EPS YoY · Wall Street ratings + price targets · Treasury yields / sector cycle / FX.",
     strategy:
-      "Each sub-view (valuation/quality/growth/analyst/macro) scores 0–1 inside agents/fundamental/*. They combine into a single FA signal (BUY/HOLD/SELL + confidence) that enters the debate — the AG2 personas reason over the composite, not the five separately.",
+      "Each sub-view (valuation/quality/growth/analyst/macro) scores 0–1 inside agents/fundamental/*. They combine into a single FA signal (BUY/HOLD/SELL + confidence) that enters the debate — the Agentic AI personas reason over the composite, not the five separately.",
     example:
       "BHP: PE 17.66 (cheap-ish) + ROE 24.7% (Quality A) + revenue +10.8% YoY (Growth A) + analyst HOLD (consensus +5.86% upside) → FA composite = BUY 0.66.",
   },
@@ -81,7 +81,7 @@ const AGENTS: Agent[] = [
       "8-K filed citing SEC investigation → event_type=LEGAL, severity=CRITICAL, sentiment=VERY_NEGATIVE.",
   },
 
-  // ── Debate agents (AG2 GroupChat) ──────────────────────────────────────
+  // ── Debate agents (Agentic AI group chat) ─────────────────────────────
   {
     slug: "bull",
     name: "Bull Analyst",
@@ -183,7 +183,7 @@ const groupMeta: Record<Agent["group"], { title: string; tag: string; desc: stri
   Debate: {
     title: "Debate Agents",
     tag: "Step 2 — Argue it out",
-    desc: "AG2 multi-agent group chat. Bull and Bear take opposing positions. Risk Manager sizes the trade. Portfolio Manager makes the final call.",
+    desc: "Agentic AI multi-agent group chat. Bull and Bear take opposing positions. Risk Manager sizes the trade. Portfolio Manager makes the final call.",
     color: "#1d4ed8",
   },
   Gate: {
