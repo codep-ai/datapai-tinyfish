@@ -64,7 +64,8 @@ export async function GET(req: Request) {
                ta_direction, fa_direction, ma_direction,
                signals_aligned, disagreement_summary,
                debate_rounds, model_used, computed_at,
-               gate_decisions, agent_signals, reflector_lessons
+               gate_decisions, agent_signals, reflector_lessons,
+               price_at_debate, price_currency, price_as_of_date
         FROM datapai.stock_synthesis
         ${where}
         ORDER BY ticker, exchange, computed_at DESC

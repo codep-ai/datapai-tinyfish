@@ -1270,6 +1270,13 @@ export interface StockSynthesis {
   ma_direction?: string;
   signals_aligned?: boolean;
   disagreement_summary?: string;
+  // ── Price snapshot (migration 046, written at debate time) ────────────
+  // Single source of truth — the exact price the AI agents saw. Use this
+  // for the "Price at debate" meta-row instead of re-querying prices,
+  // so the demo can never display a "wrong" anchor.
+  price_at_debate?: number | null;
+  price_currency?: string | null;
+  price_as_of_date?: string | null;  // YYYY-MM-DD
 }
 
 export async function getStockSynthesis(ticker: string, exchange: string): Promise<StockSynthesis | null> {

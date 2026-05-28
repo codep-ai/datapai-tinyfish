@@ -136,26 +136,29 @@ export default async function DebatePage({ params, searchParams }: PageProps) {
       })
     : "—";
 
-  // Match the debate date (YYYY-MM-DD) to the closest available price on
-  // or before that date. If no row matches, fall back to the most recent.
-  let priceAtDebate: number | null = null;
-  let priceAtDebateDate: string | null = null;
+  // ── Price-at-debate: prefer the stored snapshot (migration 046) ────────
+  // The synthesis row has price_at_debate / price_currency / price_as_of_date
+  // frozen at write time — that is the EXACT price the AI agents saw and
+  // is immune to future price-table reloads or split-adjustment changes.
+  // We fall back to the recent-prices lookup only if the snapshot is null
+  // (older rows pre-migration-046).
+  let priceAtDebate: number | null =
+    typeof synthesis.price_at_debate === "number" ? synthesis.price_at_debate : null;
+  let priceAtDebateDate: string | null = synthesis.price_as_of_date ?? null;
   let priceLatest: number | null = null;
   let priceLatestDate: string | null = null;
+
   if (recentPrices.length > 0) {
     const sorted = [...recentPrices].sort((a, b) => a.date.localeCompare(b.date));
     priceLatest = sorted[sorted.length - 1].close;
     priceLatestDate = sorted[sorted.length - 1].date;
-    if (debateDateRaw) {
-      const debateDay = debateDateRaw.toISOString().slice(0, 10); // YYYY-MM-DD
-      // Latest row at or before debate day; else fall back to nearest after
+    // Fill in price_at_debate from lookup ONLY if snapshot was missing
+    if (priceAtDebate == null && debateDateRaw) {
+      const debateDay = debateDateRaw.toISOString().slice(0, 10);
       const onOrBefore = sorted.filter((p) => p.date <= debateDay);
       const pick = onOrBefore.length > 0 ? onOrBefore[onOrBefore.length - 1] : sorted[0];
       priceAtDebate = pick.close;
       priceAtDebateDate = pick.date;
-    } else {
-      priceAtDebate = priceLatest;
-      priceAtDebateDate = priceLatestDate;
     }
   }
   const priceDeltaPct =
@@ -163,8 +166,19 @@ export default async function DebatePage({ params, searchParams }: PageProps) {
       ? ((priceLatest - priceAtDebate) / priceAtDebate) * 100
       : null;
 
-  // Currency hint by exchange (best-effort, no FX conversion here)
-  const currencySymbol = exchange === "ASX" ? "A$" : exchange === "HKEX" ? "HK$" : exchange === "HOSE" ? "₫" : "$";
+  // Currency: stored snapshot wins; fall back to exchange-based default
+  const storedCurrency = synthesis.price_currency;
+  const currencySymbol =
+    storedCurrency === "USD" ? "$"
+    : storedCurrency === "AUD" ? "A$"
+    : storedCurrency === "HKD" ? "HK$"
+    : storedCurrency === "VND" ? "₫"
+    : storedCurrency === "GBP" ? "£"
+    : storedCurrency === "JPY" ? "¥"
+    : exchange === "ASX" ? "A$"
+    : exchange === "HKEX" ? "HK$"
+    : exchange === "HOSE" ? "₫"
+    : "$";
 
   // Surface non-empty agent_signals + gate_decisions for the side rails
   const agents = Object.entries(synthesis.agent_signals ?? {}).filter(
