@@ -287,6 +287,22 @@ export default function PerformancePage() {
                                     {r.ma_direction && <span>News: <span className="font-semibold text-gray-700">{r.ma_direction}</span></span>}
                                     {r.signals_aligned !== null && <span>Signals: <span className="font-semibold text-gray-700">{r.signals_aligned ? "ALIGNED" : "CONFLICTING"}</span></span>}
                                   </div>
+                                  <div className="flex gap-2 pt-3 mt-1 border-t border-gray-200">
+                                    <a
+                                      href={`/debate/${r.ticker}?exchange=${r.exchange}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs px-3 py-1.5 rounded-full bg-[#2e8b57] hover:bg-[#236a44] text-white font-semibold transition-colors"
+                                    >
+                                      🎬 Watch full debate →
+                                    </a>
+                                    <a
+                                      href={`/ticker/${r.ticker}/intel?exchange=${r.exchange}`}
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="text-xs px-3 py-1.5 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors"
+                                    >
+                                      Full intel →
+                                    </a>
+                                  </div>
                                 </td>
                               </tr>
                             )}

@@ -881,10 +881,19 @@ function TechnicalTab({ labels }: { labels: Labels }) {
                         <WatchlistButton symbol={r.ticker} exchange={r.exchange} compact />
                       </td>
                       <td className="px-3 py-2">
-                        <Link href={`/ticker/${r.ticker}/intel?exchange=${r.exchange}`}
-                          className="font-bold text-[#2e8b57] hover:text-[#1a6e3e] hover:underline text-sm">
-                          {r.ticker}
-                        </Link>
+                        <div className="flex items-center gap-1.5">
+                          <Link href={`/ticker/${r.ticker}/intel?exchange=${r.exchange}`}
+                            className="font-bold text-[#2e8b57] hover:text-[#1a6e3e] hover:underline text-sm">
+                            {r.ticker}
+                          </Link>
+                          <Link
+                            href={`/debate/${r.ticker}?exchange=${r.exchange}`}
+                            className="text-[10px] text-gray-400 hover:text-[#2e8b57] transition-colors"
+                            title="Watch the AI agent debate for this stock"
+                          >
+                            🎬
+                          </Link>
+                        </div>
                       </td>
                       <td className="px-2 py-2 text-right font-semibold tabular-nums text-gray-700">
                         <div>{r.latest_close !== null ? (r.latest_close < 1 ? r.latest_close.toFixed(4) : r.latest_close.toFixed(2)) : "—"}</div>

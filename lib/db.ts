@@ -1282,6 +1282,45 @@ export async function getStockSynthesis(ticker: string, exchange: string): Promi
   return rows[0] ?? null;
 }
 
+// ── Debate transcript (raw agent arguments) ───────────────────────────────
+// Reads from datapai.sys_agent_debate_log_full — the read-side foreign
+// table from migration 044 that exposes id + created_at (the write-side
+// `sys_agent_debate_log` hides them for FDW INSERT compatibility).
+//
+// Used by /debate/[ticker] for the animated chat-replay view.
+export interface DebateTranscript {
+  ticker: string;
+  exchange: string;
+  debate_date: string;       // YYYY-MM-DD
+  direction: string;
+  confidence: number | null;
+  bull_arguments: string[];
+  bear_arguments: string[];
+  risk_arguments: string[];
+  pm_arguments: string[];
+  created_at: string;
+}
+
+export async function getDebateTranscript(
+  ticker: string,
+  exchange: string,
+): Promise<DebateTranscript | null> {
+  const rows = await q<DebateTranscript>(
+    `SELECT ticker, exchange, debate_date::text AS debate_date,
+            direction, confidence,
+            COALESCE(bull_arguments, '{}') AS bull_arguments,
+            COALESCE(bear_arguments, '{}') AS bear_arguments,
+            COALESCE(risk_arguments, '{}') AS risk_arguments,
+            COALESCE(pm_arguments,   '{}') AS pm_arguments,
+            created_at::text AS created_at
+     FROM datapai.sys_agent_debate_log_full
+     WHERE ticker=$1 AND exchange=$2
+     ORDER BY created_at DESC LIMIT 1`,
+    [ticker, exchange]
+  );
+  return rows[0] ?? null;
+}
+
 export async function getStockSynthesisFlexible(symbol: string, exchange: string): Promise<StockSynthesis | null> {
   // Try exact match first
   let result = await getStockSynthesis(symbol, exchange);
