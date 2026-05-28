@@ -31,11 +31,14 @@ interface Props {
   reflectorLessons?: ReflectorLessons;
 }
 
+// 7-state direction map (2026-05-28: + WATCH, AVOID).
 const directionColor = (d?: string): { bg: string; fg: string; label: string } => {
   const dir = (d || "").toUpperCase();
-  if (dir === "STRONG_BUY" || dir === "BUY") return { bg: "#dcfce7", fg: "#166534", label: dir.replace("_", " ") };
+  if (dir === "STRONG_BUY" || dir === "BUY")   return { bg: "#dcfce7", fg: "#166534", label: dir.replace("_", " ") };
   if (dir === "SELL" || dir === "STRONG_SELL") return { bg: "#fef2f2", fg: "#991b1b", label: dir.replace("_", " ") };
-  if (dir === "HOLD") return { bg: "#fefce8", fg: "#854d0e", label: "HOLD" };
+  if (dir === "HOLD")  return { bg: "#fefce8", fg: "#854d0e", label: "HOLD"  };
+  if (dir === "WATCH") return { bg: "#dbeafe", fg: "#1d4ed8", label: "WATCH" };
+  if (dir === "AVOID") return { bg: "#fee2e2", fg: "#7f1d1d", label: "AVOID" };
   return { bg: "#f3f4f6", fg: "#374151", label: dir || "—" };
 };
 

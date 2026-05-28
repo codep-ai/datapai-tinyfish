@@ -84,13 +84,17 @@ const personaMeta: Record<PersonaSlug, {
   },
 };
 
+// 7-state direction map. WATCH = blue (deferral); AVOID = darker red
+// (material risk, distinct from SELL).
 const directionColor = (d?: string): { bg: string; fg: string; label: string; emoji: string } => {
   const dir = (d || "").toUpperCase();
-  if (dir === "STRONG_BUY") return { bg: "#16a34a", fg: "#fff", label: "STRONG BUY", emoji: "🟢" };
-  if (dir === "BUY")        return { bg: "#22c55e", fg: "#fff", label: "BUY",        emoji: "🟢" };
-  if (dir === "HOLD")       return { bg: "#eab308", fg: "#111", label: "HOLD",       emoji: "🟡" };
-  if (dir === "SELL")       return { bg: "#ef4444", fg: "#fff", label: "SELL",       emoji: "🔴" };
-  if (dir === "STRONG_SELL")return { bg: "#b91c1c", fg: "#fff", label: "STRONG SELL",emoji: "🔴" };
+  if (dir === "STRONG_BUY") return { bg: "#16a34a", fg: "#fff", label: "STRONG BUY",  emoji: "🟢" };
+  if (dir === "BUY")        return { bg: "#22c55e", fg: "#fff", label: "BUY",         emoji: "🟢" };
+  if (dir === "HOLD")       return { bg: "#eab308", fg: "#111", label: "HOLD",        emoji: "🟡" };
+  if (dir === "WATCH")      return { bg: "#3b82f6", fg: "#fff", label: "WATCH",       emoji: "🔵" };
+  if (dir === "AVOID")      return { bg: "#7f1d1d", fg: "#fff", label: "AVOID",       emoji: "⛔" };
+  if (dir === "SELL")       return { bg: "#ef4444", fg: "#fff", label: "SELL",        emoji: "🔴" };
+  if (dir === "STRONG_SELL")return { bg: "#b91c1c", fg: "#fff", label: "STRONG SELL", emoji: "🔴" };
   return { bg: "#9ca3af", fg: "#fff", label: dir || "—", emoji: "⚪" };
 };
 

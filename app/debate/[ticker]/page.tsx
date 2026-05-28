@@ -59,12 +59,18 @@ const FEATURED: Array<{ ticker: string; exchange: string; label: string }> = [
 ];
 
 // Direction → label/color helpers (kept in sync with DebateReplay component).
+// 7-state direction map (2026-05-28: + WATCH, AVOID).
+//   WATCH  = blue   — "no conviction yet, monitoring"
+//   AVOID  = darker red — "material risk, stay away"
+//            (distinct from SELL which means "exit existing position")
 const directionStyles: Record<string, { bg: string; fg: string; label: string }> = {
-  STRONG_BUY:  { bg: "#dcfce7", fg: "#15803d", label: "STRONG BUY" },
-  BUY:         { bg: "#dcfce7", fg: "#166534", label: "BUY"        },
-  HOLD:        { bg: "#fefce8", fg: "#854d0e", label: "HOLD"       },
-  SELL:        { bg: "#fef2f2", fg: "#991b1b", label: "SELL"       },
-  STRONG_SELL: { bg: "#fef2f2", fg: "#7f1d1d", label: "STRONG SELL"},
+  STRONG_BUY:  { bg: "#dcfce7", fg: "#15803d", label: "STRONG BUY"  },
+  BUY:         { bg: "#dcfce7", fg: "#166534", label: "BUY"         },
+  HOLD:        { bg: "#fefce8", fg: "#854d0e", label: "HOLD"        },
+  WATCH:       { bg: "#dbeafe", fg: "#1d4ed8", label: "WATCH"       },
+  AVOID:       { bg: "#fee2e2", fg: "#7f1d1d", label: "AVOID"       },
+  SELL:        { bg: "#fef2f2", fg: "#991b1b", label: "SELL"        },
+  STRONG_SELL: { bg: "#fef2f2", fg: "#7f1d1d", label: "STRONG SELL" },
 };
 
 const agentDisplayName: Record<string, string> = {

@@ -217,11 +217,14 @@ export default async function IntelPage({
             const dir = synthesis.direction || "HOLD";
             const conf = Number(synthesis.confidence) || 0;
             const conv = synthesis.conviction || "LOW";
+            // 7-state direction map (2026-05-28: + WATCH, AVOID).
             const dirStyles: Record<string, { bg: string; color: string; emoji: string; label: string }> = {
-              STRONG_BUY:  { bg: "#dcfce7", color: "#15803d", emoji: "🟢", label: "STRONG BUY" },
-              BUY:         { bg: "#dcfce7", color: "#166534", emoji: "🟢", label: "BUY" },
-              HOLD:        { bg: "#fefce8", color: "#854d0e", emoji: "🟡", label: "HOLD" },
-              SELL:        { bg: "#fef2f2", color: "#991b1b", emoji: "🔴", label: "SELL" },
+              STRONG_BUY:  { bg: "#dcfce7", color: "#15803d", emoji: "🟢", label: "STRONG BUY"  },
+              BUY:         { bg: "#dcfce7", color: "#166534", emoji: "🟢", label: "BUY"         },
+              HOLD:        { bg: "#fefce8", color: "#854d0e", emoji: "🟡", label: "HOLD"        },
+              WATCH:       { bg: "#dbeafe", color: "#1d4ed8", emoji: "🔵", label: "WATCH"       },
+              AVOID:       { bg: "#fee2e2", color: "#7f1d1d", emoji: "⛔", label: "AVOID"       },
+              SELL:        { bg: "#fef2f2", color: "#991b1b", emoji: "🔴", label: "SELL"        },
               STRONG_SELL: { bg: "#fef2f2", color: "#7f1d1d", emoji: "🔴", label: "STRONG SELL" },
             };
             const ds = dirStyles[dir] ?? dirStyles.HOLD;

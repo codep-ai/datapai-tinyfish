@@ -117,7 +117,7 @@ const AGENTS: Agent[] = [
     role: "Makes the final call. Emits the JSON the rest of the platform consumes.",
     ingests: "All three prior debate arguments + the original signal context.",
     strategy:
-      "Synthesises into direction (STRONG_BUY .. STRONG_SELL) + confidence 0–1 + conviction (HIGH/MEDIUM/LOW) + thesis (≤2 sentences) + what-bulls-say + what-bears-say + key-risk. JSON-only output, no preamble.",
+      "Synthesises into one of 7 directions: STRONG_BUY, BUY, HOLD, WATCH (no conviction yet — monitor), AVOID (material risk — don't engage), SELL, STRONG_SELL — plus confidence 0–1 + conviction (HIGH/MEDIUM/LOW) + thesis + what-bulls-say + what-bears-say + key-risk. JSON-only output, no preamble.",
   },
 
   // ── Governance gates ───────────────────────────────────────────────────

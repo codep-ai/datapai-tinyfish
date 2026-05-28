@@ -258,13 +258,19 @@ export default function PerformancePage() {
                 </div>
               )}
 
-              {/* Direction distribution mini-cards */}
-              <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
-                {(["STRONG_BUY", "BUY", "HOLD", "SELL", "STRONG_SELL"] as const).map((d) => {
+              {/* Direction distribution mini-cards (7-state: + WATCH, AVOID) */}
+              <div className="grid grid-cols-3 md:grid-cols-7 gap-3">
+                {(["STRONG_BUY", "BUY", "HOLD", "WATCH", "AVOID", "SELL", "STRONG_SELL"] as const).map((d) => {
                   const n = synthSummary?.by_direction?.[d] ?? 0;
+                  const cls =
+                    d === "STRONG_BUY" || d === "BUY"   ? "text-emerald-600"
+                    : d === "STRONG_SELL" || d === "SELL" ? "text-red-500"
+                    : d === "WATCH"                       ? "text-blue-600"
+                    : d === "AVOID"                       ? "text-red-800"
+                    : "text-gray-500";
                   return (
                     <div key={d} className="bg-white rounded-xl border p-4 text-center">
-                      <p className={`text-2xl font-bold ${d === "STRONG_BUY" || d === "BUY" ? "text-emerald-600" : d === "STRONG_SELL" || d === "SELL" ? "text-red-500" : "text-gray-500"}`}>{n}</p>
+                      <p className={`text-2xl font-bold ${cls}`}>{n}</p>
                       <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wide">{dirLabel(d, labels)}</p>
                     </div>
                   );
@@ -284,6 +290,8 @@ export default function PerformancePage() {
                     <option value="STRONG_BUY">{dirLabel("STRONG_BUY", labels)}</option>
                     <option value="BUY">{dirLabel("BUY", labels)}</option>
                     <option value="HOLD">{dirLabel("HOLD", labels)}</option>
+                    <option value="WATCH">{dirLabel("WATCH", labels)}</option>
+                    <option value="AVOID">{dirLabel("AVOID", labels)}</option>
                     <option value="SELL">{dirLabel("SELL", labels)}</option>
                     <option value="STRONG_SELL">{dirLabel("STRONG_SELL", labels)}</option>
                   </select>
