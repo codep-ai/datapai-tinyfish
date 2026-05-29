@@ -90,7 +90,7 @@ const AGENTS: Agent[] = [
     role: "Argues the bullish thesis to the strongest standard of evidence.",
     ingests: "All 4 input agents' outputs (TA / FA / Market Activity / News) + past lessons from Reflector.",
     strategy:
-      "Highlights catalysts, refutes the bear's points, identifies what the market is missing. Hard-capped at 200 tokens to force concision (no essays).",
+      "Highlights catalysts, refutes the bear's points, identifies what the market is missing. Hard-capped at 200 tokens to force concision. If bull case isn't strong enough for BUY, Bull honestly acknowledges that — Portfolio Manager may then route to HOLD or WATCH instead of forcing a fake bullish call.",
   },
   {
     slug: "bear",
@@ -99,7 +99,7 @@ const AGENTS: Agent[] = [
     role: "Argues the bearish thesis and surfaces unpriced risks.",
     ingests: "Same as Bull, including Bull's argument (refuting in real-time).",
     strategy:
-      "Leads with the strongest material risk. Pays special attention to CRITICAL/HIGH severity news, 8-K filings, and IR-page risk-section expansions. Hard-capped at 200 tokens.",
+      "Leads with the strongest material risk. Pays special attention to CRITICAL/HIGH severity news, 8-K filings, and IR-page risk-section expansions. Hard-capped at 200 tokens. When risk is material but the audience may not hold a position (fraud, bankruptcy, sanctions), Bear pushes Portfolio Manager toward AVOID — semantically distinct from SELL which presupposes an existing position to exit.",
   },
   {
     slug: "risk",
@@ -108,7 +108,7 @@ const AGENTS: Agent[] = [
     role: "Sizes the position. Capital preservation is the brief, not direction.",
     ingests: "Bull's case, Bear's case, signal alignment, severity of any event.",
     strategy:
-      "Recommends FULL / HALF / QUARTER / NONE position size + stop-loss + take-profit levels. CRITICAL negative events → QUARTER or NONE automatically.",
+      "Recommends FULL / HALF / QUARTER / NONE position size + stop-loss + take-profit levels. CRITICAL negative events → QUARTER or NONE automatically. When signals are mixed and conviction low, recommends WATCH instead of forcing a fake HOLD. When material risk is present (fraud, bankruptcy, sanctions), recommends AVOID over SELL.",
   },
   {
     slug: "pm",
